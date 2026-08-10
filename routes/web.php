@@ -98,11 +98,16 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::get('sales', [SaleOrderController::class, 'index'])->name('sales.index');
     Route::get('sales/create', [SaleOrderController::class, 'create'])->name('sales.create');
     Route::get('sales/course-availability', [SaleOrderController::class, 'courseAvailability'])->name('sales.course-availability');
+    Route::post('sales/quick-student', [SaleOrderController::class, 'quickCreateStudent'])->name('sales.quick-student');
     Route::post('sales', [SaleOrderController::class, 'store'])->name('sales.store');
     Route::get('sales/{saleOrder}', [SaleOrderController::class, 'show'])->name('sales.show');
+    Route::get('sales/{saleOrder}/edit', [SaleOrderController::class, 'edit'])->name('sales.edit');
+    Route::put('sales/{saleOrder}', [SaleOrderController::class, 'update'])->name('sales.update');
     Route::post('sales/{saleOrder}/apply-discount', [SaleOrderController::class, 'applyDiscount'])->name('sales.apply-discount');
     Route::post('sales/{saleOrder}/confirm-payment', [SaleOrderController::class, 'confirmPayment'])->name('sales.confirm-payment');
     Route::patch('sales/{saleOrder}/cancel', [SaleOrderController::class, 'cancel'])->name('sales.cancel');
+    Route::get('sales/{saleOrder}/invoice/download', [SaleOrderController::class, 'downloadInvoice'])->name('sales.invoice.download');
+
 
     Route::get('students-search', StudentSearchController::class)->name('students.search');
 });

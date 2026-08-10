@@ -36,10 +36,10 @@ class StoreSaleOrderRequest extends FormRequest
 
             'notes' => ['nullable', 'string', 'max:1000'],
 
-            // ข้อมูลใบกำกับภาษี / ใบเสร็จ
-            'invoice_type'  => ['required', 'in:receipt,tax_invoice'],
+            // ใบเสร็จ/ใบกำกับภาษี — เลือกได้ว่าต้องการหรือไม่
+            'invoice_type'  => ['required', 'in:receipt,tax_invoice,none'],
             'is_company'    => ['nullable', 'boolean'],
-            'buyer_name'    => ['required', 'string', 'max:150'],
+            'buyer_name'    => ['required_unless:invoice_type,none', 'nullable', 'string', 'max:150'],
             'buyer_tax_id'  => ['required_if:is_company,1', 'nullable', 'digits:13'],
             'buyer_address' => ['nullable', 'string', 'max:500'],
             'buyer_phone'   => ['nullable', 'string', 'max:20'],
@@ -49,9 +49,10 @@ class StoreSaleOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'required'    => 'กรุณากรอกข้อมูลในช่องนี้',
-            'required_if' => 'กรุณากรอกเลขผู้เสียภาษี (13 หลัก) เมื่อออกในนามนิติบุคคล',
-            'digits'      => 'เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก',
+            'required'         => 'กรุณากรอกข้อมูลในช่องนี้',
+            'required_unless'  => 'กรุณากรอกชื่อผู้ซื้อ หรือปิดตัวเลือก "ต้องการใบเสร็จ/ใบกำกับภาษี"',
+            'required_if'      => 'กรุณากรอกเลขผู้เสียภาษี (13 หลัก) เมื่อออกในนามนิติบุคคล',
+            'digits'           => 'เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก',
         ];
     }
 }

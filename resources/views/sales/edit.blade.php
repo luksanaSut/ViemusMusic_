@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'สมัครเรียนคอร์ส')
+@section('title', 'แก้ไขคำสั่งสมัครเรียน')
 
 @section('content')
     <style>
@@ -101,7 +101,6 @@
             color: #b3392c;
         }
 
-        /* ===== แท็บเลือกนักเรียน ===== */
         .picker-tabs {
             display: flex;
             gap: .6rem;
@@ -184,7 +183,6 @@
             display: block;
         }
 
-        /* ===== การ์ดคอร์ส ===== */
         .course-card {
             border: 1.5px solid var(--border, #e4e1dc);
             border-radius: 14px;
@@ -270,11 +268,11 @@
         }
     </style>
 
-    <div class="breadcrumb-sm">งานขาย <i class="bi bi-chevron-right small"></i> สมัครเรียนคอร์ส</div>
-    <h1 class="page-title mb-3"><i class="bi bi-cart-plus"></i> สมัครเรียนคอร์ส</h1>
+    <div class="breadcrumb-sm">งานขาย <i class="bi bi-chevron-right small"></i> แก้ไขคำสั่งสมัครเรียน</div>
+    <h1 class="page-title mb-3"><i class="bi bi-pencil-square"></i> แก้ไขคำสั่งสมัครเรียน: {{ $saleOrder->order_no }}</h1>
 
-    <form action="{{ route('sales.store') }}" method="POST" id="saleForm">
-        @csrf
+    <form action="{{ route('sales.update', $saleOrder) }}" method="POST" id="saleForm">
+        @csrf @method('PUT')
 
         {{-- 1. เลือกนักเรียน --}}
         <div class="form-section">
@@ -282,19 +280,15 @@
                 <div class="icon-badge"><i class="bi bi-person"></i></div> เลือกนักเรียน <span class="step-no">ขั้นตอน
                     1</span>
             </div>
-            <div class="form-section-desc">เลือกนักเรียนเดิม หรือเพิ่มนักเรียนใหม่</div>
-
             <div class="picker-tabs">
                 <div class="picker-tab active" id="tabExisting">เลือกนักเรียนเดิม</div>
                 <div class="picker-tab" id="tabNew"><i class="bi bi-plus-lg"></i> เพิ่มนักเรียนใหม่</div>
             </div>
-
             <div id="existingStudentBox">
                 <input type="text" id="studentFilterInput" class="form-control form-control-sm mb-2"
                     placeholder="ค้นหาชื่อ/รหัสนักเรียน...">
                 <div id="studentCardList" style="max-height:420px; overflow-y:auto;"></div>
             </div>
-
             <div id="newStudentBox" class="d-none">
                 <div class="row g-2">
                     <div class="col-md-4"><input type="text" id="qsName" class="form-control form-control-sm"
@@ -309,9 +303,7 @@
                 </div>
                 <div id="qsError" class="text-danger small mt-2 d-none"></div>
             </div>
-
-            <input type="hidden" name="student_id" id="studentIdInput" value="{{ $preselectedStudent->id ?? '' }}"
-                required>
+            <input type="hidden" name="student_id" id="studentIdInput" value="{{ $saleOrder->student_id }}" required>
             <div id="studentSelectedInfo" class="mt-2 small fw-semibold text-success"></div>
         </div>
 
@@ -321,15 +313,13 @@
                 <div class="icon-badge"><i class="bi bi-journal-bookmark"></i></div> เลือกคอร์สเรียน (แพ็กเกจ) <span
                     class="step-no">ขั้นตอน 2</span>
             </div>
-
             <div class="position-relative mb-3">
                 <i class="bi bi-search position-absolute"
                     style="left:.9rem; top:50%; transform:translateY(-50%); color:var(--muted,#6b655e);"></i>
                 <input type="text" id="courseFilterInput" class="form-control" style="padding-left:2.3rem;"
                     placeholder="ค้นหาชื่อคอร์ส / รหัสคอร์ส / เครื่องดนตรี...">
             </div>
-
-            <input type="hidden" name="course_id" id="courseIdInput" required>
+            <input type="hidden" name="course_id" id="courseIdInput" value="{{ $saleOrder->course_id }}" required>
             <div class="row g-3" id="courseCardGrid">
                 @php
                     $covers = [
@@ -341,15 +331,13 @@
                 @endphp
                 @foreach ($courseCards as $i => $card)
                     <div class="col-md-4">
-                        <div class="course-card {{ $card['remaining'] === 0 ? 'disabled' : '' }}"
+                        <div class="course-card {{ $card['id'] == $saleOrder->course_id ? 'active' : ($card['remaining'] === 0 ? 'disabled' : '') }}"
                             data-id="{{ $card['id'] }}" data-full="{{ $card['remaining'] === 0 ? '1' : '0' }}"
                             data-search="{{ mb_strtolower($card['name'] . ' ' . $card['code'] . ' ' . $card['instrument']) }}">
                             <div class="course-cover" style="background:{{ $covers[$i % count($covers)] }};">
                                 @if ($card['discount_label'])
                                     <span class="badge badge-discount"><i class="bi bi-tag"></i> ลด
-                                        {{ $card['discount_label'] }}</span>
-                                @else
-                                    <span></span>
+                                    {{ $card['discount_label'] }}</span>@else<span></span>
                                 @endif
                                 @if ($card['instrument'])
                                     <span class="badge badge-instrument">{{ $card['instrument'] }}</span>
@@ -364,8 +352,7 @@
                                         <span class="remaining ok">ไม่จำกัด</span>
                                     @elseif($card['remaining'] === 0)
                                         <span class="remaining full">เต็มแล้ว</span>
-                                    @else
-                                        <span class="remaining ok">เหลือ {{ $card['remaining'] }} ที่</span>
+                                    @else<span class="remaining ok">เหลือ {{ $card['remaining'] }} ที่</span>
                                     @endif
                                 </div>
                             </div>
@@ -378,7 +365,7 @@
             <div id="capacityHintBox" class="capacity-hint d-none"></div>
         </div>
 
-        {{-- 3. อาจารย์ / สาขา / รูปแบบเรียน / วันเวลา --}}
+        {{-- 3. รายละเอียดการเรียน --}}
         <div class="form-section">
             <div class="form-section-title">
                 <div class="icon-badge"><i class="bi bi-sliders"></i></div> รายละเอียดการเรียน <span
@@ -390,13 +377,12 @@
                     <select name="teacher_id" id="teacherSelect" class="form-select">
                         <option value="">ให้ทางโรงเรียนจัดให้</option>
                     </select>
-                    <small class="text-muted" id="teacherHint">เลือกคอร์สก่อน
-                        ระบบจะแสดงอาจารย์ที่สอนคอร์สนี้ได้ให้อัตโนมัติ</small>
+                    <small class="text-muted" id="teacherHint"></small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เลือกสาขาเรียน</label>
                     <input type="text" name="branch" class="form-control" list="branchList"
-                        placeholder="เช่น Cloud 11">
+                        value="{{ $saleOrder->branch }}">
                     <datalist id="branchList">
                         @foreach (\App\Models\Teacher::whereNotNull('branch')->distinct()->pluck('branch') as $b)
                             <option value="{{ $b }}">
@@ -406,65 +392,64 @@
                 <div class="col-md-4">
                     <label class="form-label">รูปแบบการเรียน</label>
                     <select name="delivery_mode" id="deliveryModeSelect" class="form-select">
-                        <option value="onsite">ที่โรงเรียน</option>
-                        <option value="online">ออนไลน์</option>
-                        <option value="hybrid">ไฮบริด</option>
+                        <option value="onsite" @selected($saleOrder->delivery_mode == 'onsite')>ที่โรงเรียน</option>
+                        <option value="online" @selected($saleOrder->delivery_mode == 'online')>ออนไลน์</option>
+                        <option value="hybrid" @selected($saleOrder->delivery_mode == 'hybrid')>ไฮบริด</option>
                     </select>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">วันที่สะดวกเรียน</label>
-                    <select name="preferred_day_of_week" id="preferredDaySelect" class="form-select">
-                        <option value="">ไม่ระบุ</option>
-                        @foreach (\App\Models\TeacherAvailability::dayLabels() as $dow => $label)
-                            <option value="{{ $dow }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    <small class="text-muted" id="dayHint">เลือกอาจารย์ก่อน
-                        ระบบจะกรองเฉพาะวันที่อาจารย์ว่างจริงให้อัตโนมัติ</small>
+                    <select name="preferred_day_of_week" id="preferredDaySelect" class="form-select"></select>
+                    <small class="text-muted" id="dayHint"></small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เวลาเริ่ม</label>
-                    <input type="time" name="preferred_start_time" id="preferredStartTime" class="form-control">
+                    <input type="time" name="preferred_start_time" id="preferredStartTime" class="form-control"
+                        value="{{ $saleOrder->preferred_start_time }}">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เวลาสิ้นสุด</label>
-                    <input type="time" name="preferred_end_time" id="preferredEndTime" class="form-control">
+                    <input type="time" name="preferred_end_time" id="preferredEndTime" class="form-control"
+                        value="{{ $saleOrder->preferred_end_time }}">
                 </div>
             </div>
         </div>
 
-        {{-- 4. สรุปราคา --}}
+        {{-- 4. ราคา --}}
         <div class="form-section">
             <div class="form-section-title">
-                <div class="icon-badge"><i class="bi bi-calculator"></i></div> คำนวณค่าเรียน <span
-                    class="step-no">ขั้นตอน 4</span>
+                <div class="icon-badge"><i class="bi bi-calculator"></i></div> ค่าเรียน <span class="step-no">ขั้นตอน
+                    4</span>
             </div>
             <div class="price-box">
-                <div class="price-row"><span>ราคาคอร์ส (ก่อน VAT)</span><span id="priceSubtotal">0.00</span></div>
-                <div class="price-row"><span>VAT 7%</span><span id="priceVat">0.00</span></div>
-                <div class="price-row total"><span>ยอดชำระทั้งหมด</span><span id="priceTotal">0.00</span></div>
+                <div class="price-row"><span>ราคาคอร์ส (ก่อน VAT)</span><span
+                        id="priceSubtotal">{{ number_format($saleOrder->base_price, 2) }}</span></div>
+                <div class="price-row"><span>VAT 7%</span><span
+                        id="priceVat">{{ number_format($saleOrder->vat_amount, 2) }}</span></div>
+                <div class="price-row total"><span>ยอดชำระทั้งหมด</span><span
+                        id="priceTotal">{{ number_format($saleOrder->total_amount, 2) }}</span></div>
             </div>
-            <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i>
-                ราคานี้ยังไม่รวมส่วนลดคูปอง/แต้ม/เครดิต — ปรับยอดสุทธิได้อีกครั้งในหน้าสรุปก่อนชำระเงิน</small>
+            <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i> ถ้าเปลี่ยนคอร์ส
+                ราคาจะคำนวณใหม่ทั้งหมด และส่วนลด/คูปอง/แต้มที่เคยใช้ไว้จะถูกล้างค่า ต้องกดใช้ใหม่ในหน้าสรุป</small>
         </div>
 
-        {{-- 5. ใบเสร็จ/ใบกำกับภาษี (เลือกได้ว่าต้องการหรือไม่) --}}
+        {{-- 5. ใบเสร็จ --}}
         <div class="form-section">
             <div class="form-section-title">
-                <div class="icon-badge"><i class="bi bi-receipt"></i></div> ใบเสร็จ / ใบกำกับภาษี
-                <span class="step-no">ขั้นตอน 5</span>
+                <div class="icon-badge"><i class="bi bi-receipt"></i></div> ใบเสร็จ / ใบกำกับภาษี <span
+                    class="step-no">ขั้นตอน 5</span>
             </div>
             <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" role="switch" id="wantsInvoiceCheck" checked>
+                <input class="form-check-input" type="checkbox" role="switch" id="wantsInvoiceCheck"
+                    {{ $saleOrder->taxInvoice ? 'checked' : '' }}>
                 <label class="form-check-label fw-semibold">ต้องการใบเสร็จ/ใบกำกับภาษี</label>
             </div>
-
             <div id="invoiceFieldsBox" class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">ประเภทเอกสาร *</label>
                     <select name="invoice_type" id="invoiceType" class="form-select">
-                        <option value="receipt">ใบเสร็จรับเงิน</option>
-                        <option value="tax_invoice">ใบกำกับภาษีเต็มรูป</option>
+                        <option value="receipt" @selected(optional($saleOrder->taxInvoice)->invoice_type == 'receipt')>ใบเสร็จรับเงิน</option>
+                        <option value="tax_invoice" @selected(optional($saleOrder->taxInvoice)->invoice_type == 'tax_invoice')>ใบกำกับภาษีเต็มรูป</option>
                         <option value="none" hidden>ไม่ต้องการเอกสาร</option>
                     </select>
                 </div>
@@ -472,26 +457,29 @@
                     <div class="form-check form-switch">
                         <input type="hidden" name="is_company" value="0">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_company"
-                            id="isCompanyCheck" value="1">
+                            id="isCompanyCheck" value="1"
+                            {{ optional($saleOrder->taxInvoice)->is_company ? 'checked' : '' }}>
                         <label class="form-check-label">ออกในนามนิติบุคคล</label>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">ชื่อผู้ซื้อ/บริษัท *</label>
-                    <input type="text" name="buyer_name" id="buyerNameInput" class="form-control" maxlength="150">
+                    <input type="text" name="buyer_name" id="buyerNameInput" class="form-control" maxlength="150"
+                        value="{{ optional($saleOrder->taxInvoice)->buyer_name }}">
                 </div>
-                <div class="col-md-6 d-none" id="taxIdBox">
+                <div class="col-md-6 {{ optional($saleOrder->taxInvoice)->is_company ? '' : 'd-none' }}" id="taxIdBox">
                     <label class="form-label">เลขผู้เสียภาษี (13 หลัก) *</label>
                     <input type="text" name="buyer_tax_id" id="buyerTaxId" class="form-control" maxlength="13"
-                        inputmode="numeric">
+                        inputmode="numeric" value="{{ optional($saleOrder->taxInvoice)->buyer_tax_id }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">เบอร์โทร</label>
-                    <input type="text" name="buyer_phone" class="form-control" maxlength="20">
+                    <input type="text" name="buyer_phone" class="form-control" maxlength="20"
+                        value="{{ optional($saleOrder->taxInvoice)->buyer_phone }}">
                 </div>
                 <div class="col-12">
                     <label class="form-label">ที่อยู่สำหรับออกเอกสาร</label>
-                    <textarea name="buyer_address" class="form-control" rows="2" maxlength="500"></textarea>
+                    <textarea name="buyer_address" class="form-control" rows="2" maxlength="500">{{ optional($saleOrder->taxInvoice)->buyer_address }}</textarea>
                 </div>
             </div>
             <p class="text-muted small mb-0 d-none" id="noInvoiceNote"><i class="bi bi-info-circle"></i>
@@ -504,13 +492,12 @@
                 <div class="icon-badge"><i class="bi bi-journal-text"></i></div> หมายเหตุ <span
                     class="step-no">ขั้นตอนสุดท้าย</span>
             </div>
-            <textarea name="notes" class="form-control" rows="2" maxlength="1000"
-                placeholder="ข้อมูลเพิ่มเติม (ถ้ามี)"></textarea>
+            <textarea name="notes" class="form-control" rows="2" maxlength="1000">{{ $saleOrder->notes }}</textarea>
         </div>
 
         <div class="d-flex gap-2 mb-4">
-            <button class="btn btn-accent"><i class="bi bi-arrow-right-circle"></i> ไปหน้าสรุปข้อมูลก่อนชำระเงิน</button>
-            <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary">ยกเลิก</a>
+            <button class="btn btn-accent"><i class="bi bi-save"></i> บันทึกการแก้ไข</button>
+            <a href="{{ route('sales.show', $saleOrder) }}" class="btn btn-outline-secondary">ยกเลิก</a>
         </div>
     </form>
 
@@ -521,13 +508,17 @@
 
     <script>
         (function() {
-            // ============ 1. เลือกนักเรียน ============
+            const preselectedStudentId = "{{ $saleOrder->student_id }}";
+            const preselectedCourseId = "{{ $saleOrder->course_id }}";
+            const preselectedTeacherId = "{{ $saleOrder->teacher_id }}";
+            const preselectedDay = "{{ $saleOrder->preferred_day_of_week }}";
+
+            // ===== นักเรียน =====
             let students = JSON.parse(document.getElementById('studentsCatalog').textContent);
             const studentListBox = document.getElementById('studentCardList');
             const studentFilter = document.getElementById('studentFilterInput');
             const studentIdInput = document.getElementById('studentIdInput');
             const studentInfo = document.getElementById('studentSelectedInfo');
-            const preselectedId = "{{ $preselectedStudent->id ?? '' }}";
 
             function renderStudentCards(list) {
                 studentListBox.innerHTML = '';
@@ -540,15 +531,8 @@
                     const card = document.createElement('div');
                     card.className = 'student-card' + (String(s.id) === String(studentIdInput.value) ?
                         ' active' : '');
-                    card.innerHTML = `
-                <div class="avatar">${(s.nickname || s.name).charAt(0)}</div>
-                <div class="info">
-                    <div class="name">${s.name}</div>
-                    <div class="meta">${s.code} ${s.nickname ? '· ' + s.nickname : ''} ${s.age ? '· อายุ ' + s.age + ' ปี' : ''}</div>
-                </div>
-                ${s.instrument ? `<span class="badge text-bg-light border">${s.instrument}</span>` : ''}
-                <i class="bi bi-check-circle-fill check"></i>
-            `;
+                    card.innerHTML =
+                        `<div class="avatar">${(s.nickname||s.name).charAt(0)}</div><div class="info"><div class="name">${s.name}</div><div class="meta">${s.code} ${s.nickname?'· '+s.nickname:''} ${s.age?'· อายุ '+s.age+' ปี':''}</div></div>${s.instrument?`<span class="badge text-bg-light border">${s.instrument}</span>`:''}<i class="bi bi-check-circle-fill check"></i>`;
                     card.addEventListener('click', () => selectStudent(s));
                     studentListBox.appendChild(card);
                 });
@@ -566,19 +550,15 @@
                 return students.filter(s => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || (s
                     .nickname || '').toLowerCase().includes(q));
             }
-
             studentFilter.addEventListener('input', () => renderStudentCards(currentFilteredList()));
             renderStudentCards(students);
-            if (preselectedId) {
-                const pre = students.find(s => String(s.id) === String(preselectedId));
-                if (pre) selectStudent(pre);
-            }
+            const pre = students.find(s => String(s.id) === preselectedStudentId);
+            if (pre) selectStudent(pre);
 
             const tabExisting = document.getElementById('tabExisting');
             const tabNew = document.getElementById('tabNew');
             const existingBox = document.getElementById('existingStudentBox');
             const newBox = document.getElementById('newStudentBox');
-
             tabExisting.addEventListener('click', () => {
                 tabExisting.classList.add('active');
                 tabNew.classList.remove('active');
@@ -601,7 +581,6 @@
                     errBox.classList.remove('d-none');
                     return;
                 }
-
                 try {
                     const res = await fetch('{{ route('sales.quick-student') }}', {
                         method: 'POST',
@@ -609,14 +588,14 @@
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content,
+                                .content
                         },
                         body: JSON.stringify({
                             full_name: name,
                             nickname: document.getElementById('qsNickname').value.trim() ||
                                 null,
                             phone: document.getElementById('qsPhone').value.trim() || null,
-                            date_of_birth: document.getElementById('qsDob').value || null,
+                            date_of_birth: document.getElementById('qsDob').value || null
                         }),
                     });
                     const body = await res.json();
@@ -625,7 +604,6 @@
                         errBox.classList.remove('d-none');
                         return;
                     }
-
                     students.unshift(body);
                     selectStudent(body);
                     tabExisting.click();
@@ -636,7 +614,7 @@
                 }
             });
 
-            // ============ 2. เลือกคอร์ส (การ์ด + ค้นหา) ============
+            // ===== คอร์ส =====
             const courseIdInput = document.getElementById('courseIdInput');
             const capacityBox = document.getElementById('capacityHintBox');
             const courseCardsData = JSON.parse(document.getElementById('courseCardsData').textContent);
@@ -663,25 +641,21 @@
             const courseFilterInput = document.getElementById('courseFilterInput');
             const courseNoResult = document.getElementById('courseNoResult');
             const courseCols = document.querySelectorAll('#courseCardGrid > .col-md-4');
-
             courseFilterInput.addEventListener('input', function() {
                 const q = this.value.trim().toLowerCase();
                 let visibleCount = 0;
-
                 courseCols.forEach(col => {
                     const card = col.querySelector('.course-card');
                     const matches = q === '' || card.dataset.search.includes(q);
                     col.style.display = matches ? '' : 'none';
                     if (matches) visibleCount++;
                 });
-
                 courseNoResult.classList.toggle('d-none', visibleCount > 0);
             });
 
-            // ============ 3. อาจารย์ (ตามคอร์ส) + วันว่างจริง ============
+            // ===== อาจารย์ + วันว่าง =====
             const teacherSelect = document.getElementById('teacherSelect');
             const teacherHint = document.getElementById('teacherHint');
-            const deliverySelect = document.getElementById('deliveryModeSelect');
             const preferredDaySelect = document.getElementById('preferredDaySelect');
             const dayHint = document.getElementById('dayHint');
             const startTimeInput = document.getElementById('preferredStartTime');
@@ -696,7 +670,6 @@
                     ];
                 }),
             ) !!};
-
             const teachersAvailability = JSON.parse(document.getElementById('teachersAvailabilityData').textContent);
             const dayLabels = JSON.parse(document.getElementById('dayLabelsData').textContent);
 
@@ -704,63 +677,55 @@
                 const price = parseFloat(courseCardsData[courseIdInput.value]?.price || 0);
                 const subtotal = price / 1.07;
                 const vat = price - subtotal;
-
                 document.getElementById('priceSubtotal').textContent = subtotal.toFixed(2);
                 document.getElementById('priceVat').textContent = vat.toFixed(2);
                 document.getElementById('priceTotal').textContent = price.toFixed(2);
             }
 
-            function updateTeachers() {
+            function updateTeachers(preselect) {
                 const courseId = courseIdInput.value;
                 const list = teachersByCourse[courseId] || [];
-
                 teacherSelect.innerHTML = '<option value="">ให้ทางโรงเรียนจัดให้</option>';
                 list.forEach(t => teacherSelect.insertAdjacentHTML('beforeend',
                     `<option value="${t.id}">${t.name}</option>`));
-
-                teacherHint.textContent = list.length ?
-                    `มีอาจารย์ที่สอนคอร์สนี้ได้ ${list.length} ท่าน` :
-                    'คอร์สนี้ยังไม่ได้กำหนดอาจารย์ผู้สอนไว้ — เลือก "ให้ทางโรงเรียนจัดให้" ได้';
-
-                resetDaySelect();
+                teacherHint.textContent = list.length ? `มีอาจารย์ที่สอนคอร์สนี้ได้ ${list.length} ท่าน` :
+                    'คอร์สนี้ยังไม่ได้กำหนดอาจารย์ผู้สอนไว้';
+                if (preselect && list.some(t => String(t.id) === preselect)) {
+                    teacherSelect.value = preselect;
+                    teacherSelect.dispatchEvent(new Event('change'));
+                } else {
+                    resetDaySelect();
+                }
             }
 
-            function resetDaySelect() {
+            function resetDaySelect(preselect) {
                 preferredDaySelect.innerHTML = '<option value="">ไม่ระบุ</option>';
-                Object.keys(dayLabels).forEach(dow => {
-                    preferredDaySelect.insertAdjacentHTML('beforeend',
-                        `<option value="${dow}">${dayLabels[dow]}</option>`);
-                });
+                Object.keys(dayLabels).forEach(dow => preferredDaySelect.insertAdjacentHTML('beforeend',
+                    `<option value="${dow}">${dayLabels[dow]}</option>`));
                 dayHint.textContent = 'เลือกอาจารย์ก่อน ระบบจะกรองเฉพาะวันที่อาจารย์ว่างจริงให้อัตโนมัติ';
-                startTimeInput.removeAttribute('min');
-                startTimeInput.removeAttribute('max');
-                endTimeInput.removeAttribute('min');
-                endTimeInput.removeAttribute('max');
+                if (preselect) preferredDaySelect.value = preselect;
             }
 
             teacherSelect.addEventListener('change', function() {
                 const teacherId = this.value;
                 const avail = teachersAvailability[teacherId];
-
                 if (!teacherId || !avail || avail.length === 0) {
-                    resetDaySelect();
+                    resetDaySelect(preferredDay === preselectedDay ? preselectedDay : null);
                     if (teacherId) dayHint.textContent =
                         'อาจารย์ท่านนี้ยังไม่ได้ตั้งตาราง Availability ไว้ — เลือกวันได้อิสระ';
                     return;
                 }
-
                 const availableDays = [...new Set(avail.map(a => a.day))];
                 preferredDaySelect.innerHTML = '<option value="">ไม่ระบุ</option>';
-                availableDays.forEach(dow => {
-                    preferredDaySelect.insertAdjacentHTML('beforeend',
-                        `<option value="${dow}">${dayLabels[dow]}</option>`);
-                });
+                availableDays.forEach(dow => preferredDaySelect.insertAdjacentHTML('beforeend',
+                    `<option value="${dow}">${dayLabels[dow]}</option>`));
                 dayHint.innerHTML =
                     `<i class="bi bi-check-circle text-success"></i> แสดงเฉพาะวันที่อาจารย์ว่างจริง (${availableDays.length} วัน)`;
+                if (preselectedDay !== '' && availableDays.includes(parseInt(preselectedDay)))
+                    preferredDaySelect.value = preselectedDay;
 
                 preferredDaySelect.onchange = function() {
-                    const dow = this.value;
-                    const win = avail.find(a => a.day == dow);
+                    const win = avail.find(a => a.day == this.value);
                     if (win) {
                         startTimeInput.min = win.start;
                         startTimeInput.max = win.end;
@@ -800,9 +765,11 @@
                 }
             }
 
-            // ============ 5. Toggle ใบเสร็จ/ใบกำกับภาษี ============
-            // สำคัญ: ห้าม disable ช่อง select เด็ดขาด เพราะ input ที่ disabled จะไม่ถูกส่งไปกับฟอร์มเลย
-            // ทำให้ validation ฝั่งเซิร์ฟเวอร์ฟ้อง "required" แล้วบันทึกไม่ผ่าน (นี่คือสาเหตุของปัญหาที่เจอก่อนหน้านี้)
+            // โหลดค่าเดิมตอนเปิดหน้า
+            updateTeachers(preselectedTeacherId);
+            checkCapacity();
+
+            // ===== ใบเสร็จ =====
             const wantsInvoiceCheck = document.getElementById('wantsInvoiceCheck');
             const invoiceFieldsBox = document.getElementById('invoiceFieldsBox');
             const noInvoiceNote = document.getElementById('noInvoiceNote');
@@ -816,12 +783,8 @@
                 invoiceFieldsBox.classList.toggle('d-none', !wants);
                 noInvoiceNote.classList.toggle('d-none', wants);
                 buyerNameInput.required = wants;
-
-                if (!wants) {
-                    invoiceTypeSelect.value = 'none';
-                } else if (invoiceTypeSelect.value === 'none') {
-                    invoiceTypeSelect.value = 'receipt';
-                }
+                if (!wants) invoiceTypeSelect.value = 'none';
+                else if (invoiceTypeSelect.value === 'none') invoiceTypeSelect.value = 'receipt';
             }
             wantsInvoiceCheck.addEventListener('change', toggleInvoiceFields);
             toggleInvoiceFields();
@@ -837,7 +800,6 @@
                 this.value = this.value.replace(/\D/g, '').slice(0, 13);
             });
 
-            // ============ Submit guard ============
             document.getElementById('saleForm').addEventListener('submit', function(e) {
                 if (!studentIdInput.value) {
                     e.preventDefault();
@@ -849,7 +811,6 @@
                     alert('กรุณาเลือกคอร์สก่อน');
                     return;
                 }
-
                 const btn = this.querySelector('button[type=submit]');
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';

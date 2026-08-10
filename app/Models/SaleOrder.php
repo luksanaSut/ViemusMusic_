@@ -31,6 +31,7 @@ class SaleOrder extends Model
         'net_payable',
         'payment_proof_path',
         'payment_method',
+        'payment_reference',
         'status',
         'enrollment_id',
         'payment_id',
