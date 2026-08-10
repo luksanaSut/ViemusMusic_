@@ -58,12 +58,26 @@ class Enrollment extends Model
         return max(0, $this->course->total_sessions - $this->sessions_used);
     }
 
+    // มูลค่าคงเหลือของคอร์สนี้ ใช้สำหรับคำนวณตอนเปลี่ยนคอร์ส (FR-CS-004)
+    // ใช้ได้กับคอร์สแบบนับจำนวนครั้งเท่านั้น — คอร์สแบบไม่จำกัดจำนวนครั้ง (Private ต่อเนื่อง) ถือว่ามูลค่าคงเหลือ = 0
+    public function remainingValue(): float
+    {
+        if (!$this->course || !$this->course->total_sessions || !$this->course->price) {
+            return 0;
+        }
+
+        $ratio = $this->remainingSessions() / $this->course->total_sessions;
+        return round((float) $this->course->price * $ratio, 2);
+    }
+
     // Business rule: สิทธิ์ขยายเวลาคงเหลือ อ้างอิงจาก Course::maxExtensionMonths()
     public function remainingExtensionMonths(): int
     {
         if (!$this->course) return 0;
         return max(0, $this->course->maxExtensionMonths() - $this->extension_months_used);
     }
+
+
 
     public function canExtend(): bool
     {

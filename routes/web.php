@@ -23,6 +23,8 @@ use App\Http\Controllers\RoomBookingController;
 use App\Http\Controllers\RoomScheduleController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\StudentSearchController;
+use App\Http\Controllers\CourseTransferController;
+
 
 use Illuminate\Support\Facades\Route;
 
@@ -108,6 +110,12 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::patch('sales/{saleOrder}/cancel', [SaleOrderController::class, 'cancel'])->name('sales.cancel');
     Route::get('sales/{saleOrder}/invoice/download', [SaleOrderController::class, 'downloadInvoice'])->name('sales.invoice.download');
 
+    Route::get('course-transfers', [CourseTransferController::class, 'index'])->name('course-transfers.index');
+    Route::get('course-transfers/create', [CourseTransferController::class, 'create'])->name('course-transfers.create');
+    Route::post('course-transfers', [CourseTransferController::class, 'store'])->name('course-transfers.store');
+    Route::get('course-transfers/{courseTransfer}', [CourseTransferController::class, 'show'])->name('course-transfers.show');
+    Route::post('course-transfers/{courseTransfer}/confirm-payment', [CourseTransferController::class, 'confirmPayment'])->name('course-transfers.confirm-payment');
+    Route::patch('course-transfers/{courseTransfer}/cancel', [CourseTransferController::class, 'cancel'])->name('course-transfers.cancel');
 
     Route::get('students-search', StudentSearchController::class)->name('students.search');
 });

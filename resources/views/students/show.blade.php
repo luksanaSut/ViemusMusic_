@@ -288,7 +288,8 @@
                             </tr>
                             <tr>
                                 <th>เพศ</th>
-                                <td>{{ ['male' => 'ชาย', 'female' => 'หญิง', 'other' => 'อื่นๆ'][$student->gender] ?? '-' }}</td>
+                                <td>{{ ['male' => 'ชาย', 'female' => 'หญิง', 'other' => 'อื่นๆ'][$student->gender] ?? '-' }}
+                                </td>
                             </tr>
                             <tr>
                                 <th>เบอร์โทร</th>
@@ -467,12 +468,21 @@
                     </div>
                     <div class="row g-2 mt-2 small">
                         <div class="col-md-3"><i class="bi bi-calendar2-check text-muted"></i> ครั้งเรียนคงเหลือ:
-                            <strong>{{ $enr->remainingSessions() ?? 'ไม่จำกัด' }}</strong></div>
+                            <strong>{{ $enr->remainingSessions() ?? 'ไม่จำกัด' }}</strong>
+                        </div>
                         <div class="col-md-3"><i class="bi bi-calendar-plus text-muted"></i> สิทธิ์ขยายเวลาคงเหลือ:
-                            <strong>{{ $enr->remainingExtensionMonths() }} เดือน</strong></div>
+                            <strong>{{ $enr->remainingExtensionMonths() }} เดือน</strong>
+                        </div>
                         <div class="col-md-3"><i class="bi bi-exclamation-circle text-muted"></i> ลาฉุกเฉินใช้ไป:
                             <strong>{{ $enr->emergencyLeaveUsed() }}/{{ $enr->emergencyLeaveQuota() }} ครั้ง</strong>
                         </div>
+                        @if ($enr->status === 'active')
+                            <div class="col-md-3">
+                                <a href="{{ route('course-transfers.create', ['enrollment_id' => $enr->id]) }}"
+                                    class="btn btn-sm btn-outline-secondary w-100"><i class="bi bi-arrow-left-right"></i>
+                                    เปลี่ยนคอร์ส</a>
+                            </div>
+                        @endif
                         <div class="col-md-3">
                             <form action="{{ route('students.enrollments.status', [$student, $enr]) }}" method="POST"
                                 class="d-flex gap-1">
@@ -879,7 +889,7 @@
                         item.className =
                             'list-group-item list-group-item-action py-1 px-2 small';
                         item.textContent =
-                        `${g.full_name}${g.phone ? ' — ' + g.phone : ''}`;
+                            `${g.full_name}${g.phone ? ' — ' + g.phone : ''}`;
                         item.addEventListener('click', () => {
                             guardianIdInput.value = g.id;
                             nameInput.value = g.full_name;
@@ -977,7 +987,7 @@
             searchInput.addEventListener('focus', () => renderDropdown(searchInput.value));
             document.addEventListener('click', e => {
                 if (!document.getElementById('levelPicker').contains(e.target)) dropdown.classList.add(
-                'd-none');
+                    'd-none');
             });
         })();
     </script>
