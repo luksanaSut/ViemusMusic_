@@ -193,12 +193,6 @@
         }
 
         .sidebar-footer a {
-            color: #8f887e;
-            font-size: .78rem;
-            text-decoration: none;
-        }
-
-        .sidebar-footer a {
             color: #8b8fb8;
             font-size: .78rem;
             text-decoration: none;
@@ -442,7 +436,6 @@
 </head>
 
 <body>
-
     <aside class="sidebar">
         <div class="brand">
             <div class="brand-mark">V</div>
@@ -452,63 +445,73 @@
             </div>
         </div>
 
-        <div class="nav-section-label">ภาพรวม</div>
-        <a href="{{ route('teachers.index') }}" class="nav-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-
-        <div class="nav-section-label">บุคคล</div>
-        <a href="{{ route('students.index') }}" class="nav-link {{ request()->routeIs('students.*') ? 'active' : '' }}">
-            <i class="bi bi-mortarboard"></i> จัดการนักเรียน
-        </a>
-        <a href="{{ route('guardians.index') }}"
-            class="nav-link {{ request()->routeIs('guardians.*') ? 'active' : '' }}">
-            <i class="bi bi-people"></i> จัดการผู้ปกครอง
-        </a>
-        <a href="{{ route('teachers.index') }}" class="nav-link {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
-            <i class="bi bi-person-badge"></i> จัดการอาจารย์
-        </a>
-
-        <div class="nav-section-label">งานวิชาการ</div>
-        <a href="{{ route('courses.index') }}"
-            class="nav-link {{ request()->routeIs('courses.*') || request()->routeIs('coupons.*') ? 'active' : '' }}">
-            <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
-        </a>
-        <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
-            <i class="bi bi-door-open"></i> จัดการห้องเรียน
-        </a>
-        <a href="{{ route('schedules.index') }}"
-            class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
-            <i class="bi bi-calendar3"></i> จัดตารางเรียน
-        </a>
-        <a href="{{ route('schedule.index') }}"
-            class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
-            <i class="bi bi-calendar3"></i> ตารางเรียน
-        </a>
-
-
-        <div class="nav-section-label">งานขาย</div>
-        <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
-            <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
-        </a>
-
         @if (auth()->user()->isAdmin())
+            <div class="nav-section-label">ภาพรวม</div>
+            <a href="{{ route('teachers.index') }}" class="nav-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+
+            <div class="nav-section-label">บุคคล</div>
+            <a href="{{ route('students.index') }}"
+                class="nav-link {{ request()->routeIs('students.*') ? 'active' : '' }}">
+                <i class="bi bi-mortarboard"></i> จัดการนักเรียน
+            </a>
+            <a href="{{ route('guardians.index') }}"
+                class="nav-link {{ request()->routeIs('guardians.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> จัดการผู้ปกครอง
+            </a>
+            <a href="{{ route('teachers.index') }}"
+                class="nav-link {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
+                <i class="bi bi-person-badge"></i> จัดการอาจารย์
+            </a>
+
+            <div class="nav-section-label">งานวิชาการ</div>
+            <a href="{{ route('courses.index') }}"
+                class="nav-link {{ request()->routeIs('courses.*') || request()->routeIs('coupons.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
+            </a>
+            <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
+                <i class="bi bi-door-open"></i> จัดการห้องเรียน
+            </a>
+            <a href="{{ route('schedules.index') }}"
+                class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar3"></i> จัดตารางเรียน
+            </a>
+            <a href="{{ route('schedule.index') }}"
+                class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar3"></i> ตารางเรียน
+            </a>
+            <a href="{{ route('teacher-leaves.index') }}"
+                class="nav-link {{ request()->routeIs('teacher-leaves.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-x"></i> คำขอลาหยุดสอน
+            </a>
+
+            <div class="nav-section-label">งานขาย</div>
+            <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
+                <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
+            </a>
+            <a href="{{ route('course-transfers.index') }}"
+                class="nav-link {{ request()->routeIs('course-transfers.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-left-right"></i> เปลี่ยนคอร์สเรียน
+            </a>
+
             <div class="nav-section-label">ระบบ</div>
             <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
             </a>
+        @else
+            <div class="nav-section-label">เมนู</div>
+            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2"></i> หน้าหลักของฉัน
+            </a>
+            @if (auth()->user()->isTeacher())
+                <a href="#" class="nav-link disabled" title="กรอกแบบฟอร์มได้ที่หน้าหลัก">
+                    <i class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน
+                </a>
+            @endif
+            <a href="{{ route('notifications.index') }}"
+                class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                <i class="bi bi-bell"></i> การแจ้งเตือน
+            </a>
         @endif
-
-        {{-- <div class="sidebar-footer">
-            <div class="avatar-sm">{{ mb_substr(auth()->user()->displayName(), 0, 1) }}</div>
-            <div class="who">
-                <div>{{ auth()->user()->displayName() }}</div>
-                <div class="role">{{ auth()->user()->roleLabel() }}</div>
-            </div>
-            <form action="{{ route('logout') }}" method="POST" class="ms-auto">
-                @csrf
-                <button class="btn btn-sm border-0 text-white-50" title="ออกจากระบบ"><i
-                        class="bi bi-box-arrow-right"></i></button>
-            </form>
-        </div> --}}
     </aside>
 
     <div class="main-wrap">
@@ -519,15 +522,18 @@
                 <span class="kbd">⌘K</span>
             </div>
             <div class="ms-auto d-flex align-items-center gap-3">
-                @php $unreadCount = \App\Models\AppNotification::unreadForAdmin()->count(); @endphp
+                @php $unreadCount = \App\Models\AppNotification::unreadForUser(auth()->user())->count(); @endphp
                 <a href="{{ route('notifications.index') }}" class="position-relative text-muted"
                     style="text-decoration:none;">
                     <i class="bi bi-bell"></i>
                     @if ($unreadCount > 0)
                         <span class="position-absolute badge rounded-pill bg-danger"
-                            style="top:-6px; right:-8px; font-size:.6rem;">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                            style="top:-6px; right:-8px; font-size:.6rem;">
+                            {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                        </span>
                     @endif
                 </a>
+
                 <div class="dropdown">
                     <button class="topbar-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="avatar-circle">{{ mb_substr(auth()->user()->displayName(), 0, 1) }}</div>
@@ -570,8 +576,8 @@
             @if (session('success'))
                 @if (session('generated_password'))
                     <div class="alert alert-success">
-                        <strong><i class="bi bi-key"></i> รหัสผ่านชั่วคราว:</strong> <code
-                            style="font-size:1.1rem;">{{ session('generated_password') }}</code>
+                        <strong><i class="bi bi-key"></i> รหัสผ่านชั่วคราว:</strong>
+                        <code style="font-size:1.1rem;">{{ session('generated_password') }}</code>
                         (อีเมล: {{ session('generated_email') }}) — คัดลอกเก็บไว้ให้ดี จะไม่แสดงซ้ำอีก
                     </div>
                 @endif

@@ -28,33 +28,60 @@ use App\Http\Controllers\ClassScheduleController;
 use App\Http\Controllers\TeacherLeaveController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\Auth\PasswordController;
-
-
-
 
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/teachers');
+Route::redirect('/', '/dashboard');
 
+// ===================================================================
+// กลุ่ม 1: PUBLIC — ไม่ต้อง login
+// ===================================================================
 Route::middleware('throttle:10,1')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
 });
-Route::post('logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
+// ===================================================================
+// กลุ่ม 2: AUTH ทุก ROLE — ล็อกอินแล้วเข้าได้หมด ไม่จำกัดบทบาท
+// ===================================================================
 Route::middleware('auth')->group(function () {
+    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+
     Route::get('change-password', [PasswordController::class, 'edit'])->name('password.change');
     Route::put('change-password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('dashboard', [DashboardController::class, 'index'])
+        ->middleware('force-password-change')
+        ->name('dashboard');
+
+    Route::get('notifications', [NotificationController::class, 'index'])
+        ->middleware('force-password-change')
+        ->name('notifications.index');
+    Route::get('notifications/{notification}/read', [NotificationController::class, 'markRead'])
+        ->middleware('force-password-change')
+        ->name('notifications.read');
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])
+        ->middleware('force-password-change')
+        ->name('notifications.mark-all-read');
 });
 
-Route::get('dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'force-password-change'])
-    ->name('dashboard');
+// ===================================================================
+// กลุ่ม 3: ADMIN + TEACHER — อาจารย์แจ้งลาหยุดสอนของตัวเองได้
+// (ควบคุมสิทธิ์เพิ่มในคอนโทรลเลอร์: อาจารย์แจ้งได้เฉพาะบัญชีของตัวเอง)
+// ===================================================================
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,teacher'])->group(function () {
+    Route::post('teachers/{teacher}/leaves', [TeacherLeaveController::class, 'store'])->name('teachers.leaves.store');
+});
 
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(function () {
+// ===================================================================
+// กลุ่ม 4: ADMIN เท่านั้น — โมดูลจัดการทั้งหมดของระบบหลังบ้าน
+// ===================================================================
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin'])->group(function () {
+
+    // ----- อาจารย์ -----
     Route::resource('teachers', TeacherController::class);
     Route::post('teachers/{teacher}/rates', [TeacherRateController::class, 'store'])->name('teachers.rates.store');
     Route::delete('teachers/{teacher}/rates/{rate}', [TeacherRateController::class, 'destroy'])->name('teachers.rates.destroy');
@@ -63,64 +90,63 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(fun
     Route::post('teachers/{teacher}/sessions', [TeachingSessionController::class, 'store'])->name('teachers.sessions.store');
     Route::put('teachers/{teacher}/sessions/{session}', [TeachingSessionController::class, 'update'])->name('teachers.sessions.update');
     Route::delete('teachers/{teacher}/sessions/{session}', [TeachingSessionController::class, 'destroy'])->name('teachers.sessions.destroy');
+    Route::post('teachers/{teacher}/create-account', [UserController::class, 'quickCreateForTeacher'])->name('teachers.create-account');
 
     Route::post('instruments', [InstrumentController::class, 'store'])->name('instruments.store');
 
-    // จัดการคอร์สเรียน
+    // ----- จัดการคอร์สเรียน -----
     Route::resource('courses', CourseController::class)->except(['show']);
     Route::patch('courses/{course}/toggle-status', [CourseController::class, 'toggleStatus'])->name('courses.toggle-status');
 
-    // Promotion / Coupon
+    // ----- Promotion / Coupon -----
     Route::get('coupons', [CouponController::class, 'index'])->name('coupons.index');
     Route::post('coupons', [CouponController::class, 'store'])->name('coupons.store');
     Route::patch('coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
     Route::delete('coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
 
-    // จัดการข้อมูลนักเรียน
+    // ----- จัดการข้อมูลนักเรียน -----
     Route::resource('students', StudentController::class);
-
     Route::post('students/{student}/enrollments', [StudentEnrollmentController::class, 'store'])->name('students.enrollments.store');
     Route::patch('students/{student}/enrollments/{enrollment}/status', [StudentEnrollmentController::class, 'updateStatus'])->name('students.enrollments.status');
     Route::post('students/{student}/enrollments/{enrollment}/extend', [StudentEnrollmentController::class, 'extend'])->name('students.enrollments.extend');
-
     Route::post('students/{student}/payments', [StudentFinanceController::class, 'storePayment'])->name('students.payments.store');
     Route::post('students/{student}/credits', [StudentFinanceController::class, 'storeCredit'])->name('students.credits.store');
-
     Route::post('students/{student}/skill-levels', [StudentAcademicController::class, 'storeSkillLevel'])->name('students.skill-levels.store');
     Route::post('students/{student}/exam-results', [StudentAcademicController::class, 'storeExamResult'])->name('students.exam-results.store');
+    Route::post('students/{student}/create-account', [UserController::class, 'quickCreateForStudent'])->name('students.create-account');
+    Route::get('students-search', StudentSearchController::class)->name('students.search');
 
+    // ----- ลาเรียนของนักเรียน -----
     Route::post('students/{student}/leaves', [StudentLeaveController::class, 'store'])->name('students.leaves.store');
     Route::patch('students/{student}/leaves/{leave}/makeup', [StudentLeaveController::class, 'updateMakeup'])->name('students.leaves.makeup');
+    Route::post('students/{student}/leaves/{leave}/approve', [StudentLeaveController::class, 'approve'])->name('students.leaves.approve');
+    Route::post('students/{student}/leaves/{leave}/reject', [StudentLeaveController::class, 'reject'])->name('students.leaves.reject');
 
-    // ผู้ปกครอง
+    // ----- ผู้ปกครอง -----
     Route::get('guardians', [GuardianController::class, 'index'])->name('guardians.index');
     Route::get('guardians/search', [GuardianController::class, 'search'])->name('guardians.search');
     Route::post('guardians', [GuardianController::class, 'store'])->name('guardians.store');
     Route::put('guardians/{guardian}', [GuardianController::class, 'update'])->name('guardians.update');
     Route::delete('guardians/{guardian}', [GuardianController::class, 'destroy'])->name('guardians.destroy');
-
+    Route::post('guardians/{guardian}/create-account', [UserController::class, 'quickCreateForGuardian'])->name('guardians.create-account');
     Route::post('students/{student}/guardians', [StudentGuardianController::class, 'store'])->name('students.guardians.store');
     Route::delete('students/{student}/guardians/{guardian}', [StudentGuardianController::class, 'destroy'])->name('students.guardians.destroy');
 
-    // เพิ่มระดับใหม่แบบ inline
+    // ----- ระดับ (master data) -----
     Route::post('levels', [LevelController::class, 'store'])->name('levels.store');
 
-    // จัดการห้องเรียน
+    // ----- จัดการห้องเรียน -----
     Route::resource('rooms', RoomController::class);
     Route::patch('rooms/{room}/maintenance', [RoomController::class, 'toggleMaintenance'])->name('rooms.maintenance');
     Route::get('rooms-availability-check', [RoomController::class, 'availabilityCheck'])->name('rooms.availability-check');
-
     Route::post('rooms/{room}/equipment', [RoomEquipmentController::class, 'store'])->name('rooms.equipment.store');
     Route::delete('rooms/{room}/equipment/{equipmentType}', [RoomEquipmentController::class, 'destroy'])->name('rooms.equipment.destroy');
-
     Route::post('equipment-types', [EquipmentTypeController::class, 'store'])->name('equipment-types.store');
-
     Route::post('rooms/{room}/bookings', [RoomBookingController::class, 'store'])->name('rooms.bookings.store');
     Route::patch('rooms/{room}/bookings/{booking}/cancel', [RoomBookingController::class, 'cancel'])->name('rooms.bookings.cancel');
-
     Route::get('rooms-schedule', [RoomScheduleController::class, 'index'])->name('rooms.schedule');
 
-    // ระบบขายคอร์สเรียน
+    // ----- ระบบขายคอร์สเรียน -----
     Route::get('sales', [SaleOrderController::class, 'index'])->name('sales.index');
     Route::get('sales/create', [SaleOrderController::class, 'create'])->name('sales.create');
     Route::get('sales/course-availability', [SaleOrderController::class, 'courseAvailability'])->name('sales.course-availability');
@@ -134,7 +160,7 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(fun
     Route::patch('sales/{saleOrder}/cancel', [SaleOrderController::class, 'cancel'])->name('sales.cancel');
     Route::get('sales/{saleOrder}/invoice/download', [SaleOrderController::class, 'downloadInvoice'])->name('sales.invoice.download');
 
-    // เปลียนคอร์ส
+    // ----- เปลี่ยนคอร์ส -----
     Route::get('course-transfers', [CourseTransferController::class, 'index'])->name('course-transfers.index');
     Route::get('course-transfers/create', [CourseTransferController::class, 'create'])->name('course-transfers.create');
     Route::post('course-transfers', [CourseTransferController::class, 'store'])->name('course-transfers.store');
@@ -142,7 +168,7 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(fun
     Route::post('course-transfers/{courseTransfer}/confirm-payment', [CourseTransferController::class, 'confirmPayment'])->name('course-transfers.confirm-payment');
     Route::patch('course-transfers/{courseTransfer}/cancel', [CourseTransferController::class, 'cancel'])->name('course-transfers.cancel');
 
-    // ตารางเรียน
+    // ----- ตารางเรียน -----
     Route::get('schedules', [ClassScheduleController::class, 'index'])->name('schedules.index');
     Route::get('schedules/create', [ClassScheduleController::class, 'create'])->name('schedules.create');
     Route::post('schedules', [ClassScheduleController::class, 'store'])->name('schedules.store');
@@ -151,33 +177,15 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(fun
     Route::put('schedules/{classSchedule}', [ClassScheduleController::class, 'update'])->name('schedules.update');
     Route::patch('schedules/{classSchedule}/cancel', [ClassScheduleController::class, 'cancel'])->name('schedules.cancel');
     Route::delete('schedules/{classSchedule}', [ClassScheduleController::class, 'destroy'])->name('schedules.destroy');
+    Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule.index');
 
-    // จัดการข้อมูลการลา
-    Route::post('students/{student}/leaves/{leave}/approve', [StudentLeaveController::class, 'approve'])->name('students.leaves.approve');
-    Route::post('students/{student}/leaves/{leave}/reject', [StudentLeaveController::class, 'reject'])->name('students.leaves.reject');
-
+    // ----- อนุมัติคำขอลาหยุดสอนของอาจารย์ (แจ้งได้จากกลุ่ม admin+teacher ด้านบน แต่อนุมัติได้เฉพาะ admin) -----
     Route::get('teacher-leaves', [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
-    Route::post('teachers/{teacher}/leaves', [TeacherLeaveController::class, 'store'])->name('teachers.leaves.store');
     Route::post('teacher-leaves/{teacherLeave}/approve', [TeacherLeaveController::class, 'approve'])->name('teacher-leaves.approve');
     Route::post('teacher-leaves/{teacherLeave}/reject', [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
 
-    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
-    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
-
-    // จัดการผู้ใช้งาน
-    Route::middleware('role:admin')->group(function () {
-        Route::resource('users', UserController::class)->except(['show', 'edit', 'update']);
-        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
-        Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
-    });
-
-    Route::post('teachers/{teacher}/create-account', [UserController::class, 'quickCreateForTeacher'])->name('teachers.create-account');
-    Route::post('students/{student}/create-account', [UserController::class, 'quickCreateForStudent'])->name('students.create-account');
-    Route::post('guardians/{guardian}/create-account', [UserController::class, 'quickCreateForGuardian'])->name('guardians.create-account');
-
-    Route::get('students-search', StudentSearchController::class)->name('students.search');
+    // ----- จัดการผู้ใช้งานระบบ -----
+    Route::resource('users', UserController::class)->except(['show', 'edit', 'update']);
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
 });
-
-// ตารางสอนรวม รายวัน/สัปดาห์/เดือน
-Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule.index');

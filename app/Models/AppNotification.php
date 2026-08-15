@@ -36,4 +36,27 @@ class AppNotification extends Model
     {
         return $query->where('recipient_role', 'admin')->where('is_read', false);
     }
+
+    // ดึงเฉพาะแจ้งเตือนของผู้ใช้คนนั้นจริงๆ ตาม role + ตัวตนที่ผูกไว้
+    // admin เห็นแจ้งเตือนที่ส่งถึง role admin ทั้งหมด (ไม่ผูก recipient_id เฉพาะคน)
+    // teacher/student/guardian เห็นเฉพาะที่ส่งตรงถึง id ของตัวเองเท่านั้น
+    public function scopeForUser($query, \App\Models\User $user)
+    {
+        return $query->where('recipient_role', $user->role)
+            ->where(function ($q) use ($user) {
+                $q->whereNull('recipient_id');
+                if ($user->role === 'teacher' && $user->teacher_id) {
+                    $q->orWhere('recipient_id', $user->teacher_id);
+                } elseif ($user->role === 'student' && $user->student_id) {
+                    $q->orWhere('recipient_id', $user->student_id);
+                } elseif ($user->role === 'guardian' && $user->guardian_id) {
+                    $q->orWhere('recipient_id', $user->guardian_id);
+                }
+            });
+    }
+
+    public function scopeUnreadForUser($query, \App\Models\User $user)
+    {
+        return $query->forUser($user)->where('is_read', false);
+    }
 }
