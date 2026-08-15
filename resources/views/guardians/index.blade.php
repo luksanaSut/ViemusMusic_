@@ -23,6 +23,8 @@
         </div>
     </div>
 
+
+
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -50,6 +52,14 @@
                                 @endforelse
                             </td>
                             <td class="text-end">
+                                @if (!$g->user)
+                                    <form action="{{ route('guardians.create-account', $g) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        <button class="btn btn-sm btn-light"><i class="bi bi-key"></i>
+                                            สร้างบัญชีผู้ใช้งาน</button>
+                                    </form>
+                                @endif
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse"
                                     data-bs-target="#edit-guardian-{{ $g->id }}"><i
                                         class="bi bi-pencil"></i></button>

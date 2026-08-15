@@ -313,6 +313,131 @@
             color: var(--accent-dark);
             font-weight: 600;
         }
+
+        /* ===== Topbar user menu ===== */
+        .topbar-user-btn {
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: .3rem .5rem .3rem .3rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            background: transparent;
+            transition: .15s;
+        }
+
+        .topbar-user-btn:hover,
+        .topbar-user-btn:focus {
+            background: var(--surface);
+            border-color: var(--border);
+            box-shadow: none;
+        }
+
+        .topbar-user-btn .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 700;
+            font-size: .82rem;
+        }
+
+        .topbar-user-btn .chevron {
+            color: var(--muted);
+            font-size: .75rem;
+            transition: .15s;
+        }
+
+        .topbar-user-btn[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown-menu {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(28, 26, 23, .12);
+            padding: .5rem;
+            margin-top: .5rem !important;
+        }
+
+        .user-dropdown-menu .user-info {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: .5rem .6rem .8rem;
+        }
+
+        .user-dropdown-menu .user-info .avatar-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 700;
+            font-size: .9rem;
+        }
+
+        .user-dropdown-menu .user-info .name {
+            font-weight: 700;
+            font-family: 'Prompt', sans-serif;
+            font-size: .88rem;
+            color: var(--ink);
+        }
+
+        .user-dropdown-menu .user-info .meta {
+            font-size: .72rem;
+            color: var(--muted);
+        }
+
+        .user-dropdown-menu hr {
+            margin: .3rem 0;
+            border-color: var(--border);
+        }
+
+        .user-dropdown-menu .dropdown-item {
+            border-radius: 9px;
+            padding: .55rem .7rem;
+            font-size: .85rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+
+        .user-dropdown-menu .dropdown-item i {
+            font-size: .95rem;
+            width: 18px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .user-dropdown-menu .dropdown-item:hover {
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+        }
+
+        .user-dropdown-menu .dropdown-item:hover i {
+            color: var(--accent-dark);
+        }
+
+        .user-dropdown-menu .dropdown-item.text-danger:hover {
+            background: #fbeae7;
+            color: #b3392c;
+        }
+
+        .user-dropdown-menu .dropdown-item.text-danger:hover i {
+            color: #b3392c;
+        }
     </style>
 </head>
 
@@ -365,13 +490,25 @@
             <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
         </a>
 
-        <div class="sidebar-footer">
-            <div class="avatar-sm">A</div>
+        @if (auth()->user()->isAdmin())
+            <div class="nav-section-label">ระบบ</div>
+            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
+            </a>
+        @endif
+
+        {{-- <div class="sidebar-footer">
+            <div class="avatar-sm">{{ mb_substr(auth()->user()->displayName(), 0, 1) }}</div>
             <div class="who">
-                <div>ผู้ดูแลระบบ</div>
-                <div class="role">Admin</div>
+                <div>{{ auth()->user()->displayName() }}</div>
+                <div class="role">{{ auth()->user()->roleLabel() }}</div>
             </div>
-        </div>
+            <form action="{{ route('logout') }}" method="POST" class="ms-auto">
+                @csrf
+                <button class="btn btn-sm border-0 text-white-50" title="ออกจากระบบ"><i
+                        class="bi bi-box-arrow-right"></i></button>
+            </form>
+        </div> --}}
     </aside>
 
     <div class="main-wrap">
@@ -391,18 +528,61 @@
                             style="top:-6px; right:-8px; font-size:.6rem;">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
                     @endif
                 </a>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="avatar-sm"
-                        style="background:var(--accent-soft);color:var(--accent-dark);width:30px;height:30px;font-size:.7rem;">
-                        A</div>
+                <div class="dropdown">
+                    <button class="topbar-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-circle">{{ mb_substr(auth()->user()->displayName(), 0, 1) }}</div>
+                        <i class="bi bi-chevron-down chevron"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                        <li>
+                            <div class="user-info">
+                                <div class="avatar-circle">{{ mb_substr(auth()->user()->displayName(), 0, 1) }}</div>
+                                <div>
+                                    <div class="name">{{ auth()->user()->displayName() }}</div>
+                                    <div class="meta">{{ auth()->user()->roleLabel() }} ·
+                                        {{ auth()->user()->email }}</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <hr>
+                        </li>
+                        <li>
+                            <a href="{{ route('password.change') }}" class="dropdown-item">
+                                <i class="bi bi-key"></i> เปลี่ยนรหัสผ่าน
+                            </a>
+                        </li>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="dropdown-item text-danger w-100 text-start border-0 bg-transparent">
+                                    <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
 
         <div class="content">
             @if (session('success'))
+                @if (session('generated_password'))
+                    <div class="alert alert-success">
+                        <strong><i class="bi bi-key"></i> รหัสผ่านชั่วคราว:</strong> <code
+                            style="font-size:1.1rem;">{{ session('generated_password') }}</code>
+                        (อีเมล: {{ session('generated_email') }}) — คัดลอกเก็บไว้ให้ดี จะไม่แสดงซ้ำอีก
+                    </div>
+                @endif
                 <div class="alert alert-success alert-dismissible fade show">
                     <i class="bi bi-check-circle"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif

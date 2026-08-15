@@ -27,6 +27,11 @@ use App\Http\Controllers\CourseTransferController;
 use App\Http\Controllers\ClassScheduleController;
 use App\Http\Controllers\TeacherLeaveController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Auth\PasswordController;
+
 
 
 
@@ -34,7 +39,22 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/teachers');
 
-Route::middleware('throttle:30,1')->group(function () {
+Route::middleware('throttle:10,1')->group(function () {
+    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [LoginController::class, 'login']);
+});
+Route::post('logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('change-password', [PasswordController::class, 'edit'])->name('password.change');
+    Route::put('change-password', [PasswordController::class, 'update'])->name('password.update');
+});
+
+Route::get('dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'force-password-change'])
+    ->name('dashboard');
+
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change'])->group(function () {
     Route::resource('teachers', TeacherController::class);
     Route::post('teachers/{teacher}/rates', [TeacherRateController::class, 'store'])->name('teachers.rates.store');
     Route::delete('teachers/{teacher}/rates/{rate}', [TeacherRateController::class, 'destroy'])->name('teachers.rates.destroy');
@@ -144,6 +164,17 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+
+    // จัดการผู้ใช้งาน
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('users', UserController::class)->except(['show', 'edit', 'update']);
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+    });
+
+    Route::post('teachers/{teacher}/create-account', [UserController::class, 'quickCreateForTeacher'])->name('teachers.create-account');
+    Route::post('students/{student}/create-account', [UserController::class, 'quickCreateForStudent'])->name('students.create-account');
+    Route::post('guardians/{guardian}/create-account', [UserController::class, 'quickCreateForGuardian'])->name('guardians.create-account');
 
     Route::get('students-search', StudentSearchController::class)->name('students.search');
 });

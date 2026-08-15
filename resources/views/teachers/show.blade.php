@@ -131,6 +131,12 @@
             <div class="d-flex justify-content-end p-2 gap-2">
                 <a href="{{ route('teachers.edit', $teacher) }}" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i>
                     แก้ไข</a>
+                @if (!$teacher->user)
+                    <form action="{{ route('teachers.create-account', $teacher) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-sm btn-light"><i class="bi bi-key"></i> สร้างบัญชีผู้ใช้งาน</button>
+                    </form>
+                @endif
                 <a href="{{ route('teachers.index') }}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i>
                     กลับ</a>
             </div>

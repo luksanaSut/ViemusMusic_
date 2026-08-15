@@ -176,7 +176,14 @@
             <div class="d-flex justify-content-end p-2 gap-2">
                 <a href="{{ route('students.edit', $student) }}" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i>
                     แก้ไข</a>
-                <a href="{{ route('students.index') }}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i> กลับ</a>
+                @if (!$student->user)
+                    <form action="{{ route('students.create-account', $student) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button class="btn btn-sm btn-light"><i class="bi bi-key"></i> สร้างบัญชีผู้ใช้งาน</button>
+                    </form>
+                @endif
+                <a href="{{ route('students.index') }}" class="btn btn-sm btn-light"><i class="bi bi-arrow-left"></i>
+                    กลับ</a>
             </div>
             <div class="profile-avatar">
                 @if ($student->photo_path)
