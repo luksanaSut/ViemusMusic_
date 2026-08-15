@@ -790,34 +790,45 @@
         <div class="tab-pane fade" id="leaves">
             <div class="form-section">
                 <div class="form-section-title">
-                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> บันทึกการลา
+                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> แจ้งลาเรียน
                 </div>
-                <form action="{{ route('students.leaves.store', $student) }}" method="POST" class="row g-2">
+                <form action="{{ route('students.leaves.store', $student) }}" method="POST" class="row g-2"
+                    id="leaveForm">
                     @csrf
                     <div class="col-md-3">
-                        <select name="enrollment_id" class="form-select form-select-sm" required>
+                        <select name="enrollment_id" id="leaveEnrollmentSelect" class="form-select form-select-sm"
+                            required>
                             <option value="">เลือกคอร์ส</option>
-                            @foreach ($student->enrollments as $enr)
-                                <option value="{{ $enr->id }}">{{ $enr->course->name ?? '-' }}</option>
+                            @foreach ($student->enrollments->where('status', 'active') as $enr)
+                                <option value="{{ $enr->id }}"
+                                    data-allow-makeup="{{ $enr->course->allow_makeup_class ? '1' : '0' }}">
+                                    {{ $enr->course->name ?? '-' }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <select name="leave_type" class="form-select form-select-sm" required>
-                            <option value="normal">ลาปกติ</option>
+                        <select name="leave_type" id="leaveTypeSelect" class="form-select form-select-sm" required>
+                            <option value="normal">ลาปกติ (ขอชดเชย)</option>
                             <option value="emergency">ลาฉุกเฉิน</option>
+                            <option value="no_makeup">ลาแบบไม่ชดเชย</option>
                         </select>
                     </div>
                     <div class="col-md-2"><input type="date" name="leave_date" class="form-control form-control-sm"
                             required></div>
                     <div class="col-md-3"><input type="text" name="reason" class="form-control form-control-sm"
                             placeholder="เหตุผล"></div>
-                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">บันทึก</button></div>
+                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">ส่งคำขอ</button></div>
+                    <div class="col-12">
+                        <small class="text-muted" id="leaveHint"><i class="bi bi-info-circle"></i> ลาปกติ/ลาไม่ชดเชย
+                            ต้องแจ้งล่วงหน้าอย่างน้อย {{ config('leave.normal_advance_notice_hours', 24) }} ชั่วโมง —
+                            ลาฉุกเฉินแจ้งกะทันหันได้ แต่จำกัดสิทธิ์ตามที่คอร์สกำหนด</small>
+                    </div>
                 </form>
             </div>
+
             <div class="form-section">
                 <div class="form-section-title">
-                    <div class="icon-badge"><i class="bi bi-calendar-x"></i></div> ประวัติการลา
+                    <div class="icon-badge"><i class="bi bi-calendar-x"></i></div> ประวัติการลา / คำขอลา
                 </div>
                 <table class="table table-sm table-clean">
                     <thead>
@@ -825,24 +836,43 @@
                             <th>คอร์ส</th>
                             <th>ประเภท</th>
                             <th>วันที่ลา</th>
+                            <th>สถานะคำขอ</th>
                             <th>สถานะชดเชย</th>
-                            <th>วันชดเชย</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($student->leaves as $lv)
+                        @forelse($student->leaves->sortByDesc('created_at') as $lv)
                             <tr>
                                 <td>{{ $lv->enrollment->course->name ?? '-' }}</td>
                                 <td><span
                                         class="badge {{ $lv->leave_type == 'emergency' ? 'text-bg-danger' : 'text-bg-light border' }}">{{ $lv->leaveTypeLabel() }}</span>
                                 </td>
                                 <td>{{ $lv->leave_date->format('d/m/Y') }}</td>
+                                <td><span class="badge {{ $lv->statusBadgeClass() }}">{{ $lv->statusLabel() }}</span>
+                                </td>
                                 <td>{{ $lv->makeupStatusLabel() }}</td>
-                                <td>{{ optional($lv->makeup_date)->format('d/m/Y') ?: '-' }}</td>
+                                <td>
+                                    @if ($lv->status === 'pending')
+                                        <form action="{{ route('students.leaves.approve', [$student, $lv]) }}"
+                                            method="POST" class="d-inline">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-success" title="อนุมัติ"><i
+                                                    class="bi bi-check-lg"></i></button>
+                                        </form>
+                                        <form action="{{ route('students.leaves.reject', [$student, $lv]) }}"
+                                            method="POST" class="d-inline"
+                                            onsubmit="return confirm('ปฏิเสธคำขอลานี้?')">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-danger" title="ปฏิเสธ"><i
+                                                    class="bi bi-x-lg"></i></button>
+                                        </form>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="empty-state"><i class="bi bi-calendar-x"></i>ยังไม่มีประวัติการลา</div>
                                 </td>
                             </tr>
@@ -851,6 +881,8 @@
                 </table>
             </div>
         </div>
+
+
     </div>
 
     <script>
@@ -989,6 +1021,26 @@
                 if (!document.getElementById('levelPicker').contains(e.target)) dropdown.classList.add(
                     'd-none');
             });
+        })();
+
+
+        (function() {
+            const enrollmentSelect = document.getElementById('leaveEnrollmentSelect');
+            const typeSelect = document.getElementById('leaveTypeSelect');
+            const hint = document.getElementById('leaveHint');
+
+            function checkAllowMakeup() {
+                const opt = enrollmentSelect.options[enrollmentSelect.selectedIndex];
+                const allow = opt?.dataset.allowMakeup === '1';
+                const normalOpt = typeSelect.querySelector('option[value=normal]');
+                if (!allow && typeSelect.value === 'normal') {
+                    typeSelect.value = 'no_makeup';
+                    hint.innerHTML =
+                        '<i class="bi bi-exclamation-circle text-warning"></i> คอร์สนี้ไม่เปิดสิทธิ์เรียนชดเชย ระบบเปลี่ยนเป็น "ลาแบบไม่ชดเชย" ให้อัตโนมัติ';
+                }
+                normalOpt.disabled = !allow;
+            }
+            enrollmentSelect.addEventListener('change', checkAllowMakeup);
         })();
     </script>
 @endsection

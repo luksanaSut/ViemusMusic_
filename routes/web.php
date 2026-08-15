@@ -25,6 +25,8 @@ use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\StudentSearchController;
 use App\Http\Controllers\CourseTransferController;
 use App\Http\Controllers\ClassScheduleController;
+use App\Http\Controllers\TeacherLeaveController;
+use App\Http\Controllers\NotificationController;
 
 
 
@@ -129,6 +131,19 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::put('schedules/{classSchedule}', [ClassScheduleController::class, 'update'])->name('schedules.update');
     Route::patch('schedules/{classSchedule}/cancel', [ClassScheduleController::class, 'cancel'])->name('schedules.cancel');
     Route::delete('schedules/{classSchedule}', [ClassScheduleController::class, 'destroy'])->name('schedules.destroy');
+
+    // จัดการข้อมูลการลา
+    Route::post('students/{student}/leaves/{leave}/approve', [StudentLeaveController::class, 'approve'])->name('students.leaves.approve');
+    Route::post('students/{student}/leaves/{leave}/reject', [StudentLeaveController::class, 'reject'])->name('students.leaves.reject');
+
+    Route::get('teacher-leaves', [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
+    Route::post('teachers/{teacher}/leaves', [TeacherLeaveController::class, 'store'])->name('teachers.leaves.store');
+    Route::post('teacher-leaves/{teacherLeave}/approve', [TeacherLeaveController::class, 'approve'])->name('teacher-leaves.approve');
+    Route::post('teacher-leaves/{teacherLeave}/reject', [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
 
     Route::get('students-search', StudentSearchController::class)->name('students.search');
 });

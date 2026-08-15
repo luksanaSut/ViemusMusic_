@@ -382,7 +382,15 @@
                 <span class="kbd">⌘K</span>
             </div>
             <div class="ms-auto d-flex align-items-center gap-3">
-                <i class="bi bi-bell text-muted"></i>
+                @php $unreadCount = \App\Models\AppNotification::unreadForAdmin()->count(); @endphp
+                <a href="{{ route('notifications.index') }}" class="position-relative text-muted"
+                    style="text-decoration:none;">
+                    <i class="bi bi-bell"></i>
+                    @if ($unreadCount > 0)
+                        <span class="position-absolute badge rounded-pill bg-danger"
+                            style="top:-6px; right:-8px; font-size:.6rem;">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                    @endif
+                </a>
                 <div class="d-flex align-items-center gap-2">
                     <div class="avatar-sm"
                         style="background:var(--accent-soft);color:var(--accent-dark);width:30px;height:30px;font-size:.7rem;">

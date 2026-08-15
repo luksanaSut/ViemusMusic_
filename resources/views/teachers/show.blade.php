@@ -217,6 +217,8 @@
                     class="bi bi-calendar-week"></i> Availability</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history"><i
                     class="bi bi-journal-text"></i> ประวัติการสอน</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#teacherLeaves"><i
+                    class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน</button></li>
     </ul>
 
     <div class="tab-content">
@@ -607,5 +609,57 @@
                 <div class="mt-2">{{ $sessions->links() }}</div>
             </div>
         </div>
+
+        {{-- แจ้งลาหยุดสอน --}}
+        <div class="tab-pane fade" id="teacherLeaves">
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> แจ้งลาหยุดสอน
+                </div>
+                <form action="{{ route('teachers.leaves.store', $teacher) }}" method="POST" class="row g-2">
+                    @csrf
+                    <div class="col-md-3"><input type="date" name="leave_date_from"
+                            class="form-control form-control-sm" placeholder="ตั้งแต่วันที่" required></div>
+                    <div class="col-md-3"><input type="date" name="leave_date_to"
+                            class="form-control form-control-sm" placeholder="ถึงวันที่" required></div>
+                    <div class="col-md-4"><input type="text" name="reason" class="form-control form-control-sm"
+                            placeholder="เหตุผล เช่น ลาป่วย, ธุระส่วนตัว"></div>
+                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">ส่งคำขอลา</button></div>
+                </form>
+            </div>
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-clock-history"></i></div> ประวัติการแจ้งลา
+                </div>
+                <table class="table table-sm table-clean">
+                    <thead>
+                        <tr>
+                            <th>ช่วงวันที่ลา</th>
+                            <th>เหตุผล</th>
+                            <th>สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($teacher->leaves()->orderByDesc('created_at')->get() as $tl)
+                            <tr>
+                                <td>{{ $tl->leave_date_from->format('d/m/Y') }} -
+                                    {{ $tl->leave_date_to->format('d/m/Y') }}</td>
+                                <td>{{ $tl->reason ?: '-' }}</td>
+                                <td><span class="badge {{ $tl->statusBadgeClass() }}">{{ $tl->statusLabel() }}</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3">
+                                    <div class="empty-state"><i class="bi bi-calendar-x"></i>ยังไม่มีประวัติการแจ้งลา
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 @endsection

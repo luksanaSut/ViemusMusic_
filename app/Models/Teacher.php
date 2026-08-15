@@ -76,6 +76,11 @@ class Teacher extends Model
         return $this->hasMany(TeacherAvailability::class);
     }
 
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(TeacherLeave::class);
+    }
+
     public function teachingSessions(): HasMany
     {
         return $this->hasMany(TeachingSession::class);
