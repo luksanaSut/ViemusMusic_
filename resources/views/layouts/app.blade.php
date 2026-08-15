@@ -350,10 +350,15 @@
         <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
             <i class="bi bi-door-open"></i> จัดการห้องเรียน
         </a>
+        <a href="{{ route('schedules.index') }}"
+            class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
+            <i class="bi bi-calendar3"></i> จัดตารางเรียน
+        </a>
         <a href="{{ route('schedule.index') }}"
             class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
             <i class="bi bi-calendar3"></i> ตารางเรียน
         </a>
+
 
         <div class="nav-section-label">งานขาย</div>
         <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">

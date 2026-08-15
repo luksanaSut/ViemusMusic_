@@ -412,6 +412,7 @@ class SaleOrderController extends Controller
             $enrollment = Enrollment::create([
                 'student_id'         => $saleOrder->student_id,
                 'course_id'          => $saleOrder->course_id,
+                'teacher_id'         => $saleOrder->teacher_id, // ดึงอาจารย์ที่เลือกไว้ตอนสมัครเรียนมาผูกไว้
                 'enrolled_date'      => now()->toDateString(),
                 'expected_end_date'  => $course->duration_months ? now()->addMonths($course->duration_months)->toDateString() : null,
                 'status'             => 'active',

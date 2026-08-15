@@ -196,6 +196,7 @@ class CourseTransferController extends Controller
         $newEnrollment = Enrollment::create([
             'student_id'        => $student->id,
             'course_id'         => $newCourse->id,
+            'teacher_id'        => $courseTransfer->new_teacher_id,
             'enrolled_date'     => now()->toDateString(),
             'expected_end_date' => $newCourse->duration_months ? now()->addMonths($newCourse->duration_months)->toDateString() : null,
             'status'            => 'active',

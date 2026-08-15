@@ -268,6 +268,23 @@
             color: #b3392c;
             font-weight: 600;
         }
+
+        /* กล่องแจ้งเตือนคอร์สแบบพิเศษ */
+        .special-schedule-box {
+            border-radius: 12px;
+            padding: .9rem 1.1rem;
+            display: flex;
+            gap: .6rem;
+            align-items: flex-start;
+            background: var(--amber-soft, #fdf1e2);
+            color: #8a5a2b;
+            margin-top: .75rem;
+        }
+
+        .special-schedule-box i {
+            font-size: 1rem;
+            margin-top: .1rem;
+        }
     </style>
 
     <div class="breadcrumb-sm">งานขาย <i class="bi bi-chevron-right small"></i> สมัครเรียนคอร์ส</div>
@@ -411,6 +428,10 @@
                         <option value="hybrid">ไฮบริด</option>
                     </select>
                 </div>
+            </div>
+
+            {{-- คอร์สแบบปกติ: เลือกวันที่สะดวกเรียนได้อิสระตามวันในสัปดาห์ --}}
+            <div class="row g-3 mt-1" id="regularScheduleBox">
                 <div class="col-md-4">
                     <label class="form-label">วันที่สะดวกเรียน</label>
                     <select name="preferred_day_of_week" id="preferredDaySelect" class="form-select">
@@ -429,6 +450,18 @@
                 <div class="col-md-4">
                     <label class="form-label">เวลาสิ้นสุด</label>
                     <input type="time" name="preferred_end_time" id="preferredEndTime" class="form-control">
+                </div>
+            </div>
+
+            {{-- คอร์สแบบพิเศษ: วันเวลากำหนดตายตัวจากตัวคอร์สอยู่แล้ว แสดงเป็นข้อมูลอย่างเดียว ไม่ต้องเลือกซ้ำ --}}
+            <div class="special-schedule-box d-none" id="specialScheduleBox">
+                <i class="bi bi-calendar-range"></i>
+                <div>
+                    คอร์สนี้เป็น<strong>แบบพิเศษ</strong> กำหนดวันเรียนไว้ตายตัวแล้ว: <strong
+                        id="specialDateRangeText">-</strong>
+                    <div class="small mt-1">รวม <strong id="specialDaysCountText">-</strong> วัน วันละ <strong
+                            id="specialHoursText">-</strong> ชั่วโมง — ไม่ต้องเลือกวันที่สะดวกเรียนซ้ำ
+                        ระบบจะให้จัดตารางเรียนแต่ละวันในเมนู "จัดตารางเรียน" ภายหลัง</div>
                 </div>
             </div>
         </div>
@@ -517,7 +550,20 @@
     <script id="studentsCatalog" type="application/json">{!! json_encode($students) !!}</script>
     <script id="teachersAvailabilityData" type="application/json">{!! json_encode($teachersAvailability) !!}</script>
     <script id="dayLabelsData" type="application/json">{!! json_encode(\App\Models\TeacherAvailability::dayLabels()) !!}</script>
-    <script id="courseCardsData" type="application/json">{!! json_encode($courseCards->keyBy('id')) !!}</script>
+    <script id="courseCardsData" type="application/json">
+{!! json_encode(
+    $courseCards->map(function ($c) use ($courses) {
+        $course = $courses->firstWhere('id', $c['id']);
+        return array_merge($c, [
+            'structure_type' => $course->structure_type ?? 'regular',
+            'course_start'   => optional($course->course_start_date)->format('d/m/Y'),
+            'course_end'     => optional($course->course_end_date)->format('d/m/Y'),
+            'days_count'     => $course->days_count,
+            'hours_per_day'  => $course->hours_per_day,
+        ]);
+    })->keyBy('id')
+) !!}
+</script>
 
     <script>
         (function() {
@@ -657,6 +703,7 @@
                     updatePrice();
                     updateTeachers();
                     checkCapacity();
+                    toggleScheduleBoxByStructureType();
                 });
             });
 
@@ -678,7 +725,7 @@
                 courseNoResult.classList.toggle('d-none', visibleCount > 0);
             });
 
-            // ============ 3. อาจารย์ (ตามคอร์ส) + วันว่างจริง ============
+            // ============ 3. อาจารย์ (ตามคอร์ส) + วันว่างจริง + toggle ตามประเภทคอร์ส ============
             const teacherSelect = document.getElementById('teacherSelect');
             const teacherHint = document.getElementById('teacherHint');
             const deliverySelect = document.getElementById('deliveryModeSelect');
@@ -686,6 +733,8 @@
             const dayHint = document.getElementById('dayHint');
             const startTimeInput = document.getElementById('preferredStartTime');
             const endTimeInput = document.getElementById('preferredEndTime');
+            const regularScheduleBox = document.getElementById('regularScheduleBox');
+            const specialScheduleBox = document.getElementById('specialScheduleBox');
 
             const teachersByCourse = {!! json_encode(
                 $courses->mapWithKeys(function ($c) {
@@ -736,6 +785,31 @@
                 startTimeInput.removeAttribute('max');
                 endTimeInput.removeAttribute('min');
                 endTimeInput.removeAttribute('max');
+            }
+
+            // Business rule: คอร์สแบบพิเศษมีวันเวลาตายตัวอยู่แล้วตั้งแต่ตอนสร้างคอร์ส ไม่ต้องให้เลือกวันสะดวกเรียนซ้ำ
+            // คอร์สแบบปกติ (นับจำนวนครั้ง) ยังเลือกวันที่สะดวกเรียนได้อิสระเหมือนเดิม
+            function toggleScheduleBoxByStructureType() {
+                const data = courseCardsData[courseIdInput.value];
+                const structureType = data?.structure_type;
+
+                if (structureType === 'special') {
+                    regularScheduleBox.classList.add('d-none');
+                    specialScheduleBox.classList.remove('d-none');
+
+                    document.getElementById('specialDateRangeText').textContent =
+                        `${data.course_start || '-'} ถึง ${data.course_end || '-'}`;
+                    document.getElementById('specialDaysCountText').textContent = data.days_count || '-';
+                    document.getElementById('specialHoursText').textContent = data.hours_per_day || '-';
+
+                    // ล้างค่าช่องวันสะดวกเรียนของคอร์สปกติ ไม่ให้ส่งค่าเก่าติดไปโดยไม่ตั้งใจ
+                    preferredDaySelect.value = '';
+                    startTimeInput.value = '';
+                    endTimeInput.value = '';
+                } else {
+                    regularScheduleBox.classList.remove('d-none');
+                    specialScheduleBox.classList.add('d-none');
+                }
             }
 
             teacherSelect.addEventListener('change', function() {
@@ -802,7 +876,6 @@
 
             // ============ 5. Toggle ใบเสร็จ/ใบกำกับภาษี ============
             // สำคัญ: ห้าม disable ช่อง select เด็ดขาด เพราะ input ที่ disabled จะไม่ถูกส่งไปกับฟอร์มเลย
-            // ทำให้ validation ฝั่งเซิร์ฟเวอร์ฟ้อง "required" แล้วบันทึกไม่ผ่าน (นี่คือสาเหตุของปัญหาที่เจอก่อนหน้านี้)
             const wantsInvoiceCheck = document.getElementById('wantsInvoiceCheck');
             const invoiceFieldsBox = document.getElementById('invoiceFieldsBox');
             const noInvoiceNote = document.getElementById('noInvoiceNote');
