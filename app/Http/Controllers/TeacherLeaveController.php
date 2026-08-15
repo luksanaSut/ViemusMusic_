@@ -22,6 +22,17 @@ class TeacherLeaveController extends Controller
         return view('teacher-leaves.index', compact('leaves'));
     }
 
+    // GET /my-teacher-leave — หน้าแจ้งลาหยุดสอนของอาจารย์เอง (ใช้ได้เฉพาะบัญชี role teacher)
+    public function myIndex(Request $request)
+    {
+        $teacher = $request->user()->teacher;
+        abort_unless($teacher, 404, 'บัญชีนี้ยังไม่ได้ผูกกับข้อมูลอาจารย์');
+
+        $leaves = $teacher->leaves()->orderByDesc('created_at')->get();
+
+        return view('teacher-leaves.my-index', compact('teacher', 'leaves'));
+    }
+
     // POST /teachers/{teacher}/leaves — อาจารย์แจ้งลาหยุดสอน
     public function store(Request $request, Teacher $teacher)
     {

@@ -168,4 +168,21 @@ class Teacher extends Model
     {
         return $this->hasOne(User::class);
     }
+
+    // ตรวจว่าช่วงเวลาที่ระบุ อยู่ในตาราง Availability ที่อาจารย์ตั้งไว้หรือไม่
+    // ถ้าอาจารย์ยังไม่เคยตั้ง Availability ไว้เลย ถือว่าไม่จำกัด (return true) เพื่อไม่บล็อกการใช้งานเดิม
+    public function isAvailableAt(string $dayOfWeek, string $startTime, string $endTime): bool
+    {
+        $availabilities = $this->availabilities()->where('is_available', true)->get();
+
+        if ($availabilities->isEmpty()) {
+            return true;
+        }
+
+        return $availabilities->contains(function ($a) use ($dayOfWeek, $startTime, $endTime) {
+            return (int) $a->day_of_week === (int) $dayOfWeek
+                && $startTime >= $a->start_time
+                && $endTime <= $a->end_time;
+        });
+    }
 }

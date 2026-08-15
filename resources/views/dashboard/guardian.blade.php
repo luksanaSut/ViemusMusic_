@@ -9,13 +9,15 @@
             <div class="col-md-6">
                 <div class="card" style="border-radius:16px;">
                     <div class="card-body">
-                        <h6 class="fw-bold" style="font-family:'Prompt',sans-serif;">{{ $s->full_name }}</h6>
-                        <p class="small text-muted mb-2">คอร์สที่กำลังเรียน:
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0" style="font-family:'Prompt',sans-serif;">{{ $s->full_name }}</h6>
+                            @if ($s->hasOverduePayment())
+                                <span class="badge text-bg-danger">มีคอร์สค้างชำระ</span>
+                            @endif
+                        </div>
+                        <p class="small text-muted mb-0 mt-1">คอร์สที่กำลังเรียน:
                             {{ $s->enrollments->where('status', 'active')->pluck('course.name')->filter()->join(', ') ?: '-' }}
                         </p>
-                        @if ($s->hasOverduePayment())
-                            <span class="badge text-bg-danger">มีคอร์สค้างชำระ</span>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -25,4 +27,17 @@
             </div>
         @endforelse
     </div>
+
+    @if ($guardian->students->isNotEmpty())
+        <div class="card mt-3" style="border-radius:16px; background:var(--accent-soft); border:none;">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-bold" style="font-family:'Prompt',sans-serif;"><i class="bi bi-calendar-x"></i>
+                        ต้องการลาเรียนให้บุตรหลาน?</div>
+                    <div class="small text-muted">แจ้งลาและเสนอวันเรียนชดเชยได้ที่เมนู "แจ้งลาเรียน"</div>
+                </div>
+                <a href="{{ route('leaves.index') }}" class="btn btn-accent btn-sm">ไปที่หน้าแจ้งลา</a>
+            </div>
+        </div>
+    @endif
 @endsection

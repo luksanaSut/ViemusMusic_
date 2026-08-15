@@ -824,6 +824,58 @@
                             required></div>
                     <div class="col-md-3"><input type="text" name="reason" class="form-control form-control-sm"
                             placeholder="เหตุผล"></div>
+                    <div class="col-12 d-none" id="makeupFieldsBox">
+                        <div class="alert alert-light border mt-2">
+                            <strong><i class="bi bi-calendar-plus"></i> เลือกวันเรียนชดเชย
+                                (บังคับกรอกสำหรับลาปกติ)</strong>
+                            <div class="row g-2 mt-1">
+                                <div class="col-md-4">
+                                    <label class="form-label small">อาจารย์ผู้สอนชดเชย</label>
+                                    <select name="makeup_teacher_id" id="makeupTeacherSelect"
+                                        class="form-select form-select-sm">
+                                        <option value="">เลือกอาจารย์</option>
+                                        @foreach (\App\Models\Teacher::where('is_active', true)->orderBy('full_name')->get() as $t)
+                                            <option value="{{ $t->id }}">{{ $t->nickname ?: $t->full_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">ห้องเรียน</label>
+                                    <select name="makeup_room_id" class="form-select form-select-sm">
+                                        <option value="">ไม่ระบุ (ออนไลน์)</option>
+                                        @foreach (\App\Models\Room::where('is_active', true)->orderBy('name')->get() as $r)
+                                            <option value="{{ $r->id }}">{{ $r->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">รูปแบบการเรียน</label>
+                                    <select name="makeup_delivery_mode" class="form-select form-select-sm">
+                                        <option value="onsite">ที่โรงเรียน</option>
+                                        <option value="online">ออนไลน์</option>
+                                        <option value="hybrid">ไฮบริด</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">วันที่เรียนชดเชย</label>
+                                    <input type="date" name="makeup_date" id="makeupDateInput"
+                                        class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">เวลาเริ่ม</label>
+                                    <input type="time" name="makeup_start_time" id="makeupStartInput"
+                                        class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">เวลาสิ้นสุด</label>
+                                    <input type="time" name="makeup_end_time" id="makeupEndInput"
+                                        class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div id="makeupConflictBox" class="alert alert-danger small mt-2 mb-0 d-none"></div>
+                        </div>
+                    </div>
                     <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">ส่งคำขอ</button></div>
                     <div class="col-12">
                         <small class="text-muted" id="leaveHint"><i class="bi bi-info-circle"></i> ลาปกติ/ลาไม่ชดเชย
@@ -1035,19 +1087,73 @@
             const enrollmentSelect = document.getElementById('leaveEnrollmentSelect');
             const typeSelect = document.getElementById('leaveTypeSelect');
             const hint = document.getElementById('leaveHint');
+            const makeupBox = document.getElementById('makeupFieldsBox');
+            const makeupTeacher = document.getElementById('makeupTeacherSelect');
+            const makeupDate = document.getElementById('makeupDateInput');
+            const makeupStart = document.getElementById('makeupStartInput');
+            const makeupEnd = document.getElementById('makeupEndInput');
+            const conflictBox = document.getElementById('makeupConflictBox');
+            const submitBtn = document.querySelector('#leaveForm button[type=submit]');
+            const studentId = {{ $student->id }};
+
+            function toggleMakeupBox() {
+                const isNormal = typeSelect.value === 'normal';
+                makeupBox.classList.toggle('d-none', !isNormal);
+                [makeupTeacher, makeupDate, makeupStart, makeupEnd].forEach(el => el.required = isNormal);
+            }
 
             function checkAllowMakeup() {
                 const opt = enrollmentSelect.options[enrollmentSelect.selectedIndex];
                 const allow = opt?.dataset.allowMakeup === '1';
-                const normalOpt = typeSelect.querySelector('option[value=normal]');
                 if (!allow && typeSelect.value === 'normal') {
                     typeSelect.value = 'no_makeup';
                     hint.innerHTML =
                         '<i class="bi bi-exclamation-circle text-warning"></i> คอร์สนี้ไม่เปิดสิทธิ์เรียนชดเชย ระบบเปลี่ยนเป็น "ลาแบบไม่ชดเชย" ให้อัตโนมัติ';
                 }
-                normalOpt.disabled = !allow;
+                typeSelect.querySelector('option[value=normal]').disabled = !allow;
+                toggleMakeupBox();
             }
+
+            async function checkMakeupConflict() {
+                if (typeSelect.value !== 'normal') {
+                    conflictBox.classList.add('d-none');
+                    if (submitBtn) submitBtn.disabled = false;
+                    return;
+                }
+                if (!makeupTeacher.value || !makeupDate.value || !makeupStart.value || !makeupEnd.value) return;
+
+                const params = new URLSearchParams({
+                    student_id: studentId,
+                    teacher_id: makeupTeacher.value,
+                    date: makeupDate.value,
+                    start_time: makeupStart.value,
+                    end_time: makeupEnd.value,
+                });
+                try {
+                    const res = await fetch(
+                        `{{ route('makeup-requests.check-conflict') }}?${params.toString()}`);
+                    const data = await res.json();
+                    if (data.conflicts && data.conflicts.length > 0) {
+                        conflictBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + data.conflicts
+                            .join('<br>');
+                        conflictBox.classList.remove('d-none');
+                        if (submitBtn) submitBtn.disabled = true;
+                    } else {
+                        conflictBox.classList.add('d-none');
+                        if (submitBtn) submitBtn.disabled = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
             enrollmentSelect.addEventListener('change', checkAllowMakeup);
+            typeSelect.addEventListener('change', () => {
+                toggleMakeupBox();
+                checkMakeupConflict();
+            });
+            [makeupTeacher, makeupDate, makeupStart, makeupEnd].forEach(el => el.addEventListener('change',
+                checkMakeupConflict));
         })();
     </script>
 @endsection

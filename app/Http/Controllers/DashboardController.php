@@ -51,7 +51,11 @@ class DashboardController extends Controller
             return view('dashboard.no-link', ['role' => 'นักเรียน']);
         }
 
-        $student->load(['enrollments.course', 'payments' => fn($q) => $q->orderByDesc('due_date')]);
+        $student->load([
+            'enrollments' => fn($q) => $q->with('course')->where('status', 'active'),
+            'payments' => fn($q) => $q->orderByDesc('due_date'),
+            'leaves' => fn($q) => $q->with('makeupRequest')->orderByDesc('created_at'),
+        ]);
 
         $scheduleUpcoming = \App\Models\ClassSchedule::whereHas('enrollment', fn($q) => $q->where('student_id', $student->id))
             ->where('status', 'scheduled')
@@ -70,7 +74,11 @@ class DashboardController extends Controller
             return view('dashboard.no-link', ['role' => 'ผู้ปกครอง']);
         }
 
-        $guardian->load(['students.enrollments.course', 'students.payments']);
+        $guardian->load([
+            'students.enrollments' => fn($q) => $q->with('course')->where('status', 'active'),
+            'students.payments',
+            'students.leaves' => fn($q) => $q->with('makeupRequest')->orderByDesc('created_at'),
+        ]);
 
         return view('dashboard.guardian', compact('guardian'));
     }

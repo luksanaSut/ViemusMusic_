@@ -32,6 +32,38 @@ class AppNotification extends Model
         ]);
     }
 
+    public static function notifyStudent(int $studentId, string $title, string $message, ?string $url = null): void
+    {
+        static::create([
+            'recipient_role' => 'student',
+            'recipient_id' => $studentId,
+            'title' => $title,
+            'message' => $message,
+            'link_url' => $url,
+        ]);
+    }
+
+    public static function notifyGuardian(int $guardianId, string $title, string $message, ?string $url = null): void
+    {
+        static::create([
+            'recipient_role' => 'guardian',
+            'recipient_id' => $guardianId,
+            'title' => $title,
+            'message' => $message,
+            'link_url' => $url,
+        ]);
+    }
+
+    // แจ้งทั้งตัวนักเรียนเอง (ถ้ามีบัญชี) และผู้ปกครองทุกคนที่ผูกกับนักเรียนคนนั้น (ถ้ามีบัญชี)
+    public static function notifyStudentAndGuardians(\App\Models\Student $student, string $title, string $message, ?string $url = null): void
+    {
+        static::notifyStudent($student->id, $title, $message, $url);
+
+        foreach ($student->guardians as $guardian) {
+            static::notifyGuardian($guardian->id, $title, $message, $url);
+        }
+    }
+
     public function scopeUnreadForAdmin($query)
     {
         return $query->where('recipient_role', 'admin')->where('is_read', false);

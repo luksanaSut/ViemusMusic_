@@ -483,6 +483,10 @@
                 class="nav-link {{ request()->routeIs('teacher-leaves.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-x"></i> คำขอลาหยุดสอน
             </a>
+            <a href="{{ route('makeup-requests.index') }}"
+                class="nav-link {{ request()->routeIs('makeup-requests.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-repeat"></i> จัดการเรียนชดเชย
+            </a>
 
             <div class="nav-section-label">งานขาย</div>
             <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
@@ -502,11 +506,25 @@
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-grid-1x2"></i> หน้าหลักของฉัน
             </a>
+
             @if (auth()->user()->isTeacher())
-                <a href="#" class="nav-link disabled" title="กรอกแบบฟอร์มได้ที่หน้าหลัก">
+                <a href="{{ route('makeup-requests.my-index') }}"
+                    class="nav-link {{ request()->routeIs('makeup-requests.my-index') || request()->routeIs('makeup-requests.show') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-repeat"></i> คำขอสอนชดเชย
+                </a>
+                <a href="{{ route('teacher-leaves.my-index') }}"
+                    class="nav-link {{ request()->routeIs('teacher-leaves.my-index') ? 'active' : '' }}">
                     <i class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน
                 </a>
             @endif
+
+            @if (auth()->user()->isStudent() || auth()->user()->isGuardian())
+                <a href="{{ route('leaves.index') }}"
+                    class="nav-link {{ request()->routeIs('leaves.index') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-x"></i> แจ้งลาเรียน
+                </a>
+            @endif
+
             <a href="{{ route('notifications.index') }}"
                 class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <i class="bi bi-bell"></i> การแจ้งเตือน

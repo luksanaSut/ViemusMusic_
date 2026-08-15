@@ -31,6 +31,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\MakeupRequestController;
+use App\Http\Controllers\MyLeavesController;
+
+
 
 use Illuminate\Support\Facades\Route;
 
@@ -69,12 +73,38 @@ Route::middleware('auth')->group(function () {
 });
 
 // ===================================================================
-// กลุ่ม 3: ADMIN + TEACHER — อาจารย์แจ้งลาหยุดสอนของตัวเองได้
-// (ควบคุมสิทธิ์เพิ่มในคอนโทรลเลอร์: อาจารย์แจ้งได้เฉพาะบัญชีของตัวเอง)
+// กลุ่ม 3: ADMIN + TEACHER — แจ้งลา/เสนอวันเรียนชดเชยได้เอง
+// แจ้งลา/เสนอวันเรียนชดเชยได้เอง (แต่อนุมัติไม่ได้ ยังเป็นสิทธิ์ Admin/อาจารย์)
 // ===================================================================
 Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,teacher'])->group(function () {
     Route::post('teachers/{teacher}/leaves', [TeacherLeaveController::class, 'store'])->name('teachers.leaves.store');
+
+    Route::get('makeup-requests/{makeupRequest}', [MakeupRequestController::class, 'show'])->name('makeup-requests.show');
+    Route::post('makeup-requests/{makeupRequest}/approve-instructor', [MakeupRequestController::class, 'approveByInstructor'])->name('makeup-requests.approve-instructor');
+    Route::post('makeup-requests/{makeupRequest}/reject', [MakeupRequestController::class, 'reject'])->name('makeup-requests.reject');
 });
+
+// ===================================================================
+// กลุ่ม 3: Admin + Student + Guardian — อาจารย์แจ้งลาหยุดสอนของตัวเองได้
+// (ควบคุมสิทธิ์เพิ่มในคอนโทรลเลอร์: อาจารย์แจ้งได้เฉพาะบัญชีของตัวเอง)
+// ===================================================================
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,student,guardian'])->group(function () {
+    Route::post('students/{student}/leaves', [StudentLeaveController::class, 'store'])->name('students.leaves.store');
+    Route::get('makeup-requests-check-conflict', [MakeupRequestController::class, 'checkConflict'])->name('makeup-requests.check-conflict');
+});
+
+// นักเรียน/ผู้ปกครอง: หน้าแจ้งลาเรียนของตัวเอง (เมนูแยกต่างหาก)
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:student,guardian'])->group(function () {
+    Route::get('my-leaves', [MyLeavesController::class, 'index'])->name('leaves.index');
+    Route::get('my-leaves/create', [MyLeavesController::class, 'create'])->name('leaves.create');
+});
+
+// อาจารย์: หน้าแจ้งลาหยุดสอนของตัวเอง (เมนูแยกต่างหาก)
+Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:teacher'])->group(function () {
+    Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
+    Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
+});
+
 
 // ===================================================================
 // กลุ่ม 4: ADMIN เท่านั้น — โมดูลจัดการทั้งหมดของระบบหลังบ้าน
@@ -117,7 +147,6 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('students-search', StudentSearchController::class)->name('students.search');
 
     // ----- ลาเรียนของนักเรียน -----
-    Route::post('students/{student}/leaves', [StudentLeaveController::class, 'store'])->name('students.leaves.store');
     Route::patch('students/{student}/leaves/{leave}/makeup', [StudentLeaveController::class, 'updateMakeup'])->name('students.leaves.makeup');
     Route::post('students/{student}/leaves/{leave}/approve', [StudentLeaveController::class, 'approve'])->name('students.leaves.approve');
     Route::post('students/{student}/leaves/{leave}/reject', [StudentLeaveController::class, 'reject'])->name('students.leaves.reject');
@@ -188,4 +217,8 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::resource('users', UserController::class)->except(['show', 'edit', 'update']);
     Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+
+    // ระบบเรียนชดเชย
+    Route::get('makeup-requests', [MakeupRequestController::class, 'index'])->name('makeup-requests.index');
+    Route::post('makeup-requests/{makeupRequest}/approve-admin', [MakeupRequestController::class, 'approveByAdmin'])->name('makeup-requests.approve-admin');
 });

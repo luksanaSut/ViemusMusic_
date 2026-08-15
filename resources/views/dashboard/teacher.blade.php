@@ -34,4 +34,44 @@
             </div>
         </div>
     </div>
+
+    @php
+        // คำขอสอนชดเชยที่มอบหมายให้อาจารย์คนนี้ และยังรอให้คุณอนุมัติ (instructor_approval_status ยังเป็น pending)
+        $pendingMakeups = \App\Models\MakeupRequest::where('teacher_id', $teacher->id)
+            ->where('instructor_approval_status', 'pending')
+            ->with('student')
+            ->orderBy('makeup_date')
+            ->get();
+    @endphp
+
+    @if ($pendingMakeups->count())
+        <div class="card mt-3" style="border-radius:16px;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0" style="font-family:'Prompt',sans-serif;"><i class="bi bi-arrow-repeat"></i>
+                        คำขอสอนชดเชยรออนุมัติจากคุณ ({{ $pendingMakeups->count() }})</h6>
+                    <a href="{{ route('makeup-requests.my-index') }}" class="small">ดูทั้งหมด</a>
+                </div>
+                @foreach ($pendingMakeups as $m)
+                    <div class="d-flex justify-content-between border-bottom py-2 small">
+                        <span>{{ $m->student->full_name ?? '-' }} — {{ $m->makeup_date->format('d/m/Y') }}
+                            {{ $m->start_time }}-{{ $m->end_time }}</span>
+                        <a href="{{ route('makeup-requests.show', $m) }}"
+                            class="btn btn-sm btn-outline-primary">ตรวจสอบ</a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <div class="card mt-3" style="border-radius:16px; background:var(--accent-soft); border:none;">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <div class="fw-bold" style="font-family:'Prompt',sans-serif;"><i class="bi bi-calendar-x"></i>
+                    ต้องการลาหยุดสอน?</div>
+                <div class="small text-muted">แจ้งลาหยุดสอนได้ที่เมนู "แจ้งลาหยุดสอน"</div>
+            </div>
+            <a href="{{ route('teacher-leaves.my-index') }}" class="btn btn-accent btn-sm">ไปแจ้งลา</a>
+        </div>
+    </div>
 @endsection

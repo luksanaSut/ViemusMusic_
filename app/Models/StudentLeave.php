@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 
 class StudentLeave extends Model
 {
@@ -40,6 +42,11 @@ class StudentLeave extends Model
     public function classSchedule(): BelongsTo
     {
         return $this->belongsTo(ClassSchedule::class);
+    }
+
+    public function makeupRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(MakeupRequest::class);
     }
 
     public function leaveTypeLabel(): string
