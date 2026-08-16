@@ -1,0 +1,65 @@
+@extends('layouts.app')
+@section('title', 'Run Through')
+
+@section('content')
+    <h1 class="page-title mb-3"><i class="bi bi-arrow-repeat"></i> ระบบ Run Through</h1>
+
+    @forelse($runThroughs as $rt)
+        <div class="card mb-3" style="border-radius:16px;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="fw-bold mb-0" style="font-family:'Prompt',sans-serif;">{{ $rt->title }}</h6>
+                        <div class="text-muted small">{{ $rt->enrollment->student->full_name ?? '-' }} —
+                            {{ $rt->enrollment->course->name ?? '-' }} · สร้างเมื่อ {{ $rt->created_at->format('d/m/Y') }}
+                        </div>
+                    </div>
+                    <span class="badge {{ $rt->practiceResultBadgeClass() }}">{{ $rt->practiceResultLabel() }}</span>
+                </div>
+                @if ($rt->description)
+                    <p class="small mt-2 mb-1">{{ $rt->description }}</p>
+                @endif
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    @foreach ($rt->attachments as $att)
+                        <a href="{{ $att->url() }}" target="_blank"
+                            class="badge text-bg-light border text-decoration-none"><i class="bi bi-paperclip"></i>
+                            {{ $att->original_name }}</a>
+                    @endforeach
+                </div>
+
+                @if (!$rt->result_recorded_at)
+                    <form action="{{ route('run-throughs.record-result', $rt) }}" method="POST"
+                        class="row g-2 mt-2 border-top pt-2">
+                        @csrf
+                        <div class="col-md-4">
+                            <select name="practice_result" class="form-select form-select-sm" required>
+                                <option value="">เลือกผลการฝึกซ้อม</option>
+                                <option value="excellent">ดีเยี่ยม</option>
+                                <option value="good">ดี</option>
+                                <option value="needs_practice">ต้องฝึกเพิ่ม</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8"><input type="text" name="areas_to_improve"
+                                class="form-control form-control-sm" placeholder="สิ่งที่ต้องฝึกเพิ่มเติม (ถ้ามี)"></div>
+                        <div class="col-12">
+                            <textarea name="teacher_comment" class="form-control form-control-sm" rows="2"
+                                placeholder="ความคิดเห็นเพิ่มเติมจากอาจารย์"></textarea>
+                        </div>
+                        <div class="col-auto"><button class="btn btn-sm btn-accent">บันทึกผลการฝึกซ้อม</button></div>
+                    </form>
+                @else
+                    @if ($rt->areas_to_improve)
+                        <div class="alert alert-warning small mt-2 mb-1"><i class="bi bi-flag"></i>
+                            <strong>ต้องฝึกเพิ่ม:</strong> {{ $rt->areas_to_improve }}</div>
+                    @endif
+                    @if ($rt->teacher_comment)
+                        <p class="small mb-0"><strong>ความเห็นอาจารย์:</strong> {{ $rt->teacher_comment }}</p>
+                    @endif
+                @endif
+            </div>
+        </div>
+    @empty
+        <p class="text-muted">ยังไม่มี Run Through ในระบบ</p>
+    @endforelse
+    {{ $runThroughs->links() }}
+@endsection

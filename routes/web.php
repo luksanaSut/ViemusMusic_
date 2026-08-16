@@ -35,6 +35,14 @@ use App\Http\Controllers\MakeupRequestController;
 use App\Http\Controllers\MyLeavesController;
 use App\Http\Controllers\RescheduleRequestController;
 use App\Http\Controllers\TeachingLogController;
+use App\Http\Controllers\TeachingReportController;
+use App\Http\Controllers\CourseEvaluationController;
+use App\Http\Controllers\EvaluationCategoryController;
+use App\Http\Controllers\TeachingEvidenceController;
+use App\Http\Controllers\HomeworkSubmissionController;
+use App\Http\Controllers\RunThroughController;
+
+
 
 
 
@@ -95,6 +103,22 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('schedules/{classSchedule}/attendance', [TeachingLogController::class, 'show'])->name('teaching-logs.show');
     Route::post('teaching-logs/{teachingLog}/check-in', [TeachingLogController::class, 'checkIn'])->name('teaching-logs.check-in');
     Route::post('teaching-logs/{teachingLog}/confirm-duration', [TeachingLogController::class, 'confirmDuration'])->name('teaching-logs.confirm-duration');
+
+    Route::post('teaching-logs/{teachingLog}/report', [TeachingReportController::class, 'store'])->name('teaching-reports.store');
+    Route::delete('teaching-report-attachments/{attachment}', [TeachingReportController::class, 'destroyAttachment'])->name('teaching-reports.attachments.destroy');
+    Route::get('enrollments/{enrollment}/evaluation', [CourseEvaluationController::class, 'edit'])->name('course-evaluations.edit');
+    Route::post('enrollments/{enrollment}/evaluation', [CourseEvaluationController::class, 'store'])->name('course-evaluations.store');
+
+    Route::post('teaching-logs/{teachingLog}/evidences', [TeachingEvidenceController::class, 'store'])->name('teaching-evidences.store');
+    Route::delete('teaching-evidences/{teachingEvidence}', [TeachingEvidenceController::class, 'destroy'])->name('teaching-evidences.destroy');
+
+    Route::get('homework-submissions', [HomeworkSubmissionController::class, 'index'])->name('homework-submissions.index');
+    Route::post('homework-submissions/{homeworkSubmission}/review', [HomeworkSubmissionController::class, 'review'])->name('homework-submissions.review');
+
+    Route::get('run-throughs', [RunThroughController::class, 'index'])->name('run-throughs.index');
+    Route::get('enrollments/{enrollment}/run-throughs/create', [RunThroughController::class, 'create'])->name('run-throughs.create');
+    Route::post('enrollments/{enrollment}/run-throughs', [RunThroughController::class, 'store'])->name('run-throughs.store');
+    Route::post('run-throughs/{runThrough}/record-result', [RunThroughController::class, 'recordResult'])->name('run-throughs.record-result');
 });
 
 // ===================================================================
@@ -104,18 +128,33 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
 Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,student,guardian'])->group(function () {
     Route::post('students/{student}/leaves', [StudentLeaveController::class, 'store'])->name('students.leaves.store');
     Route::get('makeup-requests-check-conflict', [MakeupRequestController::class, 'checkConflict'])->name('makeup-requests.check-conflict');
+
+    Route::post('teaching-reports/{teachingReport}/homework-submissions', [HomeworkSubmissionController::class, 'store'])->name('homework-submissions.store');
 });
 
 // นักเรียน/ผู้ปกครอง: หน้าแจ้งลาเรียนของตัวเอง (เมนูแยกต่างหาก)
 Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:student,guardian'])->group(function () {
     Route::get('my-leaves', [MyLeavesController::class, 'index'])->name('leaves.index');
     Route::get('my-leaves/create', [MyLeavesController::class, 'create'])->name('leaves.create');
+
+    Route::get('my-teaching-reports', [TeachingReportController::class, 'myIndex'])->name('teaching-reports.my-index');
+    Route::get('my-evaluations', [CourseEvaluationController::class, 'myIndex'])->name('course-evaluations.my-index');
+
+    Route::get('my-homework', [HomeworkSubmissionController::class, 'myIndex'])->name('homework-submissions.my-index');
+
+    Route::get('my-run-throughs', [RunThroughController::class, 'myIndex'])->name('run-throughs.my-index');
 });
 
 // อาจารย์: หน้าแจ้งลาหยุดสอนของตัวเอง (เมนูแยกต่างหาก)
 Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:teacher'])->group(function () {
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
     Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('teaching-evidences/{teachingEvidence}/download', [TeachingEvidenceController::class, 'download'])
+        ->middleware('force-password-change')
+        ->name('teaching-evidences.download');
 });
 
 
@@ -243,4 +282,9 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('reschedule-requests', [RescheduleRequestController::class, 'index'])->name('reschedule-requests.index');
     Route::post('reschedule-requests/{rescheduleRequest}/approve', [RescheduleRequestController::class, 'approve'])->name('reschedule-requests.approve');
     Route::post('reschedule-requests/{rescheduleRequest}/reject', [RescheduleRequestController::class, 'reject'])->name('reschedule-requests.reject');
+
+    Route::get('evaluation-categories', [EvaluationCategoryController::class, 'index'])->name('evaluation-categories.index');
+    Route::post('evaluation-categories', [EvaluationCategoryController::class, 'store'])->name('evaluation-categories.store');
+    Route::patch('evaluation-categories/{evaluationCategory}/toggle-active', [EvaluationCategoryController::class, 'toggleActive'])->name('evaluation-categories.toggle-active');
+    Route::delete('evaluation-categories/{evaluationCategory}', [EvaluationCategoryController::class, 'destroy'])->name('evaluation-categories.destroy');
 });

@@ -186,7 +186,8 @@
                         <i class="bi bi-check-circle fs-4"></i>
                         <div class="fw-bold mt-1">เข้าเรียน</div>
                     </div>
-                    <div class="status-pill late {{ $log->attendance_status == 'late' ? 'active' : '' }}" data-value="late">
+                    <div class="status-pill late {{ $log->attendance_status == 'late' ? 'active' : '' }}"
+                        data-value="late">
                         <i class="bi bi-clock-history fs-4"></i>
                         <div class="fw-bold mt-1">เข้าเรียนสาย</div>
                     </div>
@@ -259,6 +260,125 @@
             </form>
         @endif
     </div>
+
+    {{-- ===== ขั้นที่ 3: บันทึกผลการสอน (แสดงหลังเช็คชื่อแล้ว) ===== --}}
+    @if ($log->attendance_status)
+        @php $report = $log->teachingReport; @endphp
+        <div class="form-section">
+            <div class="form-section-title">
+                <div class="icon-badge"><i class="bi bi-journal-text"></i></div> ขั้นที่ 3: บันทึกผลการสอน
+            </div>
+            <form action="{{ route('teaching-reports.store', $log) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">เนื้อหาที่สอน</label>
+                        <textarea name="content_taught" class="form-control" rows="3"
+                            placeholder="เช่น ฝึกสเกล C Major, เพลง Für Elise ท่อนที่ 1-2">{{ old('content_taught', $report->content_taught ?? '') }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">การบ้าน</label>
+                        <textarea name="homework" class="form-control" rows="2" placeholder="เช่น ฝึกเพลงเดิม 15 นาที/วัน">{{ old('homework', $report->homework ?? '') }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">ความก้าวหน้าของนักเรียน</label>
+                        <textarea name="progress_notes" class="form-control" rows="2"
+                            placeholder="เช่น จับจังหวะได้ดีขึ้น ยังต้องฝึกมือซ้าย">{{ old('progress_notes', $report->progress_notes ?? '') }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">หมายเหตุเพิ่มเติม</label>
+                        <textarea name="notes" class="form-control" rows="2">{{ old('notes', $report->notes ?? '') }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">แนบโน้ตเพลง/ไฟล์ประกอบ (สูงสุด 5 ไฟล์)</label>
+                        <input type="file" name="attachments[]" class="form-control" multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.mp3,.mp4,.mscz,.xml,.doc,.docx">
+                        @if ($report && $report->attachments->count())
+                            <div class="mt-2">
+                                @foreach ($report->attachments as $att)
+                                    <span class="badge text-bg-light border me-1 mb-1">
+                                        <a href="{{ $att->url() }}" target="_blank"
+                                            class="text-decoration-none">{{ $att->original_name }}</a>
+                                        <form action="{{ route('teaching-reports.attachments.destroy', $att) }}"
+                                            method="POST" class="d-inline" onsubmit="return confirm('ลบไฟล์นี้?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm border-0 p-0 ms-1" style="color:#b3392c;">✕</button>
+                                        </form>
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <button class="btn btn-accent mt-3"><i class="bi bi-save"></i>
+                    {{ $report ? 'อัปเดตผลการสอน' : 'บันทึกผลการสอน' }}</button>
+            </form>
+        </div>
+    @endif
+
+    {{-- ===== ขั้นที่ 4: อัปโหลดหลักฐานการสอน ===== --}}
+    @if ($log->attendance_status)
+        <div class="form-section">
+            <div class="form-section-title">
+                <div class="icon-badge"><i class="bi bi-camera"></i></div> หลักฐานการสอน
+            </div>
+
+            <form action="{{ route('teaching-evidences.store', $log) }}" method="POST" enctype="multipart/form-data"
+                class="mb-3">
+                @csrf
+                <label class="form-label">อัปโหลดรูปภาพ / วิดีโอ / เอกสาร (สูงสุด 10 ไฟล์ต่อครั้ง, ไม่เกิน
+                    50MB/ไฟล์)</label>
+                <div class="d-flex gap-2">
+                    <input type="file" name="files[]" class="form-control" multiple
+                        accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" required>
+                    <button class="btn btn-accent flex-shrink-0"><i class="bi bi-upload"></i> อัปโหลด</button>
+                </div>
+                <small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> รองรับ: รูปภาพ
+                    (JPG/PNG/WEBP/GIF), วิดีโอ (MP4/MOV/AVI/WEBM), เอกสาร (PDF/DOC/XLS)</small>
+            </form>
+
+            @if ($log->evidences->count())
+                <div class="row g-2">
+                    @foreach ($log->evidences as $ev)
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100 d-flex flex-column">
+                                @if ($ev->file_type === 'image')
+                                    <img src="{{ $ev->url() }}" class="rounded mb-2"
+                                        style="width:100%; height:110px; object-fit:cover;">
+                                @elseif($ev->file_type === 'video')
+                                    <video src="{{ $ev->url() }}" controls class="rounded mb-2"
+                                        style="width:100%; height:110px; object-fit:cover;"></video>
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center rounded mb-2"
+                                        style="height:110px; background:#f4f3f1;">
+                                        <i class="bi {{ $ev->fileTypeIcon() }} fs-1 text-secondary"></i>
+                                    </div>
+                                @endif
+                                <div class="small fw-semibold text-truncate" title="{{ $ev->original_name }}">
+                                    {{ $ev->original_name }}</div>
+                                <div class="small text-muted">{{ $ev->fileTypeLabel() }} · {{ $ev->formattedSize() }}
+                                </div>
+                                <div class="small text-muted"><i class="bi bi-person"></i> {{ $ev->uploaded_by_name }} ·
+                                    {{ $ev->created_at->format('d/m/Y H:i') }}</div>
+                                <div class="d-flex gap-1 mt-2">
+                                    <a href="{{ route('teaching-evidences.download', $ev) }}"
+                                        class="btn btn-sm btn-outline-secondary flex-fill"><i class="bi bi-download"></i>
+                                        ดาวน์โหลด</a>
+                                    <form action="{{ route('teaching-evidences.destroy', $ev) }}" method="POST"
+                                        onsubmit="return confirm('ลบไฟล์นี้?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-muted small mb-0">ยังไม่มีหลักฐานการสอนที่อัปโหลดไว้</p>
+            @endif
+        </div>
+    @endif
 
     <a href="{{ route('schedules.index') }}" class="btn btn-outline-secondary mb-4"><i class="bi bi-arrow-left"></i>
         กลับไปตารางเรียน</a>

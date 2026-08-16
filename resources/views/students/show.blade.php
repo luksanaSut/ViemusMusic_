@@ -488,6 +488,12 @@
                                 <a href="{{ route('course-transfers.create', ['enrollment_id' => $enr->id]) }}"
                                     class="btn btn-sm btn-outline-secondary w-100"><i class="bi bi-arrow-left-right"></i>
                                     เปลี่ยนคอร์ส</a>
+                                <a href="{{ route('course-evaluations.edit', $enr) }}"
+                                    class="btn btn-sm btn-outline-primary w-100 mt-1"><i class="bi bi-clipboard-data"></i>
+                                    ประเมินผลจบคอร์ส</a>
+                                <a href="{{ route('run-throughs.create', $enr) }}"
+                                    class="btn btn-sm btn-outline-primary w-100 mt-1"><i class="bi bi-arrow-repeat"></i>
+                                    สร้าง Run Through</a>
                             </div>
                         @endif
                         <div class="col-md-3">

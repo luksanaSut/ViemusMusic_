@@ -63,6 +63,26 @@
             display: flex;
             flex-direction: column;
             z-index: 40;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #4a453e var(--ink);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--ink);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #4a453e;
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #5c574f;
         }
 
         .sidebar .brand {
@@ -483,6 +503,18 @@
                 class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-check"></i> บันทึกการสอน
             </a>
+            <a href="{{ route('evaluation-categories.index') }}"
+                class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
+                <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
+            </a>
+            <a href="{{ route('homework-submissions.index') }}"
+                class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
+                <i class="bi bi-journal-check"></i> ตรวจการบ้าน
+            </a>
+            <a href="{{ route('run-throughs.index') }}"
+                class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-repeat"></i> Run Through
+            </a>
             <a href="{{ route('schedule.index') }}"
                 class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> ตารางเรียน
@@ -532,12 +564,36 @@
                     class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-journal-check"></i> บันทึกการสอนของฉัน
                 </a>
+                <a href="{{ route('homework-submissions.index') }}"
+                    class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
+                    <i class="bi bi-journal-check"></i> ตรวจการบ้าน
+                </a>
+                <a href="{{ route('run-throughs.index') }}"
+                    class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-repeat"></i> Run Through
+                </a>
             @endif
 
             @if (auth()->user()->isStudent() || auth()->user()->isGuardian())
                 <a href="{{ route('leaves.index') }}"
                     class="nav-link {{ request()->routeIs('leaves.index') ? 'active' : '' }}">
                     <i class="bi bi-calendar-x"></i> แจ้งลาเรียน
+                </a>
+                <a href="{{ route('teaching-reports.my-index') }}"
+                    class="nav-link {{ request()->routeIs('teaching-reports.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i> ผลการสอน
+                </a>
+                <a href="{{ route('homework-submissions.my-index') }}"
+                    class="nav-link {{ request()->routeIs('homework-submissions.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-journal-check"></i> การบ้าน
+                </a>
+                <a href="{{ route('run-throughs.my-index') }}"
+                    class="nav-link {{ request()->routeIs('run-throughs.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-repeat"></i> Run Through
+                </a>
+                <a href="{{ route('course-evaluations.my-index') }}"
+                    class="nav-link {{ request()->routeIs('course-evaluations.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-clipboard-data"></i> ผลประเมินจบคอร์ส
                 </a>
             @endif
 

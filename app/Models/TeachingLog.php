@@ -85,4 +85,14 @@ class TeachingLog extends Model
         $label = $this->confirmed_duration_minutes . ' นาที';
         return $this->is_extra_time ? $label . ' (สอนเพิ่ม)' : $label;
     }
+
+    public function teachingReport(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TeachingReport::class);
+    }
+
+    public function evidences(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TeachingEvidence::class);
+    }
 }
