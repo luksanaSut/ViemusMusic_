@@ -68,6 +68,20 @@ class Enrollment extends Model
         return max(0, $this->course->total_sessions - $this->sessions_used);
     }
 
+    // ตัดจำนวนครั้งเรียนไป 1 ครั้ง (Business rule: ตัดเมื่อเข้าเรียนจริงเท่านั้น ไม่ใช่ตอนลา)
+    public function deductSession(): void
+    {
+        $this->increment('sessions_used');
+    }
+
+    // คืนจำนวนครั้งเรียน (เผื่อกรณีแก้ไขสถานะย้อนหลัง)
+    public function restoreSession(): void
+    {
+        if ($this->sessions_used > 0) {
+            $this->decrement('sessions_used');
+        }
+    }
+
     // มูลค่าคงเหลือของคอร์สนี้ ใช้สำหรับคำนวณตอนเปลี่ยนคอร์ส (FR-CS-004)
     // ใช้ได้กับคอร์สแบบนับจำนวนครั้งเท่านั้น — คอร์สแบบไม่จำกัดจำนวนครั้ง (Private ต่อเนื่อง) ถือว่ามูลค่าคงเหลือ = 0
     public function remainingValue(): float

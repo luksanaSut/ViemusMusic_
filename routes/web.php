@@ -34,6 +34,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MakeupRequestController;
 use App\Http\Controllers\MyLeavesController;
 use App\Http\Controllers\RescheduleRequestController;
+use App\Http\Controllers\TeachingLogController;
+
 
 
 
@@ -88,6 +90,11 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('reschedule-requests/create', [RescheduleRequestController::class, 'create'])->name('reschedule-requests.create');
     Route::post('reschedule-requests', [RescheduleRequestController::class, 'store'])->name('reschedule-requests.store');
     Route::get('reschedule-requests-check-conflict', [RescheduleRequestController::class, 'checkConflict'])->name('reschedule-requests.check-conflict');
+
+    Route::get('teaching-logs', [TeachingLogController::class, 'index'])->name('teaching-logs.index');
+    Route::get('schedules/{classSchedule}/attendance', [TeachingLogController::class, 'show'])->name('teaching-logs.show');
+    Route::post('teaching-logs/{teachingLog}/check-in', [TeachingLogController::class, 'checkIn'])->name('teaching-logs.check-in');
+    Route::post('teaching-logs/{teachingLog}/confirm-duration', [TeachingLogController::class, 'confirmDuration'])->name('teaching-logs.confirm-duration');
 });
 
 // ===================================================================

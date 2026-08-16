@@ -243,6 +243,7 @@
                 เพิ่มทีละคาบ</a>
             <a href="{{ route('schedules.bulk-create') }}" class="btn btn-accent"><i class="bi bi-calendar2-range"></i>
                 จัดตารางแบบชุด</a>
+
         </div>
     </div>
 

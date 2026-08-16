@@ -479,6 +479,10 @@
                 class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i> สลับคลาส
             </a>
+            <a href="{{ route('teaching-logs.index') }}"
+                class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-check"></i> บันทึกการสอน
+            </a>
             <a href="{{ route('schedule.index') }}"
                 class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> ตารางเรียน
@@ -523,6 +527,10 @@
                 <a href="{{ route('reschedule-requests.create') }}"
                     class="nav-link {{ request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i> ขอเปลี่ยนตารางสอน
+                </a>
+                <a href="{{ route('teaching-logs.index') }}"
+                    class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-check"></i> บันทึกการสอนของฉัน
                 </a>
             @endif
 

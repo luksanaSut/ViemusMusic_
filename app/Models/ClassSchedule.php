@@ -132,4 +132,9 @@ class ClassSchedule extends Model
             default => '-',
         };
     }
+
+    public function teachingLog(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TeachingLog::class);
+    }
 }
