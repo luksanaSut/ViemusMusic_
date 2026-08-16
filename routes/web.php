@@ -33,6 +33,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MakeupRequestController;
 use App\Http\Controllers\MyLeavesController;
+use App\Http\Controllers\RescheduleRequestController;
+
 
 
 
@@ -82,6 +84,10 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('makeup-requests/{makeupRequest}', [MakeupRequestController::class, 'show'])->name('makeup-requests.show');
     Route::post('makeup-requests/{makeupRequest}/approve-instructor', [MakeupRequestController::class, 'approveByInstructor'])->name('makeup-requests.approve-instructor');
     Route::post('makeup-requests/{makeupRequest}/reject', [MakeupRequestController::class, 'reject'])->name('makeup-requests.reject');
+
+    Route::get('reschedule-requests/create', [RescheduleRequestController::class, 'create'])->name('reschedule-requests.create');
+    Route::post('reschedule-requests', [RescheduleRequestController::class, 'store'])->name('reschedule-requests.store');
+    Route::get('reschedule-requests-check-conflict', [RescheduleRequestController::class, 'checkConflict'])->name('reschedule-requests.check-conflict');
 });
 
 // ===================================================================
@@ -207,6 +213,10 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::patch('schedules/{classSchedule}/cancel', [ClassScheduleController::class, 'cancel'])->name('schedules.cancel');
     Route::delete('schedules/{classSchedule}', [ClassScheduleController::class, 'destroy'])->name('schedules.destroy');
     Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule.index');
+    Route::get('schedules/bulk-create', [ClassScheduleController::class, 'bulkCreate'])->name('schedules.bulk-create');
+    Route::post('schedules/bulk-preview', [ClassScheduleController::class, 'bulkPreview'])->name('schedules.bulk-preview');
+    Route::get('schedules/bulk-row-check-conflict', [ClassScheduleController::class, 'bulkRowCheckConflict'])->name('schedules.bulk-row-check-conflict');
+    Route::post('schedules/bulk-confirm', [ClassScheduleController::class, 'bulkConfirm'])->name('schedules.bulk-confirm');
 
     // ----- อนุมัติคำขอลาหยุดสอนของอาจารย์ (แจ้งได้จากกลุ่ม admin+teacher ด้านบน แต่อนุมัติได้เฉพาะ admin) -----
     Route::get('teacher-leaves', [TeacherLeaveController::class, 'index'])->name('teacher-leaves.index');
@@ -221,4 +231,9 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     // ระบบเรียนชดเชย
     Route::get('makeup-requests', [MakeupRequestController::class, 'index'])->name('makeup-requests.index');
     Route::post('makeup-requests/{makeupRequest}/approve-admin', [MakeupRequestController::class, 'approveByAdmin'])->name('makeup-requests.approve-admin');
+
+    // ระบบสลับคลาส
+    Route::get('reschedule-requests', [RescheduleRequestController::class, 'index'])->name('reschedule-requests.index');
+    Route::post('reschedule-requests/{rescheduleRequest}/approve', [RescheduleRequestController::class, 'approve'])->name('reschedule-requests.approve');
+    Route::post('reschedule-requests/{rescheduleRequest}/reject', [RescheduleRequestController::class, 'reject'])->name('reschedule-requests.reject');
 });

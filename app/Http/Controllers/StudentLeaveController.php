@@ -27,28 +27,19 @@ class StudentLeaveController extends Controller
             'reason'            => ['nullable', 'string', 'max:500'],
         ];
 
-        // ===== Validation rule: ตรวจตารางซ้ำของนักเรียน/อาจารย์/ห้อง + ตรวจ Availability ของอาจารย์ สำหรับวันเรียนชดเชย =====
-        if ($data['leave_type'] === 'normal') {
-            $makeupTeacher = \App\Models\Teacher::find($data['makeup_teacher_id']);
-            $dayOfWeek = Carbon::parse($data['makeup_date'])->dayOfWeek; // 0=อาทิตย์..6=เสาร์ ตรงกับ TeacherAvailability
-
-            if ($makeupTeacher && !$makeupTeacher->isAvailableAt($dayOfWeek, $data['makeup_start_time'], $data['makeup_end_time'])) {
-                return back()->withInput()->with('error', 'อาจารย์ที่เลือกไม่ได้ตั้งเวลาว่างไว้ในช่วงนี้ กรุณาเลือกวันเวลาใหม่ตามตาราง Availability ของอาจารย์');
-            }
-
-            $conflicts = ClassSchedule::findConflicts(
-                $data['makeup_date'],
-                $data['makeup_start_time'],
-                $data['makeup_end_time'],
-                $student->id,
-                $data['makeup_teacher_id'],
-                $data['makeup_room_id'] ?? null
-            );
-            if (!empty($conflicts)) {
-                return back()->withInput()->with('error', 'ไม่สามารถจองเวลาเรียนชดเชยได้: ' . implode(' / ', $conflicts));
-            }
+        // Business rule: ต้องบังคับเลือกวันเรียนชดเชยทันที เมื่อเป็นการลาแบบขอชดเชย (leave_type = normal)
+        if ($request->leave_type === 'normal') {
+            $rules += [
+                'makeup_teacher_id' => ['required', 'exists:teachers,id'],
+                'makeup_room_id'    => ['nullable', 'exists:rooms,id'],
+                'makeup_date'       => ['required', 'date', 'after_or_equal:today'],
+                'makeup_start_time' => ['required'],
+                'makeup_end_time'   => ['required', 'after:makeup_start_time'],
+                'makeup_delivery_mode' => ['required', 'in:onsite,online,hybrid'],
+            ];
         }
 
+        // สำคัญ: ต้อง validate() ก่อนเสมอ เพื่อให้ $data ถูกกำหนดค่าก่อนถูกนำไปใช้ต่อด้านล่างทั้งหมด
         $data = $request->validate($rules);
 
         $enrollment = Enrollment::with('course')->findOrFail($data['enrollment_id']);
@@ -79,8 +70,15 @@ class StudentLeaveController extends Controller
             }
         }
 
-        // ===== Validation rule: ตรวจตารางซ้ำของนักเรียน/อาจารย์/ห้อง สำหรับวันเรียนชดเชย =====
+        // ===== Validation rule: ตรวจ Availability ของอาจารย์ + ตรวจตารางซ้ำของนักเรียน/อาจารย์/ห้อง สำหรับวันเรียนชดเชย =====
         if ($data['leave_type'] === 'normal') {
+            $makeupTeacher = \App\Models\Teacher::find($data['makeup_teacher_id']);
+            $dayOfWeek = Carbon::parse($data['makeup_date'])->dayOfWeek; // 0=อาทิตย์..6=เสาร์ ตรงกับ TeacherAvailability
+
+            if ($makeupTeacher && !$makeupTeacher->isAvailableAt($dayOfWeek, $data['makeup_start_time'], $data['makeup_end_time'])) {
+                return back()->withInput()->with('error', 'อาจารย์ที่เลือกไม่ได้ตั้งเวลาว่างไว้ในช่วงนี้ กรุณาเลือกวันเวลาใหม่ตามตาราง Availability ของอาจารย์');
+            }
+
             $conflicts = ClassSchedule::findConflicts(
                 $data['makeup_date'],
                 $data['makeup_start_time'],

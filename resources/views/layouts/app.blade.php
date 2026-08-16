@@ -475,6 +475,10 @@
                 class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> จัดตารางเรียน
             </a>
+            <a href="{{ route('reschedule-requests.index') }}"
+                class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-left-right"></i> สลับคลาส
+            </a>
             <a href="{{ route('schedule.index') }}"
                 class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> ตารางเรียน
@@ -515,6 +519,10 @@
                 <a href="{{ route('teacher-leaves.my-index') }}"
                     class="nav-link {{ request()->routeIs('teacher-leaves.my-index') ? 'active' : '' }}">
                     <i class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน
+                </a>
+                <a href="{{ route('reschedule-requests.create') }}"
+                    class="nav-link {{ request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-left-right"></i> ขอเปลี่ยนตารางสอน
                 </a>
             @endif
 

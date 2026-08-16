@@ -13,13 +13,13 @@ class MyLeavesController extends Controller
         $user = $request->user();
 
         if ($user->isStudent() && $user->student) {
-            return collect([$user->student]);
+            return \App\Models\Student::where('id', $user->student->id)->get();
         }
         if ($user->isGuardian() && $user->guardian) {
             return $user->guardian->students;
         }
 
-        return collect();
+        return \App\Models\Student::whereRaw('1=0')->get(); // Eloquent collection ว่างเปล่า แทน collect() เฉยๆ
     }
 
     // GET /my-leaves — หน้าสรุปสถานะคำขอลา + เรียนชดเชย
