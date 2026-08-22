@@ -43,6 +43,11 @@ use App\Http\Controllers\HomeworkSubmissionController;
 use App\Http\Controllers\RunThroughController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\TransportFeeController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\StoreSaleController;
+use App\Http\Controllers\StorefrontController;
 
 
 
@@ -147,6 +152,15 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:stude
     Route::get('my-homework', [HomeworkSubmissionController::class, 'myIndex'])->name('homework-submissions.my-index');
 
     Route::get('my-run-throughs', [RunThroughController::class, 'myIndex'])->name('run-throughs.my-index');
+
+    Route::get('store', [StorefrontController::class, 'index'])->name('store.index');
+    Route::post('store/checkout', [StorefrontController::class, 'checkout'])->name('store.checkout');
+    Route::get('store/orders/{storeSale}', [StorefrontController::class, 'show'])->name('store.show');
+    Route::get('store/orders/{storeSale}/edit', [StorefrontController::class, 'edit'])->name('store.edit');
+    Route::put('store/orders/{storeSale}', [StorefrontController::class, 'update'])->name('store.update');
+    Route::patch('store/orders/{storeSale}/cancel', [StorefrontController::class, 'cancelByCustomer'])->name('store.cancel');
+    Route::post('store/orders/{storeSale}/confirm-payment', [StorefrontController::class, 'confirmPayment'])->name('store.confirm-payment');
+    Route::get('my-orders', [StorefrontController::class, 'myOrders'])->name('store.my-orders');
 });
 
 // อาจารย์: หน้าแจ้งลาหยุดสอนของตัวเอง (เมนูแยกต่างหาก)
@@ -307,4 +321,24 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::get('transport-fees/{teacher}', [TransportFeeController::class, 'show'])->name('transport-fees.show');
     Route::post('transport-fees/{teacher}/compensations', [TransportFeeController::class, 'storeCompensation'])->name('transport-fees.compensations.store');
     Route::delete('transport-compensations/{transportCompensation}', [TransportFeeController::class, 'destroyCompensation'])->name('transport-fees.compensations.destroy');
+
+    // ----- Music Store: จัดการสินค้า -----
+    Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');
+    Route::post('product-categories', [ProductCategoryController::class, 'store'])->name('product-categories.store');
+    Route::patch('product-categories/{productCategory}/toggle-active', [ProductCategoryController::class, 'toggleActive'])->name('product-categories.toggle-active');
+    Route::delete('product-categories/{productCategory}', [ProductCategoryController::class, 'destroy'])->name('product-categories.destroy');
+
+    Route::resource('products', ProductController::class)->except(['show']);
+    Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+    // ----- Music Store: ระบบสต็อก -----
+    Route::get('stock', [StockController::class, 'index'])->name('stock.index');
+    Route::post('products/{product}/stock/adjust', [StockController::class, 'adjust'])->name('products.stock.adjust');
+
+    // ----- Music Store: ขายสินค้า -----
+    Route::get('store-sales', [StoreSaleController::class, 'index'])->name('store-sales.index');
+    Route::get('store-sales/create', [StoreSaleController::class, 'create'])->name('store-sales.create');
+    Route::post('store-sales', [StoreSaleController::class, 'store'])->name('store-sales.store');
+    Route::get('store-sales/{storeSale}', [StoreSaleController::class, 'show'])->name('store-sales.show');
+    Route::patch('store-sales/{storeSale}/cancel', [StoreSaleController::class, 'cancel'])->name('store-sales.cancel');
 });

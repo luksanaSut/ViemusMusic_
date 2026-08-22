@@ -466,158 +466,274 @@
         </div>
 
         @if (auth()->user()->isAdmin())
-            <div class="nav-section-label">ภาพรวม</div>
-            <a href="{{ route('teachers.index') }}" class="nav-link"><i class="bi bi-grid-1x2"></i> Dashboard</a>
 
+            {{-- ==================== ภาพรวม ==================== --}}
+            <div class="nav-section-label">ภาพรวม</div>
+
+            <a href="{{ route('teachers.index') }}" class="nav-link">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+
+
+            {{-- ==================== บุคคล ==================== --}}
             <div class="nav-section-label">บุคคล</div>
+
             <a href="{{ route('students.index') }}"
                 class="nav-link {{ request()->routeIs('students.*') ? 'active' : '' }}">
                 <i class="bi bi-mortarboard"></i> จัดการนักเรียน
             </a>
+
             <a href="{{ route('guardians.index') }}"
                 class="nav-link {{ request()->routeIs('guardians.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> จัดการผู้ปกครอง
             </a>
+
             <a href="{{ route('teachers.index') }}"
                 class="nav-link {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i> จัดการอาจารย์
             </a>
 
-            <div class="nav-section-label">งานวิชาการ</div>
+
+            {{-- ==================== หลักสูตรและตารางเรียน ==================== --}}
+            <div class="nav-section-label">หลักสูตรและตารางเรียน</div>
+
             <a href="{{ route('courses.index') }}"
                 class="nav-link {{ request()->routeIs('courses.*') || request()->routeIs('coupons.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
             </a>
+
             <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
                 <i class="bi bi-door-open"></i> จัดการห้องเรียน
             </a>
+
             <a href="{{ route('schedules.index') }}"
                 class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar3"></i> จัดตารางเรียน
             </a>
-            <a href="{{ route('reschedule-requests.index') }}"
-                class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-left-right"></i> สลับคลาส
+
+            <a href="{{ route('schedule.index') }}"
+                class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-week"></i> ตารางเรียน
             </a>
+
+
+            {{-- ==================== การเรียนการสอน ==================== --}}
+            <div class="nav-section-label">การเรียนการสอน</div>
+
             <a href="{{ route('teaching-logs.index') }}"
                 class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-check"></i> บันทึกการสอน
             </a>
-            <a href="{{ route('evaluation-categories.index') }}"
-                class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
-                <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
-            </a>
+
             <a href="{{ route('homework-submissions.index') }}"
                 class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
-                <i class="bi bi-journal-check"></i> ตรวจการบ้าน
+                <i class="bi bi-pencil-square"></i> ตรวจการบ้าน
             </a>
+
             <a href="{{ route('run-throughs.index') }}"
                 class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-repeat"></i> Run Through
             </a>
-            <a href="{{ route('schedule.index') }}"
-                class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> ตารางเรียน
+
+            <a href="{{ route('evaluation-categories.index') }}"
+                class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
+                <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
             </a>
+
+
+            {{-- ==================== คำร้องและการเปลี่ยนแปลง ==================== --}}
+            <div class="nav-section-label">คำร้องและการเปลี่ยนแปลง</div>
+
+            <a href="{{ route('reschedule-requests.index') }}"
+                class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-left-right"></i> สลับคลาส
+            </a>
+
             <a href="{{ route('teacher-leaves.index') }}"
                 class="nav-link {{ request()->routeIs('teacher-leaves.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-x"></i> คำขอลาหยุดสอน
             </a>
+
             <a href="{{ route('makeup-requests.index') }}"
                 class="nav-link {{ request()->routeIs('makeup-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-repeat"></i> จัดการเรียนชดเชย
+                <i class="bi bi-calendar-plus"></i> จัดการเรียนชดเชย
             </a>
 
 
+            {{-- ==================== งานขาย ==================== --}}
             <div class="nav-section-label">งานขาย</div>
+
             <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
                 <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
             </a>
+
             <a href="{{ route('course-transfers.index') }}"
                 class="nav-link {{ request()->routeIs('course-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i> เปลี่ยนคอร์สเรียน
             </a>
 
-            <div class="nav-section-label">ระบบ</div>
-            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
+
+            {{-- ==================== Music Store ==================== --}}
+            <div class="nav-section-label">Music Store</div>
+
+            <a href="{{ route('products.index') }}"
+                class="nav-link {{ request()->routeIs('products.*') || request()->routeIs('product-categories.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam"></i> จัดการสินค้า
             </a>
+
+            <a href="{{ route('stock.index') }}" class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                <i class="bi bi-boxes"></i> ระบบสต็อกสินค้า
+            </a>
+
+            <a href="{{ route('store-sales.index') }}"
+                class="nav-link {{ request()->routeIs('store-sales.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i> ขายสินค้า
+            </a>
+
+
+            {{-- ==================== การเงิน ==================== --}}
+            <div class="nav-section-label">การเงิน</div>
+
             <a href="{{ route('payroll.index') }}"
                 class="nav-link {{ request()->routeIs('payroll.*') && !request()->routeIs('payroll.my-index') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack"></i> เงินเดือนอาจารย์
             </a>
+
             <a href="{{ route('transport-fees.index') }}"
                 class="nav-link {{ request()->routeIs('transport-fees.*') && !request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
                 <i class="bi bi-car-front"></i> ค่ารถอาจารย์
             </a>
+
+
+            {{-- ==================== ระบบ ==================== --}}
+            <div class="nav-section-label">ระบบ</div>
+
+            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
+            </a>
         @else
-            <div class="nav-section-label">เมนู</div>
-            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            {{-- ==================== เมนูหลัก ==================== --}}
+            <div class="nav-section-label">เมนูหลัก</div>
+
+            <a href="{{ route('dashboard') }}"
+                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-grid-1x2"></i> หน้าหลักของฉัน
             </a>
 
+
+            {{-- ==================================================
+        อาจารย์
+    =================================================== --}}
             @if (auth()->user()->isTeacher())
-                <a href="{{ route('makeup-requests.my-index') }}"
-                    class="nav-link {{ request()->routeIs('makeup-requests.my-index') || request()->routeIs('makeup-requests.show') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-repeat"></i> คำขอสอนชดเชย
-                </a>
-                <a href="{{ route('teacher-leaves.my-index') }}"
-                    class="nav-link {{ request()->routeIs('teacher-leaves.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน
-                </a>
-                <a href="{{ route('reschedule-requests.create') }}"
-                    class="nav-link {{ request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-left-right"></i> ขอเปลี่ยนตารางสอน
-                </a>
+                <div class="nav-section-label">การเรียนการสอน</div>
+
                 <a href="{{ route('teaching-logs.index') }}"
                     class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-journal-check"></i> บันทึกการสอนของฉัน
                 </a>
+
                 <a href="{{ route('homework-submissions.index') }}"
                     class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
-                    <i class="bi bi-journal-check"></i> ตรวจการบ้าน
+                    <i class="bi bi-pencil-square"></i> ตรวจการบ้าน
                 </a>
+
                 <a href="{{ route('run-throughs.index') }}"
                     class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-repeat"></i> Run Through
                 </a>
+
+
+                <div class="nav-section-label">ตารางและคำร้อง</div>
+
+                <a href="{{ route('reschedule-requests.create') }}"
+                    class="nav-link {{ request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
+                    <i class="bi bi-arrow-left-right"></i> ขอเปลี่ยนตารางสอน
+                </a>
+
+                <a href="{{ route('makeup-requests.my-index') }}"
+                    class="nav-link {{ request()->routeIs('makeup-requests.my-index') || request()->routeIs('makeup-requests.show') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-plus"></i> คำขอสอนชดเชย
+                </a>
+
+                <a href="{{ route('teacher-leaves.my-index') }}"
+                    class="nav-link {{ request()->routeIs('teacher-leaves.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-x"></i> แจ้งลาหยุดสอน
+                </a>
+
+
+                <div class="nav-section-label">รายได้</div>
+
                 <a href="{{ route('payroll.my-index') }}"
                     class="nav-link {{ request()->routeIs('payroll.my-index') ? 'active' : '' }}">
                     <i class="bi bi-cash-stack"></i> เงินเดือนของฉัน
                 </a>
+
                 <a href="{{ route('transport-fees.my-index') }}"
                     class="nav-link {{ request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
                     <i class="bi bi-car-front"></i> ค่ารถของฉัน
                 </a>
             @endif
 
+
+            {{-- ==================================================
+        นักเรียน / ผู้ปกครอง
+    =================================================== --}}
             @if (auth()->user()->isStudent() || auth()->user()->isGuardian())
-                <a href="{{ route('leaves.index') }}"
-                    class="nav-link {{ request()->routeIs('leaves.index') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-x"></i> แจ้งลาเรียน
-                </a>
+                <div class="nav-section-label">
+                    {{ auth()->user()->isStudent() ? 'การเรียนของฉัน' : 'การเรียนของนักเรียน' }}
+                </div>
+
                 <a href="{{ route('teaching-reports.my-index') }}"
                     class="nav-link {{ request()->routeIs('teaching-reports.my-index') ? 'active' : '' }}">
                     <i class="bi bi-journal-text"></i> ผลการสอน
                 </a>
+
                 <a href="{{ route('homework-submissions.my-index') }}"
                     class="nav-link {{ request()->routeIs('homework-submissions.my-index') ? 'active' : '' }}">
                     <i class="bi bi-journal-check"></i> การบ้าน
                 </a>
+
                 <a href="{{ route('run-throughs.my-index') }}"
                     class="nav-link {{ request()->routeIs('run-throughs.my-index') ? 'active' : '' }}">
                     <i class="bi bi-arrow-repeat"></i> Run Through
                 </a>
+
                 <a href="{{ route('course-evaluations.my-index') }}"
                     class="nav-link {{ request()->routeIs('course-evaluations.my-index') ? 'active' : '' }}">
                     <i class="bi bi-clipboard-data"></i> ผลประเมินจบคอร์ส
                 </a>
+
+
+                <div class="nav-section-label">การลา</div>
+
+                <a href="{{ route('leaves.index') }}"
+                    class="nav-link {{ request()->routeIs('leaves.index') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-x"></i> แจ้งลาเรียน
+                </a>
+
+
+                <div class="nav-section-label">Music Store</div>
+
+                <a href="{{ route('store.index') }}"
+                    class="nav-link {{ request()->routeIs('store.index') ? 'active' : '' }}">
+                    <i class="bi bi-shop"></i> ร้านค้า
+                </a>
+
+                <a href="{{ route('store.my-orders') }}"
+                    class="nav-link {{ request()->routeIs('store.my-orders') ? 'active' : '' }}">
+                    <i class="bi bi-bag-check"></i> คำสั่งซื้อของฉัน
+                </a>
             @endif
+
+
+            {{-- ==================== ส่วนตัว ==================== --}}
+            <div class="nav-section-label">ส่วนตัว</div>
 
             <a href="{{ route('notifications.index') }}"
                 class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <i class="bi bi-bell"></i> การแจ้งเตือน
             </a>
+
         @endif
     </aside>
 
