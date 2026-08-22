@@ -41,6 +41,10 @@ use App\Http\Controllers\EvaluationCategoryController;
 use App\Http\Controllers\TeachingEvidenceController;
 use App\Http\Controllers\HomeworkSubmissionController;
 use App\Http\Controllers\RunThroughController;
+use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\TransportFeeController;
+
+
 
 
 
@@ -149,6 +153,8 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:stude
 Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:teacher'])->group(function () {
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
     Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
+    Route::get('my-payroll', [PayrollController::class, 'myIndex'])->name('payroll.my-index');
+    Route::get('my-transport-fees', [TransportFeeController::class, 'myIndex'])->name('transport-fees.my-index');
 });
 
 Route::middleware('auth')->group(function () {
@@ -287,4 +293,18 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
     Route::post('evaluation-categories', [EvaluationCategoryController::class, 'store'])->name('evaluation-categories.store');
     Route::patch('evaluation-categories/{evaluationCategory}/toggle-active', [EvaluationCategoryController::class, 'toggleActive'])->name('evaluation-categories.toggle-active');
     Route::delete('evaluation-categories/{evaluationCategory}', [EvaluationCategoryController::class, 'destroy'])->name('evaluation-categories.destroy');
+
+    Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('payroll/{teacher}/generate', [PayrollController::class, 'show'])->name('payroll.show');
+    Route::post('payroll/{payrollRun}/adjust', [PayrollController::class, 'adjust'])->name('payroll.adjust');
+    Route::post('payroll/{payrollRun}/confirm', [PayrollController::class, 'confirm'])->name('payroll.confirm');
+    Route::post('payroll/{payrollRun}/mark-paid', [PayrollController::class, 'markPaid'])->name('payroll.mark-paid');
+    Route::get('payroll/{payrollRun}/export-pdf', [PayrollController::class, 'exportPdf'])->name('payroll.export-pdf');
+    Route::get('payroll/{payrollRun}/export-excel', [PayrollController::class, 'exportExcel'])->name('payroll.export-excel');
+    Route::post('payroll/{payrollRun}/recalculate', [PayrollController::class, 'recalculate'])->name('payroll.recalculate');
+
+    Route::get('transport-fees', [TransportFeeController::class, 'index'])->name('transport-fees.index');
+    Route::get('transport-fees/{teacher}', [TransportFeeController::class, 'show'])->name('transport-fees.show');
+    Route::post('transport-fees/{teacher}/compensations', [TransportFeeController::class, 'storeCompensation'])->name('transport-fees.compensations.store');
+    Route::delete('transport-compensations/{transportCompensation}', [TransportFeeController::class, 'destroyCompensation'])->name('transport-fees.compensations.destroy');
 });

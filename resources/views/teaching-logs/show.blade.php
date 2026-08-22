@@ -251,6 +251,16 @@
                         style="max-width:200px;">
                 </div>
 
+                @php $transportFee = $classSchedule->teacher?->activeTransportFee(); @endphp
+                @if ($transportFee && $transportFee->fee_type === 'per_km')
+                    <div class="mb-3">
+                        <label class="form-label small">ระยะทางเดินทาง (กิโลเมตร) — ใช้คำนวณค่ารถ</label>
+                        <input type="number" step="0.1" name="km_traveled" class="form-control"
+                            style="max-width:200px;" placeholder="เช่น 12.5" min="0">
+                        <small class="text-muted">อัตรา ฿{{ number_format($transportFee->fee_amount, 2) }}/กม.</small>
+                    </div>
+                @endif
+
                 <button class="btn btn-accent" id="confirmDurationBtn" disabled><i class="bi bi-check-lg"></i>
                     ยืนยันเวลาสอนจริง</button>
                 <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i>

@@ -528,6 +528,7 @@
                 <i class="bi bi-arrow-repeat"></i> จัดการเรียนชดเชย
             </a>
 
+
             <div class="nav-section-label">งานขาย</div>
             <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
                 <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
@@ -540,6 +541,14 @@
             <div class="nav-section-label">ระบบ</div>
             <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
+            </a>
+            <a href="{{ route('payroll.index') }}"
+                class="nav-link {{ request()->routeIs('payroll.*') && !request()->routeIs('payroll.my-index') ? 'active' : '' }}">
+                <i class="bi bi-cash-stack"></i> เงินเดือนอาจารย์
+            </a>
+            <a href="{{ route('transport-fees.index') }}"
+                class="nav-link {{ request()->routeIs('transport-fees.*') && !request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
+                <i class="bi bi-car-front"></i> ค่ารถอาจารย์
             </a>
         @else
             <div class="nav-section-label">เมนู</div>
@@ -571,6 +580,14 @@
                 <a href="{{ route('run-throughs.index') }}"
                     class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
                     <i class="bi bi-arrow-repeat"></i> Run Through
+                </a>
+                <a href="{{ route('payroll.my-index') }}"
+                    class="nav-link {{ request()->routeIs('payroll.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-cash-stack"></i> เงินเดือนของฉัน
+                </a>
+                <a href="{{ route('transport-fees.my-index') }}"
+                    class="nav-link {{ request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-car-front"></i> ค่ารถของฉัน
                 </a>
             @endif
 

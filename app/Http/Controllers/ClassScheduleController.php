@@ -205,10 +205,10 @@ class ClassScheduleController extends Controller
             'delivery_mode'   => ['required', 'in:onsite,online,hybrid'],
             'mode'            => ['required', 'in:weekly,daily_range'],
 
-            'days_of_week'    => ['required_if:mode,weekly', 'array'],
+            'days_of_week'    => ['nullable', 'array'],
             'days_of_week.*'  => ['integer', 'between:0,6'],
-            'start_date'      => ['required_if:mode,weekly', 'date'],
-            'session_count'   => ['required_if:mode,weekly', 'integer', 'min:1', 'max:200'],
+            'start_date'      => ['nullable', 'required_if:mode,weekly', 'date'],
+            'session_count'   => ['nullable', 'required_if:mode,weekly', 'integer', 'min:1', 'max:200'],
 
             'start_time'      => ['required'],
             'end_time'        => ['required', 'after:start_time'],

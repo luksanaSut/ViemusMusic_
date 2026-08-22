@@ -1,0 +1,53 @@
+ php artisan tinker --execute="
+Schema::disableForeignKeyConstraints();
+
+// ===== Payroll / ค่ารถ =====
+DB::table('payroll_run_items')->truncate();
+DB::table('payroll_runs')->truncate();
+DB::table('transport_compensations')->truncate();
+
+// ===== Teaching Log และระบบย่อยทั้งหมด =====
+DB::table('run_through_attachments')->truncate();
+DB::table('run_throughs')->truncate();
+DB::table('homework_submission_files')->truncate();
+DB::table('homework_submissions')->truncate();
+DB::table('course_evaluation_items')->truncate();
+DB::table('course_evaluations')->truncate();
+DB::table('teaching_evidences')->truncate();
+DB::table('teaching_report_attachments')->truncate();
+DB::table('teaching_reports')->truncate();
+DB::table('teaching_logs')->truncate();
+DB::table('teaching_sessions')->truncate();
+
+// ===== ตารางเรียน / สลับคลาส / ลา / เรียนชดเชย =====
+DB::table('reschedule_requests')->truncate();
+DB::table('makeup_requests')->truncate();
+DB::table('student_leaves')->truncate();
+DB::table('teacher_leaves')->truncate();
+DB::table('class_schedules')->truncate();
+DB::table('enrollments')->truncate();
+
+// ===== ระบบขาย / เปลี่ยนคอร์ส / การเงิน =====
+DB::table('course_transfers')->truncate();
+DB::table('tax_invoices')->truncate();
+DB::table('sale_orders')->truncate();
+DB::table('student_point_transactions')->truncate();
+DB::table('student_credit_transactions')->truncate();
+DB::table('payments')->truncate();
+DB::table('course_coupon')->truncate();
+DB::table('coupons')->truncate();
+
+// ===== ห้องเรียน: เก็บตัวห้องไว้ แต่ล้างการจอง =====
+DB::table('room_bookings')->truncate();
+
+// ===== ผลการเรียน / สอบ =====
+DB::table('exam_results')->truncate();
+DB::table('student_skill_levels')->truncate();
+
+// ===== แจ้งเตือน =====
+DB::table('app_notifications')->truncate();
+
+Schema::enableForeignKeyConstraints();
+
+echo 'เคลียร์ข้อมูลเรียบร้อยแล้ว';
+"

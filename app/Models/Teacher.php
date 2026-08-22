@@ -69,7 +69,7 @@ class Teacher extends Model
 
     public function activeTransportFee()
     {
-        return $this->hasOne(TeacherTransportFee::class)->where('is_active', true)->latestOfMany('effective_from');
+        return $this->transportFees()->where('is_active', true)->latest()->first();
     }
 
     public function availabilities(): HasMany

@@ -126,6 +126,7 @@ class TeachingLogController extends Controller
         $data = $request->validate([
             'duration_minutes' => ['required', 'integer', 'min:1', 'max:600'],
             'is_extra_time'    => ['nullable', 'boolean'],
+            'km_traveled'       => ['nullable', 'numeric', 'min:0', 'max:1000'],
         ]);
 
         DB::transaction(function () use ($request, $data, $teachingLog, $user) {
@@ -149,7 +150,19 @@ class TeachingLogController extends Controller
                 ->first();
 
             $rateApplied = $rate?->rate_amount ?? 0;
-            $income = $rate && $rate->rate_type === 'per_hour' ? round($hours * $rateApplied, 2) : $rateApplied;
+
+            if ($rate && $rate->rate_type === 'per_hour') {
+                $income = round($hours * $rateApplied, 2);
+            } elseif ($rate && $rate->rate_type === 'percentage') {
+                // รายเปอร์เซ็นต์: คิดจากราคาคอร์สต่อครั้ง (ราคาคอร์ส / จำนวนครั้งทั้งหมด) x เปอร์เซ็นต์ที่ตั้งไว้
+                $course = $enrollment->course;
+                $pricePerSession = ($course && $course->total_sessions) ? ($course->price / $course->total_sessions) : ($course->price ?? 0);
+                $income = round($pricePerSession * ($rateApplied / 100), 2);
+            } else {
+                $income = $rateApplied; // per_session / monthly_fixed
+            }
+
+            $transportFee = $this->calculateTransportFee($teacher, $classSchedule->schedule_date->toDateString(), $data['km_traveled'] ?? null);
 
             $teachingSession = TeachingSession::create([
                 'teacher_id'      => $teacher->id,
@@ -162,10 +175,21 @@ class TeachingLogController extends Controller
                 'end_time'        => $classSchedule->end_time,
                 'hours'           => $hours,
                 'rate_applied'    => $rateApplied,
-                'transport_fee_applied' => 0,
+                'transport_fee_applied' => $transportFee,
+                'km_traveled'     => $data['km_traveled'] ?? null,
                 'income_amount'   => $income,
                 'status'          => 'completed',
             ]);
+
+            // สำคัญ: บังคับ hours/income ให้ตรงกับเวลาสอนจริงที่อาจารย์ยืนยันเสมอ
+            // กันกรณีโมเดล TeachingSession มี boot()/mutator ที่คำนวณ hours จาก start_time-end_time ของตารางเรียน
+            // ซ้ำทับค่าที่คำนวณจาก duration_minutes จริงไปแล้ว (สาเหตุของค่าติดลบ/ค่าผิดที่เจอ)
+            \Illuminate\Support\Facades\DB::table('teaching_sessions')
+                ->where('id', $teachingSession->id)
+                ->update(['hours' => $hours, 'income_amount' => $income]);
+
+            $teachingSession->refresh();
+
             $teachingLog->update(['teaching_session_id' => $teachingSession->id]);
 
             // ===== Business rule: เชื่อมโยงกับตารางเรียน + การตัดคอร์ส =====
@@ -187,5 +211,25 @@ class TeachingLogController extends Controller
         );
 
         return back()->with('success', 'ยืนยันเวลาสอนจริงเรียบร้อยแล้ว — บันทึกลงระบบเงินเดือนและตัดจำนวนครั้งเรียนแล้ว');
+    }
+
+    // คำนวณค่ารถตามเงื่อนไขที่ตั้งไว้ให้อาจารย์แต่ละคน
+    // Business rule: คำนวณเฉพาะคลาสที่สอนจริงเท่านั้น (เมธอดนี้ถูกเรียกจากจุดเดียวคือตอนยืนยันเวลาสอนจริงสำเร็จ)
+    private function calculateTransportFee($teacher, string $sessionDate, ?float $kmTraveled): float
+    {
+        $fee = $teacher->activeTransportFee();
+        if (!$fee) return 0;
+
+        if ($fee->fee_type === 'per_km') {
+            return $kmTraveled ? round($kmTraveled * $fee->fee_amount, 2) : 0;
+        }
+
+        // fixed_per_day: จ่ายแค่ 1 ครั้งต่อวัน แม้จะสอนหลายคาบในวันเดียวกัน
+        $alreadyPaidToday = \App\Models\TeachingSession::where('teacher_id', $teacher->id)
+            ->whereDate('session_date', $sessionDate)
+            ->where('transport_fee_applied', '>', 0)
+            ->exists();
+
+        return $alreadyPaidToday ? 0 : (float) $fee->fee_amount;
     }
 }
