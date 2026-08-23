@@ -44,6 +44,8 @@ use App\Http\Controllers\EvaluationCategoryController;
 use App\Http\Controllers\TeachingEvidenceController;
 use App\Http\Controllers\HomeworkSubmissionController;
 use App\Http\Controllers\RunThroughController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\TransportFeeController;
 use App\Http\Controllers\ProductCategoryController;
@@ -364,6 +366,18 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::get('transport-fees/{teacher}', [TransportFeeController::class, 'show'])->name('transport-fees.show');
     Route::post('transport-fees/{teacher}/compensations', [TransportFeeController::class, 'storeCompensation'])->name('transport-fees.compensations.store');
     Route::delete('transport-compensations/{transportCompensation}', [TransportFeeController::class, 'destroyCompensation'])->name('transport-fees.compensations.destroy');
+
+    // ----- การเงิน: รายรับ-รายจ่าย -----
+    Route::get('finance', [FinanceController::class, 'dashboard'])->name('finance.dashboard');
+    Route::get('finance/report', [FinanceController::class, 'report'])->name('finance.report');
+    Route::get('finance/report/export', [FinanceController::class, 'exportCsv'])->name('finance.report.export');
+
+    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+    Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
 
     // ----- Music Store: จัดการสินค้า -----
     Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');

@@ -604,6 +604,21 @@
             {{-- ==================== การเงิน ==================== --}}
             <div class="nav-section-label">การเงิน</div>
 
+            <a href="{{ route('finance.dashboard') }}"
+                class="nav-link {{ request()->routeIs('finance.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-graph-up-arrow"></i> ภาพรวมการเงิน
+            </a>
+
+            <a href="{{ route('expenses.index') }}"
+                class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt-cutoff"></i> บันทึกรายจ่าย
+            </a>
+
+            <a href="{{ route('finance.report') }}"
+                class="nav-link {{ request()->routeIs('finance.report') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line"></i> รายงานการเงิน
+            </a>
+
             <a href="{{ route('payroll.index') }}"
                 class="nav-link {{ request()->routeIs('payroll.*') && !request()->routeIs('payroll.my-index') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack"></i> เงินเดือนอาจารย์
