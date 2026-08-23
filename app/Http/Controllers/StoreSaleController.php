@@ -150,7 +150,7 @@ class StoreSaleController extends Controller
     public function updateDeliveryStatus(Request $request, StoreSale $storeSale)
     {
         $data = $request->validate([
-            'delivery_status'      => ['required', 'in:preparing,shipped,ready_for_pickup,picked_up,delivered'],
+            'delivery_status'      => ['required', 'in:preparing,shipped,ready_for_pickup,picked_up'],
             'delivery_tracking_no' => ['nullable', 'string', 'max:100'],
         ]);
 
