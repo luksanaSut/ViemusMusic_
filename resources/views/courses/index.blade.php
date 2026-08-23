@@ -9,8 +9,8 @@
             <div class="page-sub">คอร์สทั้งหมด {{ $courses->total() }} คอร์ส</div>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('coupons.index') }}" class="btn btn-outline-secondary"><i class="bi bi-tag"></i> Promotion /
-                Coupon</a>
+            <a href="{{ route('promotions.index') }}" class="btn btn-outline-secondary"><i class="bi bi-tag"></i> โปรโมชัน /
+                คูปอง</a>
             <a href="{{ route('courses.create') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> เพิ่มคอร์สเรียน</a>
         </div>
     </div>

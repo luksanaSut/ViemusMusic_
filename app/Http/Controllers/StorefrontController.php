@@ -8,6 +8,7 @@ use App\Models\ProductCategory;
 use App\Models\StockMovement;
 use App\Models\StoreSale;
 use App\Models\StoreSaleItem;
+use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -67,23 +68,30 @@ class StorefrontController extends Controller
             }
         }
 
-        $sale = null;
-        DB::transaction(function () use ($request, $data, &$sale) {
-            $total = 0;
-            $itemsData = [];
-            foreach ($data['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $subtotal = $product->price * $item['quantity'];
-                $total += $subtotal;
-                $itemsData[] = ['product' => $product, 'quantity' => $item['quantity'], 'subtotal' => $subtotal];
-            }
+        $total = 0;
+        $itemsData = [];
+        foreach ($data['items'] as $item) {
+            $product = Product::findOrFail($item['product_id']);
+            $subtotal = $product->price * $item['quantity'];
+            $total += $subtotal;
+            $itemsData[] = ['product' => $product, 'quantity' => $item['quantity'], 'subtotal' => $subtotal];
+        }
 
+        $productIds = collect($data['items'])->pluck('product_id')->all();
+        // ตอนสร้างคำสั่งซื้อ ใช้เฉพาะโปรโมชันอัตโนมัติก่อน (ยังไม่มีการกรอกโค้ดคูปอง)
+        $promo = app(PromotionEngine::class)->applyToCart('product', $productIds, (float) $total, null, $data['student_id'], null);
+
+        $sale = null;
+        DB::transaction(function () use ($request, $data, $total, $itemsData, $promo, &$sale) {
             $sale = StoreSale::create([
-                'sale_no'            => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
-                'student_id'          => $data['student_id'],
-                'total_amount'        => $total,
-                'status'              => 'pending_payment',
-                'ordered_by_user_id'  => $request->user()->id,
+                'sale_no'              => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
+                'student_id'           => $data['student_id'],
+                'auto_promotion_id'    => $promo['auto_promotion']?->id,
+                'total_amount'         => $total,
+                'auto_discount_amount' => $promo['auto_discount'],
+                'net_payable'          => $promo['net_payable'],
+                'status'               => 'pending_payment',
+                'ordered_by_user_id'   => $request->user()->id,
             ]);
 
             foreach ($itemsData as $d) {
@@ -146,7 +154,9 @@ class StorefrontController extends Controller
             }
         }
 
-        DB::transaction(function () use ($data, $storeSale) {
+        $warning = null;
+
+        DB::transaction(function () use ($data, $storeSale, &$warning) {
             $storeSale->items()->delete();
 
             $total = 0;
@@ -165,10 +175,69 @@ class StorefrontController extends Controller
                 ]);
             }
 
-            $storeSale->update(['total_amount' => $total]);
+            // ตะกร้าเปลี่ยนไป ต้องคำนวณโปรโมชัน/คูปองใหม่ทั้งหมด เพราะเงื่อนไข (เช่น ซื้อครบ X, สินค้าที่เข้าเงื่อนไข) อาจไม่เข้าแล้ว
+            $productIds = collect($data['items'])->pluck('product_id')->all();
+            $promo = app(PromotionEngine::class)->applyToCart('product', $productIds, (float) $total, $storeSale->promotion_code, $storeSale->student_id, null);
+
+            if ($promo['error']) {
+                // โค้ดคูปองเดิมใช้ไม่ได้กับตะกร้าใหม่แล้ว ตัดออกแทนที่จะฟ้อง error การแก้ไขตะกร้า
+                $warning = 'โค้ดส่วนลดที่ใช้อยู่ไม่สามารถใช้ได้กับตะกร้าที่แก้ไข จึงถูกยกเลิกโดยอัตโนมัติ';
+                $promo = app(PromotionEngine::class)->applyToCart('product', $productIds, (float) $total, null, $storeSale->student_id, null);
+            }
+
+            $storeSale->update([
+                'total_amount'         => $total,
+                'auto_promotion_id'    => $promo['auto_promotion']?->id,
+                'auto_discount_amount' => $promo['auto_discount'],
+                'promotion_id'         => $promo['coupon']?->id,
+                'promotion_code'       => $promo['coupon']?->code,
+                'discount_amount'      => $promo['coupon_discount'],
+                'net_payable'          => $promo['net_payable'],
+            ]);
         });
 
-        return redirect()->route('store.show', $storeSale)->with('success', 'แก้ไขรายการสั่งซื้อเรียบร้อยแล้ว');
+        return redirect()->route('store.show', $storeSale)
+            ->with('success', 'แก้ไขรายการสั่งซื้อเรียบร้อยแล้ว')
+            ->when($warning, fn ($redirect) => $redirect->with('warning', $warning));
+    }
+
+    // POST /store/orders/{storeSale}/apply-discount — กรอกโค้ดคูปองที่หน้าคำสั่งซื้อ (รอชำระเงิน)
+    public function applyDiscount(Request $request, StoreSale $storeSale)
+    {
+        $this->authorizeOrderOwner($request, $storeSale);
+
+        if ($storeSale->status !== 'pending_payment') {
+            return back()->with('error', 'คำสั่งซื้อนี้ไม่สามารถแก้ไขส่วนลดได้แล้ว');
+        }
+
+        $data = $request->validate([
+            'coupon_code' => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $storeSale->load('items');
+        $productIds = $storeSale->items->pluck('product_id')->all();
+
+        $promo = app(PromotionEngine::class)->applyToCart(
+            'product',
+            $productIds,
+            (float) $storeSale->total_amount,
+            $data['coupon_code'] ?? null,
+            $storeSale->student_id,
+            null
+        );
+
+        if ($promo['error']) {
+            return back()->with('error', $promo['error']);
+        }
+
+        $storeSale->update([
+            'promotion_id'    => $promo['coupon']?->id,
+            'promotion_code'  => $promo['coupon']?->code,
+            'discount_amount' => $promo['coupon_discount'],
+            'net_payable'     => $promo['net_payable'],
+        ]);
+
+        return back()->with('success', 'อัปเดตส่วนลดเรียบร้อยแล้ว');
     }
 
     // PATCH /store/orders/{storeSale}/cancel — ยกเลิกคำสั่งซื้อเอง (เฉพาะที่ยังไม่จ่ายเงิน)
@@ -248,6 +317,16 @@ class StorefrontController extends Controller
 
             $storeSale->save();
 
+            app(PromotionEngine::class)->recordUsage([
+                'auto_promotion'  => $storeSale->autoPromotion,
+                'auto_discount'   => $storeSale->auto_discount_amount,
+                'coupon'          => $storeSale->promotion,
+                'coupon_discount' => $storeSale->discount_amount,
+            ], [
+                'store_sale_id' => $storeSale->id,
+                'student_id'    => $storeSale->student_id,
+            ]);
+
             // ===== Business Rule: ตัดสต็อกอัตโนมัติ (เกิดขึ้นตอนยืนยันจ่ายเงินสำเร็จเท่านั้น) =====
             foreach ($storeSale->items as $item) {
                 $product = $item->product;
@@ -268,7 +347,7 @@ class StorefrontController extends Controller
 
         AppNotification::notifyAdmins(
             'มีคำสั่งซื้อสินค้าใหม่',
-            "{$storeSale->student->full_name} สั่งซื้อสินค้า {$storeSale->items->count()} รายการ ยอดรวม ฿" . number_format($storeSale->total_amount, 2) . ' (' . $storeSale->deliveryMethodLabel() . ')',
+            "{$storeSale->student->full_name} สั่งซื้อสินค้า {$storeSale->items->count()} รายการ ยอดรวม ฿" . number_format($storeSale->net_payable ?? $storeSale->total_amount, 2) . ' (' . $storeSale->deliveryMethodLabel() . ')',
             route('store-sales.show', $storeSale)
         );
         return back()->with('success', 'ชำระเงินเรียบร้อยแล้ว คำสั่งซื้อสำเร็จ');

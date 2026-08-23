@@ -269,7 +269,7 @@
                         <label class="form-label">โปรโมชั่น / คูปอง</label>
                         <div class="input-group mb-3">
                             <input type="text" name="coupon_code" class="form-control"
-                                placeholder="เช่น SUMMER25 / EARLY" value="{{ $saleOrder->coupon_code }}"
+                                placeholder="เช่น SUMMER25 / EARLY" value="{{ $saleOrder->promotion_code }}"
                                 style="text-transform:uppercase">
                             <button class="btn btn-outline-secondary" type="submit">ใช้</button>
                         </div>
@@ -279,7 +279,7 @@
 
                     <form action="{{ route('sales.apply-discount', $saleOrder) }}" method="POST" id="pointsForm">
                         @csrf
-                        <input type="hidden" name="coupon_code" value="{{ $saleOrder->coupon_code }}">
+                        <input type="hidden" name="coupon_code" value="{{ $saleOrder->promotion_code }}">
                         <input type="hidden" name="use_credit" value="{{ $saleOrder->credit_used > 0 ? 1 : 0 }}">
                         <div class="toggle-row">
                             <div>
@@ -298,7 +298,7 @@
 
                     <form action="{{ route('sales.apply-discount', $saleOrder) }}" method="POST" id="creditForm">
                         @csrf
-                        <input type="hidden" name="coupon_code" value="{{ $saleOrder->coupon_code }}">
+                        <input type="hidden" name="coupon_code" value="{{ $saleOrder->promotion_code }}">
                         <input type="hidden" name="use_points" value="{{ $saleOrder->points_used > 0 ? 1 : 0 }}">
                         <div class="toggle-row">
                             <div>
@@ -443,9 +443,14 @@
                 <div class="price-summary">
                     <div class="price-row">
                         <span>ราคาแพ็กเกจ</span><span>฿{{ number_format($saleOrder->total_amount, 2) }}</span></div>
+                    @if ($saleOrder->auto_discount_amount > 0)
+                        <div class="price-row discount">
+                            <span>ส่วนลดโปรโมชัน{{ $saleOrder->autoPromotion?->name ? " ({$saleOrder->autoPromotion->name})" : '' }}</span><span>-฿{{ number_format($saleOrder->auto_discount_amount, 2) }}</span>
+                        </div>
+                    @endif
                     @if ($saleOrder->discount_amount > 0)
                         <div class="price-row discount">
-                            <span>ส่วนลดคูปอง{{ $saleOrder->coupon_code ? " ($saleOrder->coupon_code)" : '' }}</span><span>-฿{{ number_format($saleOrder->discount_amount, 2) }}</span>
+                            <span>ส่วนลดคูปอง{{ $saleOrder->promotion_code ? " ({$saleOrder->promotion_code})" : '' }}</span><span>-฿{{ number_format($saleOrder->discount_amount, 2) }}</span>
                         </div>
                     @endif
                     @if ($saleOrder->points_discount_amount > 0)

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -31,6 +32,10 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class)->orderByDesc('created_at');
+    }
+    public function promotions(): BelongsToMany
+    {
+        return $this->belongsToMany(Promotion::class, 'promotion_product')->withTimestamps();
     }
 
     public function scopeSearch($query, ?string $term)

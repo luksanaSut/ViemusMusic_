@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSaleOrderRequest;
-use App\Models\Coupon;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Payment;
@@ -11,6 +10,7 @@ use App\Models\SaleOrder;
 use App\Models\Student;
 use App\Models\TaxInvoice;
 use App\Models\Teacher;
+use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -42,13 +42,8 @@ class SaleOrderController extends Controller
                 $remaining = max(0, ($c->max_students ?? 0) - $used);
             }
 
-            $applicableCoupon = Coupon::where('is_active', true)
-                ->where(function ($q) use ($c) {
-                    $q->where('applies_to_all_courses', true)
-                        ->orWhereHas('courses', fn($qq) => $qq->where('courses.id', $c->id));
-                })
-                ->get()
-                ->first(fn($cp) => $cp->isCurrentlyValid());
+            $autoPromotion = app(PromotionEngine::class)
+                ->findBestAutoPromotion('course', [$c->id], (float) $c->price, null, null);
 
             return [
                 'id'             => $c->id,
@@ -58,7 +53,7 @@ class SaleOrderController extends Controller
                 'instrument'     => optional($c->instrument)->name,
                 'class_type'     => $c->class_type,
                 'remaining'      => $remaining,
-                'discount_label' => $applicableCoupon?->discountLabel(),
+                'discount_label' => $autoPromotion?->discountLabel(),
             ];
         });
 
@@ -156,9 +151,11 @@ class SaleOrderController extends Controller
                     'vat_amount'             => $vatAmount,
                     'total_amount'           => $totalAmount,
                     'net_payable'            => $totalAmount,
-                    'coupon_id'              => null,
-                    'coupon_code'            => null,
+                    'promotion_id'           => null,
+                    'promotion_code'         => null,
                     'discount_amount'        => 0,
+                    'auto_promotion_id'      => null,
+                    'auto_discount_amount'   => 0,
                     'points_used'            => 0,
                     'points_discount_amount' => 0,
                     'credit_used'            => 0,
@@ -318,27 +315,21 @@ class SaleOrderController extends Controller
         ]);
 
         $student = $saleOrder->student;
-        $running = (float) $saleOrder->total_amount;
 
-        $couponDiscount = 0;
-        $couponId = null;
-        $couponCode = null;
+        $promoResult = app(PromotionEngine::class)->applyToOrder(
+            'course',
+            $saleOrder->course_id,
+            (float) $saleOrder->total_amount,
+            $data['coupon_code'] ?? null,
+            $saleOrder->student_id,
+            null
+        );
 
-        if (!empty($data['coupon_code'])) {
-            $coupon = Coupon::where('code', strtoupper(trim($data['coupon_code'])))->first();
-            if (!$coupon || !$coupon->isCurrentlyValid()) {
-                return back()->with('error', 'โค้ดคูปองไม่ถูกต้อง หมดอายุ หรือใช้ครบจำนวนสิทธิ์แล้ว');
-            }
-            if (!$coupon->applies_to_all_courses && !$coupon->courses()->where('courses.id', $saleOrder->course_id)->exists()) {
-                return back()->with('error', 'คูปองนี้ใช้ไม่ได้กับคอร์สที่เลือก');
-            }
-            $couponDiscount = $coupon->discount_type === 'percent'
-                ? round($running * $coupon->discount_value / 100, 2)
-                : min($coupon->discount_value, $running);
-            $couponId = $coupon->id;
-            $couponCode = $coupon->code;
-            $running -= $couponDiscount;
+        if ($promoResult['error']) {
+            return back()->with('error', $promoResult['error']);
         }
+
+        $running = $promoResult['net_payable'];
 
         $pointsDiscount = 0;
         $pointsUsed = 0;
@@ -355,9 +346,11 @@ class SaleOrderController extends Controller
         }
 
         $saleOrder->update([
-            'coupon_id' => $couponId,
-            'coupon_code' => $couponCode,
-            'discount_amount' => $couponDiscount,
+            'promotion_id' => $promoResult['coupon']?->id,
+            'promotion_code' => $promoResult['coupon']?->code,
+            'discount_amount' => $promoResult['coupon_discount'],
+            'auto_promotion_id' => $promoResult['auto_promotion']?->id,
+            'auto_discount_amount' => $promoResult['auto_discount'],
             'points_used' => $pointsUsed,
             'points_discount_amount' => $pointsDiscount,
             'credit_used' => $creditUsed,
@@ -430,7 +423,15 @@ class SaleOrderController extends Controller
                 'note'          => 'ชำระผ่านระบบขายคอร์สเรียน (' . $saleOrder->order_no . ')',
             ]);
 
-            if ($saleOrder->coupon_id) $saleOrder->coupon()->increment('used_count');
+            app(PromotionEngine::class)->recordUsage([
+                'auto_promotion'  => $saleOrder->autoPromotion,
+                'auto_discount'   => $saleOrder->auto_discount_amount,
+                'coupon'          => $saleOrder->promotion,
+                'coupon_discount' => $saleOrder->discount_amount,
+            ], [
+                'sale_order_id' => $saleOrder->id,
+                'student_id'    => $saleOrder->student_id,
+            ]);
 
             if ($saleOrder->credit_used > 0) {
                 $student = $saleOrder->student;

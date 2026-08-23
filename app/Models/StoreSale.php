@@ -12,7 +12,13 @@ class StoreSale extends Model
         'sale_no',
         'buyer_name',
         'student_id',
+        'promotion_id',
+        'promotion_code',
+        'auto_promotion_id',
         'total_amount',
+        'discount_amount',
+        'auto_discount_amount',
+        'net_payable',
         'payment_method',
         'payment_proof_path',
         'payment_reference',
@@ -41,6 +47,14 @@ class StoreSale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(StoreSaleItem::class);
+    }
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
+    }
+    public function autoPromotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class, 'auto_promotion_id');
     }
 
     public function paymentMethodLabel(): string

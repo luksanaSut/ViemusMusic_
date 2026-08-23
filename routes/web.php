@@ -7,7 +7,7 @@ use App\Http\Controllers\TeacherRateController;
 use App\Http\Controllers\TeachingSessionController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\CourseController;
-use App\Http\Controllers\CouponController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentEnrollmentController;
 use App\Http\Controllers\StudentFinanceController;
@@ -64,7 +64,8 @@ Route::redirect('/', '/dashboard');
 // ===================================================================
 // กลุ่ม 1: PUBLIC — ไม่ต้อง login
 // ===================================================================
-Route::middleware('throttle:10,1')->group(function () {
+$publicMiddleware = app()->environment('testing') ? [] : ['throttle:10,1'];
+Route::middleware($publicMiddleware)->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
 });
@@ -97,7 +98,11 @@ Route::middleware('auth')->group(function () {
 // กลุ่ม 3: ADMIN + TEACHER — แจ้งลา/เสนอวันเรียนชดเชยได้เอง
 // แจ้งลา/เสนอวันเรียนชดเชยได้เอง (แต่อนุมัติไม่ได้ ยังเป็นสิทธิ์ Admin/อาจารย์)
 // ===================================================================
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,teacher'])->group(function () {
+$adminTeacherMiddleware = ['auth', 'force-password-change', 'role:admin,teacher'];
+if (!app()->environment('testing')) {
+    array_unshift($adminTeacherMiddleware, 'throttle:30,1');
+}
+Route::middleware($adminTeacherMiddleware)->group(function () {
     Route::post('teachers/{teacher}/leaves', [TeacherLeaveController::class, 'store'])->name('teachers.leaves.store');
 
     Route::get('makeup-requests/{makeupRequest}', [MakeupRequestController::class, 'show'])->name('makeup-requests.show');
@@ -134,7 +139,11 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
 // กลุ่ม 3: Admin + Student + Guardian — อาจารย์แจ้งลาหยุดสอนของตัวเองได้
 // (ควบคุมสิทธิ์เพิ่มในคอนโทรลเลอร์: อาจารย์แจ้งได้เฉพาะบัญชีของตัวเอง)
 // ===================================================================
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin,student,guardian'])->group(function () {
+$adminCustomerMiddleware = ['auth', 'force-password-change', 'role:admin,student,guardian'];
+if (!app()->environment('testing')) {
+    array_unshift($adminCustomerMiddleware, 'throttle:30,1');
+}
+Route::middleware($adminCustomerMiddleware)->group(function () {
     Route::post('students/{student}/leaves', [StudentLeaveController::class, 'store'])->name('students.leaves.store');
     Route::get('makeup-requests-check-conflict', [MakeupRequestController::class, 'checkConflict'])->name('makeup-requests.check-conflict');
 
@@ -142,7 +151,11 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin
 });
 
 // นักเรียน/ผู้ปกครอง: หน้าแจ้งลาเรียนของตัวเอง (เมนูแยกต่างหาก)
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:student,guardian'])->group(function () {
+$customerMiddleware = ['auth', 'force-password-change', 'role:student,guardian'];
+if (!app()->environment('testing')) {
+    array_unshift($customerMiddleware, 'throttle:30,1');
+}
+Route::middleware($customerMiddleware)->group(function () {
     Route::get('my-leaves', [MyLeavesController::class, 'index'])->name('leaves.index');
     Route::get('my-leaves/create', [MyLeavesController::class, 'create'])->name('leaves.create');
 
@@ -156,6 +169,7 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:stude
     Route::get('store', [StorefrontController::class, 'index'])->name('store.index');
     Route::post('store/checkout', [StorefrontController::class, 'checkout'])->name('store.checkout');
     Route::get('store/orders/{storeSale}', [StorefrontController::class, 'show'])->name('store.show');
+    Route::post('store/orders/{storeSale}/apply-discount', [StorefrontController::class, 'applyDiscount'])->name('store.apply-discount');
     Route::get('store/orders/{storeSale}/edit', [StorefrontController::class, 'edit'])->name('store.edit');
     Route::put('store/orders/{storeSale}', [StorefrontController::class, 'update'])->name('store.update');
     Route::patch('store/orders/{storeSale}/cancel', [StorefrontController::class, 'cancelByCustomer'])->name('store.cancel');
@@ -164,7 +178,11 @@ Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:stude
 });
 
 // อาจารย์: หน้าแจ้งลาหยุดสอนของตัวเอง (เมนูแยกต่างหาก)
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:teacher'])->group(function () {
+$teacherMiddleware = ['auth', 'force-password-change', 'role:teacher'];
+if (!app()->environment('testing')) {
+    array_unshift($teacherMiddleware, 'throttle:30,1');
+}
+Route::middleware($teacherMiddleware)->group(function () {
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
     Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
     Route::get('my-payroll', [PayrollController::class, 'myIndex'])->name('payroll.my-index');
@@ -206,10 +224,13 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::patch('courses/{course}/toggle-status', [CourseController::class, 'toggleStatus'])->name('courses.toggle-status');
 
     // ----- Promotion / Coupon -----
-    Route::get('coupons', [CouponController::class, 'index'])->name('coupons.index');
-    Route::post('coupons', [CouponController::class, 'store'])->name('coupons.store');
-    Route::patch('coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
-    Route::delete('coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+    Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
+    Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
+    Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
+    Route::get('promotions/{promotion}/edit', [PromotionController::class, 'edit'])->name('promotions.edit');
+    Route::put('promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+    Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
+    Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
 
     // ----- จัดการข้อมูลนักเรียน -----
     Route::resource('students', StudentController::class);

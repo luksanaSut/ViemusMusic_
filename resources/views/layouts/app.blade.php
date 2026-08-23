@@ -498,7 +498,7 @@
             <div class="nav-section-label">หลักสูตรและตารางเรียน</div>
 
             <a href="{{ route('courses.index') }}"
-                class="nav-link {{ request()->routeIs('courses.*') || request()->routeIs('coupons.*') ? 'active' : '' }}">
+                class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
             </a>
 
@@ -570,6 +570,11 @@
             <a href="{{ route('course-transfers.index') }}"
                 class="nav-link {{ request()->routeIs('course-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i> เปลี่ยนคอร์สเรียน
+            </a>
+
+            <a href="{{ route('promotions.index') }}"
+                class="nav-link {{ request()->routeIs('promotions.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i> โปรโมชัน / คูปอง
             </a>
 
 
@@ -812,6 +817,12 @@
             @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show">
                     <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if (session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle"></i> {{ session('warning') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif

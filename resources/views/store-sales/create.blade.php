@@ -82,6 +82,9 @@
                         </select>
                         <input type="text" name="buyer_name" class="form-control form-control-sm mb-2"
                             placeholder="ชื่อลูกค้า (ถ้าไม่ใช่นักเรียนในระบบ)">
+                        <label class="form-label small">โค้ดโปรโมชัน/คูปอง (ถ้ามี)</label>
+                        <input type="text" name="coupon_code" class="form-control form-control-sm mb-2 text-uppercase"
+                            placeholder="เช่น SUMMER25">
                         <label class="form-label small">ช่องทางชำระเงิน</label>
                         <select name="payment_method" class="form-select form-select-sm" required>
                             <option value="cash">เงินสด</option>

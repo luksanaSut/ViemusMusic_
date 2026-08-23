@@ -7,6 +7,7 @@ use App\Models\StockMovement;
 use App\Models\StoreSale;
 use App\Models\StoreSaleItem;
 use App\Models\Student;
+use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,6 +44,7 @@ class StoreSaleController extends Controller
             'buyer_name'      => ['nullable', 'string', 'max:150'],
             'student_id'      => ['nullable', 'exists:students,id'],
             'payment_method'  => ['required', 'in:cash,transfer,credit_card,promptpay'],
+            'coupon_code'     => ['nullable', 'string', 'max:30'],
             'items'           => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity'   => ['required', 'integer', 'min:1'],
@@ -56,26 +58,51 @@ class StoreSaleController extends Controller
             }
         }
 
+        $total = 0;
+        $itemsData = [];
+        foreach ($data['items'] as $item) {
+            $product = Product::findOrFail($item['product_id']);
+            $subtotal = $product->price * $item['quantity'];
+            $total += $subtotal;
+            $itemsData[] = ['product' => $product, 'quantity' => $item['quantity'], 'subtotal' => $subtotal];
+        }
+
+        $productIds = collect($data['items'])->pluck('product_id')->all();
+        $promo = app(PromotionEngine::class)->applyToCart(
+            'product',
+            $productIds,
+            (float) $total,
+            $data['coupon_code'] ?? null,
+            $data['student_id'] ?? null,
+            $data['buyer_name'] ?? null
+        );
+
+        if ($promo['error']) {
+            return back()->withInput()->with('error', $promo['error']);
+        }
+
         $sale = null;
-        DB::transaction(function () use ($data, &$sale) {
-            $total = 0;
-            $itemsData = [];
-
-            foreach ($data['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $subtotal = $product->price * $item['quantity'];
-                $total += $subtotal;
-                $itemsData[] = ['product' => $product, 'quantity' => $item['quantity'], 'subtotal' => $subtotal];
-            }
-
+        DB::transaction(function () use ($data, $promo, $total, $itemsData, &$sale) {
             $sale = StoreSale::create([
-                'sale_no'         => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
-                'buyer_name'      => $data['buyer_name'] ?? null,
-                'student_id'      => $data['student_id'] ?? null,
-                'total_amount'    => $total,
-                'payment_method'  => $data['payment_method'],
-                'status'          => 'completed',
-                'sold_by'         => auth()->user()->name ?? 'แอดมิน',
+                'sale_no'              => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
+                'buyer_name'           => $data['buyer_name'] ?? null,
+                'student_id'           => $data['student_id'] ?? null,
+                'promotion_id'         => $promo['coupon']?->id,
+                'promotion_code'       => $promo['coupon']?->code,
+                'auto_promotion_id'    => $promo['auto_promotion']?->id,
+                'total_amount'         => $total,
+                'discount_amount'      => $promo['coupon_discount'],
+                'auto_discount_amount' => $promo['auto_discount'],
+                'net_payable'          => $promo['net_payable'],
+                'payment_method'       => $data['payment_method'],
+                'status'               => 'completed',
+                'sold_by'              => auth()->user()->name ?? 'แอดมิน',
+            ]);
+
+            app(PromotionEngine::class)->recordUsage($promo, [
+                'store_sale_id'    => $sale->id,
+                'student_id'       => $data['student_id'] ?? null,
+                'buyer_identifier' => $data['buyer_name'] ?? null,
             ]);
 
             foreach ($itemsData as $d) {
@@ -139,6 +166,8 @@ class StoreSaleController extends Controller
                     ]);
                 }
             }
+
+            app(PromotionEngine::class)->voidUsage(['store_sale_id' => $storeSale->id]);
 
             $storeSale->update(['status' => 'cancelled']);
         });

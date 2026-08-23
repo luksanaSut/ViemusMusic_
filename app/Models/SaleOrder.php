@@ -13,8 +13,10 @@ class SaleOrder extends Model
         'student_id',
         'course_id',
         'teacher_id',
-        'coupon_id',
-        'coupon_code',
+        'promotion_id',
+        'promotion_code',
+        'auto_promotion_id',
+        'auto_discount_amount',
         'branch',
         'delivery_mode',
         'preferred_day_of_week',
@@ -51,9 +53,13 @@ class SaleOrder extends Model
     {
         return $this->belongsTo(Teacher::class);
     }
-    public function coupon(): BelongsTo
+    public function promotion(): BelongsTo
     {
-        return $this->belongsTo(Coupon::class);
+        return $this->belongsTo(Promotion::class);
+    }
+    public function autoPromotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class, 'auto_promotion_id');
     }
     public function enrollment(): BelongsTo
     {

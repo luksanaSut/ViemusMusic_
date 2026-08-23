@@ -311,10 +311,34 @@
                         <div class="summary-row">
                             <span>ยอดรวม</span><span>฿{{ number_format($storeSale->total_amount, 0) }}</span>
                         </div>
+                        @if ($storeSale->auto_discount_amount > 0)
+                            <div class="summary-row text-success">
+                                <span>ส่วนลดโปรโมชัน{{ $storeSale->autoPromotion?->name ? " ({$storeSale->autoPromotion->name})" : '' }}</span>
+                                <span>-฿{{ number_format($storeSale->auto_discount_amount, 0) }}</span>
+                            </div>
+                        @endif
+                        @if ($storeSale->discount_amount > 0)
+                            <div class="summary-row text-success">
+                                <span>ส่วนลดคูปอง{{ $storeSale->promotion_code ? " ({$storeSale->promotion_code})" : '' }}</span>
+                                <span>-฿{{ number_format($storeSale->discount_amount, 0) }}</span>
+                            </div>
+                        @endif
                         <div class="summary-row total">
-                            <span>รวมสุทธิ</span><span>฿{{ number_format($storeSale->total_amount, 0) }}</span>
+                            <span>รวมสุทธิ</span><span>฿{{ number_format($storeSale->net_payable ?? $storeSale->total_amount, 0) }}</span>
                         </div>
                     </div>
+
+                    @if ($storeSale->status === 'pending_payment')
+                        <form action="{{ route('store.apply-discount', $storeSale) }}" method="POST" class="mt-3">
+                            @csrf
+                            <label class="form-label small">โปรโมชั่น / คูปอง</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="coupon_code" class="form-control text-uppercase"
+                                    placeholder="เช่น SUMMER25" value="{{ $storeSale->promotion_code }}">
+                                <button class="btn btn-outline-secondary" type="submit">ใช้</button>
+                            </div>
+                        </form>
+                    @endif
 
                     @if ($storeSale->status === 'completed' && $storeSale->payment_proof_path)
                         <div class="proof-box mt-3"><i class="bi bi-check-circle-fill"></i> อัปโหลดหลักฐานการชำระเงินแล้ว
@@ -422,12 +446,13 @@
                                 </div>
                             </div>
 
+                            @php $netAmount = $storeSale->net_payable ?? $storeSale->total_amount; @endphp
                             <div id="promptpayBox" class="text-center mb-3" style="display:none;">
                                 @if (config('payment.promptpay_id'))
-                                    <img src="https://promptpay.io/{{ config('payment.promptpay_id') }}/{{ number_format($storeSale->total_amount, 2, '.', '') }}.png"
+                                    <img src="https://promptpay.io/{{ config('payment.promptpay_id') }}/{{ number_format($netAmount, 2, '.', '') }}.png"
                                         style="max-width:200px;">
                                 @endif
-                                <div class="fw-bold mt-1">ยอดชำระ ฿{{ number_format($storeSale->total_amount, 2) }}</div>
+                                <div class="fw-bold mt-1">ยอดชำระ ฿{{ number_format($netAmount, 2) }}</div>
                             </div>
                             <div id="transferBox" class="mb-3" style="display:none;">
                                 <p class="mb-1"><strong>ธนาคาร:</strong> {{ config('payment.bank_name') }}</p>

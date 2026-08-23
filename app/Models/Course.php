@@ -61,9 +61,9 @@ class Course extends Model
         return $this->belongsToMany(Teacher::class, 'course_teacher')->withTimestamps();
     }
 
-    public function coupons(): BelongsToMany
+    public function promotions(): BelongsToMany
     {
-        return $this->belongsToMany(Coupon::class, 'course_coupon')->withTimestamps();
+        return $this->belongsToMany(Promotion::class, 'promotion_course')->withTimestamps();
     }
 
     // ===== Scopes =====

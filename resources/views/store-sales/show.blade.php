@@ -153,9 +153,25 @@
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="sale-total-row fw-bold">
+                            <tr>
                                 <td colspan="3">ยอดรวม</td>
                                 <td class="text-end">฿{{ number_format($storeSale->total_amount, 2) }}</td>
+                            </tr>
+                            @if ($storeSale->auto_discount_amount > 0)
+                                <tr class="text-success">
+                                    <td colspan="3">ส่วนลดโปรโมชัน{{ $storeSale->autoPromotion?->name ? " ({$storeSale->autoPromotion->name})" : '' }}</td>
+                                    <td class="text-end">-฿{{ number_format($storeSale->auto_discount_amount, 2) }}</td>
+                                </tr>
+                            @endif
+                            @if ($storeSale->discount_amount > 0)
+                                <tr class="text-success">
+                                    <td colspan="3">ส่วนลดคูปอง{{ $storeSale->promotion_code ? " ({$storeSale->promotion_code})" : '' }}</td>
+                                    <td class="text-end">-฿{{ number_format($storeSale->discount_amount, 2) }}</td>
+                                </tr>
+                            @endif
+                            <tr class="sale-total-row fw-bold">
+                                <td colspan="3">ยอดสุทธิ</td>
+                                <td class="text-end">฿{{ number_format($storeSale->net_payable ?? $storeSale->total_amount, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
