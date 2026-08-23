@@ -8,6 +8,8 @@ use App\Models\ProductCategory;
 use App\Models\StockMovement;
 use App\Models\StoreSale;
 use App\Models\StoreSaleItem;
+use App\Models\StudentCreditTransaction;
+use App\Services\LoyaltyService;
 use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -185,14 +187,18 @@ class StorefrontController extends Controller
                 $promo = app(PromotionEngine::class)->applyToCart('product', $productIds, (float) $total, null, $storeSale->student_id, null);
             }
 
+            // ตะกร้าเปลี่ยน ยอดเดิมที่เคยใช้แต้ม/เครดิตคำนวณไว้ไม่ตรงกับยอดใหม่แล้ว ต้องให้เลือกใหม่ (ป้องกันยอดสุทธิเพี้ยน)
             $storeSale->update([
-                'total_amount'         => $total,
-                'auto_promotion_id'    => $promo['auto_promotion']?->id,
-                'auto_discount_amount' => $promo['auto_discount'],
-                'promotion_id'         => $promo['coupon']?->id,
-                'promotion_code'       => $promo['coupon']?->code,
-                'discount_amount'      => $promo['coupon_discount'],
-                'net_payable'          => $promo['net_payable'],
+                'total_amount'           => $total,
+                'auto_promotion_id'      => $promo['auto_promotion']?->id,
+                'auto_discount_amount'   => $promo['auto_discount'],
+                'promotion_id'           => $promo['coupon']?->id,
+                'promotion_code'         => $promo['coupon']?->code,
+                'discount_amount'        => $promo['coupon_discount'],
+                'points_used'            => 0,
+                'points_discount_amount' => 0,
+                'credit_used'            => 0,
+                'net_payable'            => $promo['net_payable'],
             ]);
         });
 
@@ -212,6 +218,8 @@ class StorefrontController extends Controller
 
         $data = $request->validate([
             'coupon_code' => ['nullable', 'string', 'max:30'],
+            'use_points'  => ['nullable', 'boolean'],
+            'use_credit'  => ['nullable', 'boolean'],
         ]);
 
         $storeSale->load('items');
@@ -230,11 +238,31 @@ class StorefrontController extends Controller
             return back()->with('error', $promo['error']);
         }
 
+        $student = $storeSale->student;
+        $running = $promo['net_payable'];
+
+        $pointsDiscount = 0;
+        $pointsUsed = 0;
+        if ($request->boolean('use_points')) {
+            $pointsDiscount = $student->maxPointsRedeemableValue($running);
+            $pointsUsed = (int) ($pointsDiscount * 10);
+            $running -= $pointsDiscount;
+        }
+
+        $creditUsed = 0;
+        if ($request->boolean('use_credit')) {
+            $creditUsed = min($student->creditBalance(), $running);
+            $running -= $creditUsed;
+        }
+
         $storeSale->update([
-            'promotion_id'    => $promo['coupon']?->id,
-            'promotion_code'  => $promo['coupon']?->code,
-            'discount_amount' => $promo['coupon_discount'],
-            'net_payable'     => $promo['net_payable'],
+            'promotion_id'           => $promo['coupon']?->id,
+            'promotion_code'         => $promo['coupon']?->code,
+            'discount_amount'        => $promo['coupon_discount'],
+            'points_used'            => $pointsUsed,
+            'points_discount_amount' => $pointsDiscount,
+            'credit_used'            => $creditUsed,
+            'net_payable'            => max(0, round($running, 2)),
         ]);
 
         return back()->with('success', 'อัปเดตส่วนลดเรียบร้อยแล้ว');
@@ -258,7 +286,7 @@ class StorefrontController extends Controller
     public function show(Request $request, StoreSale $storeSale)
     {
         $this->authorizeOrderOwner($request, $storeSale);
-        $storeSale->load('items');
+        $storeSale->load('items', 'student');
 
         return view('storefront.show', compact('storeSale'));
     }
@@ -326,6 +354,29 @@ class StorefrontController extends Controller
                 'store_sale_id' => $storeSale->id,
                 'student_id'    => $storeSale->student_id,
             ]);
+
+            $student = $storeSale->student;
+            $loyalty = app(LoyaltyService::class);
+
+            if ($storeSale->points_used > 0) {
+                $loyalty->redeemPoints($student, $storeSale->points_used, sale: $storeSale, reason: 'แลกแต้มเป็นส่วนลดคำสั่งซื้อ ' . $storeSale->sale_no);
+            }
+
+            if ($storeSale->credit_used > 0) {
+                $newBalance = $student->creditBalance() - $storeSale->credit_used;
+                StudentCreditTransaction::create([
+                    'student_id'    => $student->id,
+                    'type'          => 'use',
+                    'amount'        => -$storeSale->credit_used,
+                    'balance_after' => $newBalance,
+                    'reason'        => 'ใช้ชำระค่าสินค้า ' . $storeSale->sale_no,
+                ]);
+            }
+
+            $earned = (int) floor(($storeSale->net_payable ?? $storeSale->total_amount) / 100);
+            if ($earned > 0) {
+                $loyalty->earnPoints($student, $earned, sale: $storeSale, reason: 'สะสมแต้มจากการซื้อสินค้า ' . $storeSale->sale_no);
+            }
 
             // ===== Business Rule: ตัดสต็อกอัตโนมัติ (เกิดขึ้นตอนยืนยันจ่ายเงินสำเร็จเท่านั้น) =====
             foreach ($storeSale->items as $item) {

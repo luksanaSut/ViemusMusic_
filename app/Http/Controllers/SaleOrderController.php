@@ -10,6 +10,7 @@ use App\Models\SaleOrder;
 use App\Models\Student;
 use App\Models\TaxInvoice;
 use App\Models\Teacher;
+use App\Services\LoyaltyService;
 use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -445,28 +446,12 @@ class SaleOrderController extends Controller
             }
 
             if ($saleOrder->points_used > 0) {
-                $student = $saleOrder->student;
-                $newBalance = $student->pointBalance() - $saleOrder->points_used;
-                $student->pointTransactions()->create([
-                    'sale_order_id' => $saleOrder->id,
-                    'type' => 'redeem',
-                    'points' => -$saleOrder->points_used,
-                    'balance_after' => $newBalance,
-                    'reason' => 'แลกแต้มเป็นส่วนลดคำสั่ง ' . $saleOrder->order_no,
-                ]);
-            }
-
-            $student = $saleOrder->student;
-            $earned = (int) floor($netPayable / 100);
-            if ($earned > 0) {
-                $newBalance = $student->pointBalance() + $earned;
-                $student->pointTransactions()->create([
-                    'sale_order_id' => $saleOrder->id,
-                    'type' => 'earn',
-                    'points' => $earned,
-                    'balance_after' => $newBalance,
-                    'reason' => 'สะสมแต้มจากการซื้อคอร์ส ' . $saleOrder->order_no,
-                ]);
+                app(LoyaltyService::class)->redeemPoints(
+                    $saleOrder->student,
+                    $saleOrder->points_used,
+                    order: $saleOrder,
+                    reason: 'แลกแต้มเป็นส่วนลดคำสั่ง ' . $saleOrder->order_no,
+                );
             }
 
             if ($saleOrder->taxInvoice) {
@@ -481,6 +466,16 @@ class SaleOrderController extends Controller
             }
 
             $saleOrder->update(['status' => 'paid', 'enrollment_id' => $enrollment->id, 'payment_id' => $payment->id]);
+
+            $earned = (int) floor($netPayable / 100);
+            if ($earned > 0) {
+                app(LoyaltyService::class)->earnPoints(
+                    $saleOrder->student,
+                    $earned,
+                    order: $saleOrder,
+                    reason: 'สะสมแต้มจากการซื้อคอร์ส ' . $saleOrder->order_no,
+                );
+            }
         });
 
         return back()->with('success', 'ยืนยันการชำระเงินเรียบร้อยแล้ว บันทึกแต้มสะสม และลงทะเบียนเรียนให้นักเรียนแล้ว');

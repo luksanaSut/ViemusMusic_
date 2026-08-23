@@ -64,6 +64,10 @@ class Student extends Model
     {
         return $this->hasMany(SaleOrder::class);
     }
+    public function membership(): HasOne
+    {
+        return $this->hasOne(StudentMembership::class);
+    }
 
     public function guardians(): BelongsToMany
     {
@@ -138,6 +142,21 @@ class Student extends Model
         $pointsValue = floor($this->pointBalance() / 10);
         $cap = round($capBase * 0.20, 2);
         return max(0, min($pointsValue, $cap));
+    }
+
+    // ก้อนแต้มที่ยังไม่หมดอายุและยังมีคงเหลือ เรียงจากใกล้หมดอายุที่สุดก่อน (ใช้กับ FIFO consume + แสดงผล)
+    public function activePointBatches()
+    {
+        return $this->pointTransactions()
+            ->whereIn('type', ['earn', 'adjustment'])
+            ->where('remaining_points', '>', 0)
+            ->orderBy('expires_at')
+            ->get();
+    }
+
+    public function nextExpiringPointBatch(): ?StudentPointTransaction
+    {
+        return $this->activePointBatches()->first();
     }
 
     // ===== Helpers: การชำระเงิน =====

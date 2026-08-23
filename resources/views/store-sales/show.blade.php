@@ -169,6 +169,18 @@
                                     <td class="text-end">-฿{{ number_format($storeSale->discount_amount, 2) }}</td>
                                 </tr>
                             @endif
+                            @if ($storeSale->points_discount_amount > 0)
+                                <tr class="text-success">
+                                    <td colspan="3">แลกแต้ม ({{ $storeSale->points_used }} แต้ม)</td>
+                                    <td class="text-end">-฿{{ number_format($storeSale->points_discount_amount, 2) }}</td>
+                                </tr>
+                            @endif
+                            @if ($storeSale->credit_used > 0)
+                                <tr class="text-success">
+                                    <td colspan="3">ใช้เครดิตคงเหลือ</td>
+                                    <td class="text-end">-฿{{ number_format($storeSale->credit_used, 2) }}</td>
+                                </tr>
+                            @endif
                             <tr class="sale-total-row fw-bold">
                                 <td colspan="3">ยอดสุทธิ</td>
                                 <td class="text-end">฿{{ number_format($storeSale->net_payable ?? $storeSale->total_amount, 2) }}</td>

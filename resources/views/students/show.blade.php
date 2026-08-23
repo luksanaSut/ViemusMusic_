@@ -256,6 +256,32 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--amber-soft,#fdf1e2);color:var(--amber,#8a5a2b);"><i
+                        class="bi bi-star"></i></div>
+                <div>
+                    <div class="text-muted small">แต้มสะสม</div>
+                    <div class="fs-4 fw-bold" style="font-family:'Prompt',sans-serif;">
+                        {{ number_format($student->pointBalance()) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#efe6da;color:#6b4a2b;"><i class="bi bi-award"></i></div>
+                <div>
+                    <div class="text-muted small">ระดับสมาชิก</div>
+                    <div class="fs-5 fw-bold" style="font-family:'Prompt',sans-serif;">
+                        @if ($student->membership?->tier)
+                            <span class="badge {{ $student->membership->tier->badgeClass() }}">{{ $student->membership->tier->name }}</span>
+                        @else
+                            <span class="text-muted small">ยังไม่มีระดับ</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- ===== แท็บ ===== --}}
@@ -270,6 +296,10 @@
                     class="bi bi-cash-coin"></i> การชำระเงิน</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#credits"><i
                     class="bi bi-wallet2"></i> เครดิต</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#points"><i
+                    class="bi bi-star"></i> แต้มสะสม</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#membership"><i
+                    class="bi bi-award"></i> ระดับสมาชิก</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#skills"><i
                     class="bi bi-stars"></i> Skill Level</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#exams"><i
@@ -655,6 +685,130 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        {{-- แต้มสะสม --}}
+        <div class="tab-pane fade" id="points">
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> ปรับยอดแต้ม
+                </div>
+                <form action="{{ route('students.points.store', $student) }}" method="POST" class="row g-2">
+                    @csrf
+                    <div class="col-md-3">
+                        <select name="type" class="form-select form-select-sm" required>
+                            <option value="earn">เพิ่มแต้ม</option>
+                            <option value="use">หักแต้ม</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3"><input type="number" min="1" name="points"
+                            class="form-control form-control-sm" placeholder="จำนวนแต้ม" required></div>
+                    <div class="col-md-4"><input type="text" name="reason" class="form-control form-control-sm"
+                            placeholder="เหตุผล"></div>
+                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">บันทึก</button></div>
+                </form>
+            </div>
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-clock-history"></i></div> ประวัติแต้มสะสม
+                </div>
+                @if ($nextExpiring = $student->nextExpiringPointBatch())
+                    <div class="alert alert-warning small">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        แต้มจำนวน {{ number_format($nextExpiring->remaining_points) }} แต้ม จะหมดอายุวันที่
+                        {{ $nextExpiring->expires_at->format('d/m/Y') }}
+                    </div>
+                @endif
+                <table class="table table-sm table-clean">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>ประเภท</th>
+                            <th>จำนวน</th>
+                            <th>ยอดคงเหลือ</th>
+                            <th>คงเหลือของก้อนนี้</th>
+                            <th>วันหมดอายุ</th>
+                            <th>เหตุผล</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($student->pointTransactions()->orderByDesc('created_at')->get() as $t)
+                            <tr>
+                                <td>{{ $t->created_at->format('d/m/Y H:i') }}</td>
+                                <td>{{ $t->typeLabel() }}</td>
+                                <td class="{{ $t->points < 0 ? 'text-danger' : 'text-success' }} fw-semibold">
+                                    {{ $t->points > 0 ? '+' : '' }}{{ number_format($t->points) }}</td>
+                                <td class="fw-semibold">{{ number_format($t->balance_after) }}</td>
+                                <td>{{ $t->remaining_points !== null ? number_format($t->remaining_points) : '-' }}</td>
+                                <td>{{ $t->expires_at?->format('d/m/Y') ?: '-' }}</td>
+                                <td>{{ $t->reason ?: '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state"><i class="bi bi-star"></i>ยังไม่มีประวัติแต้มสะสม</div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- ระดับสมาชิก --}}
+        <div class="tab-pane fade" id="membership">
+            @php
+                $membership = $student->membership;
+                $currentTier = $membership?->tier;
+            @endphp
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-award"></i></div> สถานะสมาชิก
+                    <form action="{{ route('students.membership.recalculate', $student) }}" method="POST" class="ms-auto">
+                        @csrf
+                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i>
+                            คำนวณสถานะสมาชิกใหม่</button>
+                    </form>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div class="text-muted small">ระดับปัจจุบัน</div>
+                        @if ($currentTier)
+                            <span class="badge {{ $currentTier->badgeClass() }} fs-6 mt-1"><i class="bi bi-award me-1"></i>
+                                {{ $currentTier->name }}</span>
+                        @else
+                            <div class="fw-semibold text-muted">ยังไม่มีระดับ</div>
+                        @endif
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">ยอดใช้จ่าย 12 เดือนล่าสุด</div>
+                        <div class="fw-semibold">฿{{ number_format($membership?->total_spend_12m ?? 0, 2) }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">ยอดใช้จ่ายตลอดชีพ</div>
+                        <div class="fw-semibold">฿{{ number_format($membership?->lifetime_spend ?? 0, 2) }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">ทบทวนล่าสุด / ครั้งถัดไป</div>
+                        <div class="fw-semibold small">
+                            {{ $membership?->renewed_at?->format('d/m/Y') ?? '-' }} /
+                            {{ $membership?->next_review_at?->format('d/m/Y') ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+
+                @if ($currentTier && $currentTier->benefitsList())
+                    <div class="border rounded-3 p-3 bg-light">
+                        <div class="fw-semibold small mb-2"><i class="bi bi-gift me-1"></i> สิทธิประโยชน์</div>
+                        <ul class="mb-0 ps-3 small">
+                            @foreach ($currentTier->benefitsList() as $benefit)
+                                <li>{{ $benefit }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
         </div>
 

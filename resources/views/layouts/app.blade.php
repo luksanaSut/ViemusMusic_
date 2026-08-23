@@ -577,6 +577,11 @@
                 <i class="bi bi-tags"></i> โปรโมชัน / คูปอง
             </a>
 
+            <a href="{{ route('membership-tiers.index') }}"
+                class="nav-link {{ request()->routeIs('membership-tiers.*') ? 'active' : '' }}">
+                <i class="bi bi-award"></i> ระดับสมาชิก
+            </a>
+
 
             {{-- ==================== Music Store ==================== --}}
             <div class="nav-section-label">Music Store</div>
@@ -727,6 +732,19 @@
                 <a href="{{ route('store.my-orders') }}"
                     class="nav-link {{ request()->routeIs('store.my-orders') ? 'active' : '' }}">
                     <i class="bi bi-bag-check"></i> คำสั่งซื้อของฉัน
+                </a>
+
+
+                <div class="nav-section-label">สมาชิก / แต้มสะสม</div>
+
+                <a href="{{ route('membership.my-index') }}"
+                    class="nav-link {{ request()->routeIs('membership.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-award"></i> สมาชิกของฉัน
+                </a>
+
+                <a href="{{ route('membership.my-points') }}"
+                    class="nav-link {{ request()->routeIs('membership.my-points') ? 'active' : '' }}">
+                    <i class="bi bi-star"></i> แต้มสะสมของฉัน
                 </a>
             @endif
 

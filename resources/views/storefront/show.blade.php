@@ -323,6 +323,18 @@
                                 <span>-฿{{ number_format($storeSale->discount_amount, 0) }}</span>
                             </div>
                         @endif
+                        @if ($storeSale->points_discount_amount > 0)
+                            <div class="summary-row text-success">
+                                <span>แลกแต้ม ({{ $storeSale->points_used }} แต้ม)</span>
+                                <span>-฿{{ number_format($storeSale->points_discount_amount, 0) }}</span>
+                            </div>
+                        @endif
+                        @if ($storeSale->credit_used > 0)
+                            <div class="summary-row text-success">
+                                <span>ใช้เครดิตคงเหลือ</span>
+                                <span>-฿{{ number_format($storeSale->credit_used, 0) }}</span>
+                            </div>
+                        @endif
                         <div class="summary-row total">
                             <span>รวมสุทธิ</span><span>฿{{ number_format($storeSale->net_payable ?? $storeSale->total_amount, 0) }}</span>
                         </div>
@@ -332,10 +344,28 @@
                         <form action="{{ route('store.apply-discount', $storeSale) }}" method="POST" class="mt-3">
                             @csrf
                             <label class="form-label small">โปรโมชั่น / คูปอง</label>
-                            <div class="input-group input-group-sm">
+                            <div class="input-group input-group-sm mb-2">
                                 <input type="text" name="coupon_code" class="form-control text-uppercase"
                                     placeholder="เช่น SUMMER25" value="{{ $storeSale->promotion_code }}">
                                 <button class="btn btn-outline-secondary" type="submit">ใช้</button>
+                            </div>
+
+                            <div class="form-check form-switch mb-1">
+                                <input class="form-check-input" type="checkbox" role="switch" name="use_points"
+                                    value="1" id="usePointsSwitch" {{ $storeSale->points_used > 0 ? 'checked' : '' }}
+                                    onchange="this.form.submit()">
+                                <label class="form-check-label small" for="usePointsSwitch">
+                                    ใช้แต้มสะสม (มี {{ $storeSale->student->pointBalance() }} แต้ม · แลกได้สูงสุด
+                                    ฿{{ number_format($storeSale->student->maxPointsRedeemableValue($storeSale->total_amount - $storeSale->discount_amount - $storeSale->auto_discount_amount), 0) }})
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" name="use_credit"
+                                    value="1" id="useCreditSwitch" {{ $storeSale->credit_used > 0 ? 'checked' : '' }}
+                                    onchange="this.form.submit()">
+                                <label class="form-check-label small" for="useCreditSwitch">
+                                    ใช้เครดิตคงเหลือ (฿{{ number_format($storeSale->student->creditBalance(), 2) }})
+                                </label>
                             </div>
                         </form>
                     @endif

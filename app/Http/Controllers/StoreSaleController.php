@@ -7,6 +7,8 @@ use App\Models\StockMovement;
 use App\Models\StoreSale;
 use App\Models\StoreSaleItem;
 use App\Models\Student;
+use App\Models\StudentCreditTransaction;
+use App\Services\LoyaltyService;
 use App\Services\PromotionEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +47,8 @@ class StoreSaleController extends Controller
             'student_id'      => ['nullable', 'exists:students,id'],
             'payment_method'  => ['required', 'in:cash,transfer,credit_card,promptpay'],
             'coupon_code'     => ['nullable', 'string', 'max:30'],
+            'use_points'      => ['nullable', 'boolean'],
+            'use_credit'      => ['nullable', 'boolean'],
             'items'           => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity'   => ['required', 'integer', 'min:1'],
@@ -81,22 +85,45 @@ class StoreSaleController extends Controller
             return back()->withInput()->with('error', $promo['error']);
         }
 
+        // ใช้แต้มสะสม/เครดิตได้เฉพาะเมื่อเลือกนักเรียนจากระบบ (ไม่ใช่ลูกค้าทั่วไปที่กรอกแค่ชื่อ)
+        $student = !empty($data['student_id']) ? Student::find($data['student_id']) : null;
+        $running = $promo['net_payable'];
+
+        $pointsDiscount = 0;
+        $pointsUsed = 0;
+        if ($student && $request->boolean('use_points')) {
+            $pointsDiscount = $student->maxPointsRedeemableValue($running);
+            $pointsUsed = (int) ($pointsDiscount * 10);
+            $running -= $pointsDiscount;
+        }
+
+        $creditUsed = 0;
+        if ($student && $request->boolean('use_credit')) {
+            $creditUsed = min($student->creditBalance(), $running);
+            $running -= $creditUsed;
+        }
+
+        $netPayable = max(0, round($running, 2));
+
         $sale = null;
-        DB::transaction(function () use ($data, $promo, $total, $itemsData, &$sale) {
+        DB::transaction(function () use ($data, $promo, $total, $itemsData, $student, $pointsDiscount, $pointsUsed, $creditUsed, $netPayable, &$sale) {
             $sale = StoreSale::create([
-                'sale_no'              => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
-                'buyer_name'           => $data['buyer_name'] ?? null,
-                'student_id'           => $data['student_id'] ?? null,
-                'promotion_id'         => $promo['coupon']?->id,
-                'promotion_code'       => $promo['coupon']?->code,
-                'auto_promotion_id'    => $promo['auto_promotion']?->id,
-                'total_amount'         => $total,
-                'discount_amount'      => $promo['coupon_discount'],
-                'auto_discount_amount' => $promo['auto_discount'],
-                'net_payable'          => $promo['net_payable'],
-                'payment_method'       => $data['payment_method'],
-                'status'               => 'completed',
-                'sold_by'              => auth()->user()->name ?? 'แอดมิน',
+                'sale_no'                => 'STK-' . now()->format('Ymd') . '-' . str_pad(StoreSale::whereDate('created_at', now())->count() + 1, 4, '0', STR_PAD_LEFT),
+                'buyer_name'             => $data['buyer_name'] ?? null,
+                'student_id'             => $data['student_id'] ?? null,
+                'promotion_id'           => $promo['coupon']?->id,
+                'promotion_code'         => $promo['coupon']?->code,
+                'auto_promotion_id'      => $promo['auto_promotion']?->id,
+                'total_amount'           => $total,
+                'discount_amount'        => $promo['coupon_discount'],
+                'auto_discount_amount'   => $promo['auto_discount'],
+                'points_used'            => $pointsUsed,
+                'points_discount_amount' => $pointsDiscount,
+                'credit_used'            => $creditUsed,
+                'net_payable'            => $netPayable,
+                'payment_method'         => $data['payment_method'],
+                'status'                 => 'completed',
+                'sold_by'                => auth()->user()->name ?? 'แอดมิน',
             ]);
 
             app(PromotionEngine::class)->recordUsage($promo, [
@@ -104,6 +131,30 @@ class StoreSaleController extends Controller
                 'student_id'       => $data['student_id'] ?? null,
                 'buyer_identifier' => $data['buyer_name'] ?? null,
             ]);
+
+            if ($student) {
+                $loyalty = app(LoyaltyService::class);
+
+                if ($pointsUsed > 0) {
+                    $loyalty->redeemPoints($student, $pointsUsed, sale: $sale, reason: 'แลกแต้มเป็นส่วนลดการซื้อสินค้า ' . $sale->sale_no);
+                }
+
+                if ($creditUsed > 0) {
+                    $newBalance = $student->creditBalance() - $creditUsed;
+                    StudentCreditTransaction::create([
+                        'student_id'    => $student->id,
+                        'type'          => 'use',
+                        'amount'        => -$creditUsed,
+                        'balance_after' => $newBalance,
+                        'reason'        => 'ใช้ชำระค่าสินค้า ' . $sale->sale_no,
+                    ]);
+                }
+
+                $earned = (int) floor($netPayable / 100);
+                if ($earned > 0) {
+                    $loyalty->earnPoints($student, $earned, sale: $sale, reason: 'สะสมแต้มจากการซื้อสินค้า ' . $sale->sale_no);
+                }
+            }
 
             foreach ($itemsData as $d) {
                 StoreSaleItem::create([
@@ -168,6 +219,25 @@ class StoreSaleController extends Controller
             }
 
             app(PromotionEngine::class)->voidUsage(['store_sale_id' => $storeSale->id]);
+
+            if ($storeSale->student_id) {
+                $student = Student::find($storeSale->student_id);
+
+                if ($student) {
+                    app(LoyaltyService::class)->reversePurchasePoints($student, sale: $storeSale);
+
+                    if ($storeSale->credit_used > 0) {
+                        $newBalance = $student->creditBalance() + $storeSale->credit_used;
+                        StudentCreditTransaction::create([
+                            'student_id'    => $student->id,
+                            'type'          => 'refund',
+                            'amount'        => $storeSale->credit_used,
+                            'balance_after' => $newBalance,
+                            'reason'        => 'คืนเครดิตจากการยกเลิกการขาย ' . $storeSale->sale_no,
+                        ]);
+                    }
+                }
+            }
 
             $storeSale->update(['status' => 'cancelled']);
         });

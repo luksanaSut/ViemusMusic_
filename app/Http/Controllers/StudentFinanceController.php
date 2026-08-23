@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\StudentCreditTransaction;
+use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
 
 class StudentFinanceController extends Controller
@@ -60,5 +61,25 @@ class StudentFinanceController extends Controller
         ]);
 
         return back()->with('success', 'บันทึกรายการเครดิตเรียบร้อยแล้ว');
+    }
+
+    // POST /students/{student}/points — ปรับยอดแต้มมือโดยแอดมิน (ไม่ผูกกับคำสั่งซื้อ)
+    public function storePointAdjustment(Request $request, Student $student, LoyaltyService $loyalty)
+    {
+        $data = $request->validate([
+            'type'   => ['required', 'in:earn,use'],
+            'points' => ['required', 'integer', 'min:1'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $delta = $data['type'] === 'earn' ? $data['points'] : -$data['points'];
+
+        if ($delta < 0 && $student->pointBalance() + $delta < 0) {
+            return back()->with('error', 'ยอดแต้มไม่พอสำหรับการหักครั้งนี้');
+        }
+
+        $loyalty->adjustPoints($student, $delta, $data['reason'] ?? 'ปรับยอดโดยแอดมิน');
+
+        return back()->with('success', 'บันทึกรายการแต้มเรียบร้อยแล้ว');
     }
 }

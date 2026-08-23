@@ -74,7 +74,7 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <label class="form-label small">ลูกค้า (ถ้ามี)</label>
-                        <select name="student_id" class="form-select form-select-sm mb-2">
+                        <select name="student_id" id="studentSelect" class="form-select form-select-sm mb-2">
                             <option value="">ลูกค้าทั่วไป</option>
                             @foreach ($students as $s)
                                 <option value="{{ $s->id }}">{{ $s->full_name }} ({{ $s->student_code }})</option>
@@ -85,6 +85,20 @@
                         <label class="form-label small">โค้ดโปรโมชัน/คูปอง (ถ้ามี)</label>
                         <input type="text" name="coupon_code" class="form-control form-control-sm mb-2 text-uppercase"
                             placeholder="เช่น SUMMER25">
+
+                        <div id="pointsCreditBox" style="display:none;">
+                            <div class="form-check form-switch mb-1">
+                                <input class="form-check-input" type="checkbox" role="switch" name="use_points"
+                                    value="1" id="usePoints">
+                                <label class="form-check-label small" for="usePoints">ใช้แต้มสะสม</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" name="use_credit"
+                                    value="1" id="useCredit">
+                                <label class="form-check-label small" for="useCredit">ใช้เครดิตคงเหลือ</label>
+                            </div>
+                        </div>
+
                         <label class="form-label small">ช่องทางชำระเงิน</label>
                         <select name="payment_method" class="form-select form-select-sm" required>
                             <option value="cash">เงินสด</option>
@@ -167,6 +181,21 @@
             document.getElementById('saleForm').addEventListener('submit', function() {
                 document.getElementById('submitBtn').disabled = true;
             });
+
+            // แสดงตัวเลือกใช้แต้ม/เครดิตเฉพาะเมื่อเลือกลูกค้าที่เป็นนักเรียนในระบบ
+            const studentSelect = document.getElementById('studentSelect');
+            const pointsCreditBox = document.getElementById('pointsCreditBox');
+
+            function updatePointsCreditVisibility() {
+                pointsCreditBox.style.display = studentSelect.value ? 'block' : 'none';
+                if (!studentSelect.value) {
+                    document.getElementById('usePoints').checked = false;
+                    document.getElementById('useCredit').checked = false;
+                }
+            }
+
+            studentSelect.addEventListener('change', updatePointsCreditVisibility);
+            updatePointsCreditVisibility();
         })();
     </script>
 @endsection

@@ -8,9 +8,12 @@ use App\Http\Controllers\TeachingSessionController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\MembershipTierController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentEnrollmentController;
 use App\Http\Controllers\StudentFinanceController;
+use App\Http\Controllers\StudentMembershipController;
 use App\Http\Controllers\StudentAcademicController;
 use App\Http\Controllers\StudentLeaveController;
 use App\Http\Controllers\GuardianController;
@@ -175,6 +178,9 @@ Route::middleware($customerMiddleware)->group(function () {
     Route::patch('store/orders/{storeSale}/cancel', [StorefrontController::class, 'cancelByCustomer'])->name('store.cancel');
     Route::post('store/orders/{storeSale}/confirm-payment', [StorefrontController::class, 'confirmPayment'])->name('store.confirm-payment');
     Route::get('my-orders', [StorefrontController::class, 'myOrders'])->name('store.my-orders');
+
+    Route::get('my-membership', [MembershipController::class, 'index'])->name('membership.my-index');
+    Route::get('my-points', [MembershipController::class, 'points'])->name('membership.my-points');
 });
 
 // อาจารย์: หน้าแจ้งลาหยุดสอนของตัวเอง (เมนูแยกต่างหาก)
@@ -232,6 +238,15 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::patch('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
     Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
 
+    // ----- ระดับสมาชิก -----
+    Route::get('membership-tiers', [MembershipTierController::class, 'index'])->name('membership-tiers.index');
+    Route::get('membership-tiers/create', [MembershipTierController::class, 'create'])->name('membership-tiers.create');
+    Route::post('membership-tiers', [MembershipTierController::class, 'store'])->name('membership-tiers.store');
+    Route::get('membership-tiers/{membershipTier}/edit', [MembershipTierController::class, 'edit'])->name('membership-tiers.edit');
+    Route::put('membership-tiers/{membershipTier}', [MembershipTierController::class, 'update'])->name('membership-tiers.update');
+    Route::patch('membership-tiers/{membershipTier}/toggle-active', [MembershipTierController::class, 'toggleActive'])->name('membership-tiers.toggle-active');
+    Route::delete('membership-tiers/{membershipTier}', [MembershipTierController::class, 'destroy'])->name('membership-tiers.destroy');
+
     // ----- จัดการข้อมูลนักเรียน -----
     Route::resource('students', StudentController::class);
     Route::post('students/{student}/enrollments', [StudentEnrollmentController::class, 'store'])->name('students.enrollments.store');
@@ -239,6 +254,8 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::post('students/{student}/enrollments/{enrollment}/extend', [StudentEnrollmentController::class, 'extend'])->name('students.enrollments.extend');
     Route::post('students/{student}/payments', [StudentFinanceController::class, 'storePayment'])->name('students.payments.store');
     Route::post('students/{student}/credits', [StudentFinanceController::class, 'storeCredit'])->name('students.credits.store');
+    Route::post('students/{student}/points', [StudentFinanceController::class, 'storePointAdjustment'])->name('students.points.store');
+    Route::post('students/{student}/membership/recalculate', [StudentMembershipController::class, 'recalculate'])->name('students.membership.recalculate');
     Route::post('students/{student}/skill-levels', [StudentAcademicController::class, 'storeSkillLevel'])->name('students.skill-levels.store');
     Route::post('students/{student}/exam-results', [StudentAcademicController::class, 'storeExamResult'])->name('students.exam-results.store');
     Route::post('students/{student}/create-account', [UserController::class, 'quickCreateForStudent'])->name('students.create-account');
