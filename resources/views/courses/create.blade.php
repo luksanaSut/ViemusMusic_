@@ -6,7 +6,7 @@
             class="bi bi-chevron-right small"></i> เพิ่มคอร์ส</div>
     <h1 class="page-title mb-3">เพิ่มคอร์สเรียน</h1>
 
-    <form action="{{ route('courses.store') }}" method="POST">
+    <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @include('courses._form')
         <div class="d-flex gap-2 mb-4">

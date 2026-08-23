@@ -21,7 +21,18 @@ class StudentController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('students.index', compact('students'));
+        $statusCounts = Student::query()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        $overdueCount = Student::query()
+            ->whereHas('payments', function ($q) {
+                $q->whereIn('status', ['pending', 'partial', 'overdue'])
+                    ->where(function ($q2) {
+                        $q2->where('status', 'overdue')->orWhere('due_date', '<', now()->toDateString());
+                    });
+            })
+            ->count();
+
+        return view('students.index', compact('students', 'statusCounts', 'overdueCount'));
     }
 
     public function create()

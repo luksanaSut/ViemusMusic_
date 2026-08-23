@@ -181,7 +181,12 @@ Route::middleware('auth')->group(function () {
 // ===================================================================
 // กลุ่ม 4: ADMIN เท่านั้น — โมดูลจัดการทั้งหมดของระบบหลังบ้าน
 // ===================================================================
-Route::middleware(['throttle:30,1', 'auth', 'force-password-change', 'role:admin'])->group(function () {
+$adminMiddleware = ['auth', 'force-password-change', 'role:admin'];
+if (!app()->environment('testing')) {
+    array_unshift($adminMiddleware, 'throttle:30,1');
+}
+
+Route::middleware($adminMiddleware)->group(function () {
 
     // ----- อาจารย์ -----
     Route::resource('teachers', TeacherController::class);

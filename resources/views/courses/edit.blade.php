@@ -6,7 +6,7 @@
             class="bi bi-chevron-right small"></i> แก้ไข</div>
     <h1 class="page-title mb-3">แก้ไขคอร์สเรียน: {{ $course->name }}</h1>
 
-    <form action="{{ route('courses.update', $course) }}" method="POST">
+    <form action="{{ route('courses.update', $course) }}" method="POST" enctype="multipart/form-data">
         @csrf @method('PUT')
         @include('courses._form')
         <div class="d-flex gap-2 mb-4">
