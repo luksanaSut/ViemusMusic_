@@ -145,4 +145,17 @@ class StoreSaleController extends Controller
 
         return back()->with('success', 'ยกเลิกการขายเรียบร้อยแล้ว คืนสต็อกสินค้าให้อัตโนมัติแล้ว');
     }
+
+    // PATCH /store-sales/{storeSale}/delivery-status — Admin อัปเดตสถานะจัดส่ง/เลขพัสดุ
+    public function updateDeliveryStatus(Request $request, StoreSale $storeSale)
+    {
+        $data = $request->validate([
+            'delivery_status'      => ['required', 'in:preparing,shipped,ready_for_pickup,picked_up,delivered'],
+            'delivery_tracking_no' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $storeSale->update($data);
+
+        return back()->with('success', 'อัปเดตสถานะการจัดส่งเรียบร้อยแล้ว');
+    }
 }

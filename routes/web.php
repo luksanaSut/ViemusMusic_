@@ -346,4 +346,5 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::post('store-sales', [StoreSaleController::class, 'store'])->name('store-sales.store');
     Route::get('store-sales/{storeSale}', [StoreSaleController::class, 'show'])->name('store-sales.show');
     Route::patch('store-sales/{storeSale}/cancel', [StoreSaleController::class, 'cancel'])->name('store-sales.cancel');
+    Route::patch('store-sales/{storeSale}/delivery-status', [StoreSaleController::class, 'updateDeliveryStatus'])->name('store-sales.delivery-status');
 });

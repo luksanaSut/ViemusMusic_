@@ -207,8 +207,15 @@ class StorefrontController extends Controller
             'payment_method'    => ['required', 'in:promptpay,transfer,credit_card'],
             'payment_reference' => ['required_if:payment_method,credit_card', 'nullable', 'string', 'max:100'],
             'payment_proof'     => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'delivery_method'          => ['required', 'in:pickup,delivery'],
+            'delivery_recipient_name'  => ['required_if:delivery_method,delivery', 'nullable', 'string', 'max:150'],
+            'delivery_phone'           => ['required_if:delivery_method,delivery', 'nullable', 'string', 'max:20'],
+            'delivery_address'         => ['required_if:delivery_method,delivery', 'nullable', 'string', 'max:1000'],
         ], [
-            'payment_reference.required_if' => 'กรุณากรอกเลขอ้างอิงการทำรายการบัตร',
+            'payment_reference.required_if'       => 'กรุณากรอกเลขอ้างอิงการทำรายการบัตร',
+            'delivery_recipient_name.required_if' => 'กรุณากรอกชื่อผู้รับ',
+            'delivery_phone.required_if'          => 'กรุณากรอกเบอร์โทรติดต่อ',
+            'delivery_address.required_if'        => 'กรุณากรอกที่อยู่จัดส่ง',
         ]);
 
         $storeSale->load('items.product');
@@ -228,6 +235,17 @@ class StorefrontController extends Controller
             $storeSale->payment_reference = $data['payment_reference'] ?? null;
             $storeSale->confirmed_at = now();
             $storeSale->status = 'completed';
+
+            $storeSale->delivery_method = $data['delivery_method'];
+            if ($data['delivery_method'] === 'delivery') {
+                $storeSale->delivery_recipient_name = $data['delivery_recipient_name'];
+                $storeSale->delivery_phone = $data['delivery_phone'];
+                $storeSale->delivery_address = $data['delivery_address'];
+                $storeSale->delivery_status = 'preparing';
+            } else {
+                $storeSale->delivery_status = 'ready_for_pickup';
+            }
+
             $storeSale->save();
 
             // ===== Business Rule: ตัดสต็อกอัตโนมัติ (เกิดขึ้นตอนยืนยันจ่ายเงินสำเร็จเท่านั้น) =====
@@ -250,10 +268,9 @@ class StorefrontController extends Controller
 
         AppNotification::notifyAdmins(
             'มีคำสั่งซื้อสินค้าใหม่',
-            "{$storeSale->student->full_name} สั่งซื้อสินค้า {$storeSale->items->count()} รายการ ยอดรวม ฿" . number_format($storeSale->total_amount, 2),
+            "{$storeSale->student->full_name} สั่งซื้อสินค้า {$storeSale->items->count()} รายการ ยอดรวม ฿" . number_format($storeSale->total_amount, 2) . ' (' . $storeSale->deliveryMethodLabel() . ')',
             route('store-sales.show', $storeSale)
         );
-
         return back()->with('success', 'ชำระเงินเรียบร้อยแล้ว คำสั่งซื้อสำเร็จ');
     }
 
@@ -263,12 +280,24 @@ class StorefrontController extends Controller
         $students = $this->myStudents($request);
         $studentIds = $students->pluck('id');
 
+        $status = $request->get('status');
+
+        $baseQuery = StoreSale::whereIn('student_id', $studentIds);
+
+        $counts = [
+            'pending_payment' => (clone $baseQuery)->where('status', 'pending_payment')->count(),
+            'completed'        => (clone $baseQuery)->where('status', 'completed')->count(),
+            'cancelled'        => (clone $baseQuery)->where('status', 'cancelled')->count(),
+        ];
+
         $orders = StoreSale::with('items')
             ->whereIn('student_id', $studentIds)
+            ->when($status, fn($q) => $q->where('status', $status))
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('storefront.my-orders', compact('orders'));
+        return view('storefront.my-orders', compact('orders', 'counts', 'status'));
     }
 
     private function authorizeStudent(Request $request, int $studentId): void

@@ -47,6 +47,40 @@
             </tfoot>
         </table>
     </div>
+    @if ($storeSale->status === 'completed')
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold mb-2"><i class="bi bi-truck"></i> การรับสินค้า — {{ $storeSale->deliveryMethodLabel() }}
+                </h6>
+                @if ($storeSale->delivery_method === 'delivery')
+                    <p class="mb-1 small"><strong>ผู้รับ:</strong> {{ $storeSale->delivery_recipient_name }}
+                        ({{ $storeSale->delivery_phone }})</p>
+                    <p class="mb-2 small"><strong>ที่อยู่:</strong> {{ $storeSale->delivery_address }}</p>
+                @endif
+                <form action="{{ route('store-sales.delivery-status', $storeSale) }}" method="POST" class="row g-2">
+                    @csrf @method('PATCH')
+                    <div class="col-md-5">
+                        <select name="delivery_status" class="form-select form-select-sm">
+                            @if ($storeSale->delivery_method === 'delivery')
+                                <option value="preparing" @selected($storeSale->delivery_status == 'preparing')>กำลังเตรียมสินค้า</option>
+                                <option value="shipped" @selected($storeSale->delivery_status == 'shipped')>จัดส่งแล้ว</option>
+                                <option value="delivered" @selected($storeSale->delivery_status == 'delivered')>จัดส่งถึงแล้ว</option>
+                            @else
+                                <option value="ready_for_pickup" @selected($storeSale->delivery_status == 'ready_for_pickup')>พร้อมให้รับที่ร้าน</option>
+                                <option value="picked_up" @selected($storeSale->delivery_status == 'picked_up')>รับสินค้าแล้ว</option>
+                            @endif
+                        </select>
+                    </div>
+                    @if ($storeSale->delivery_method === 'delivery')
+                        <div class="col-md-5"><input type="text" name="delivery_tracking_no"
+                                class="form-control form-control-sm" placeholder="เลขพัสดุ (ถ้ามี)"
+                                value="{{ $storeSale->delivery_tracking_no }}"></div>
+                    @endif
+                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">อัปเดต</button></div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     @if ($storeSale->status === 'completed')
         <form action="{{ route('store-sales.cancel', $storeSale) }}" method="POST"
