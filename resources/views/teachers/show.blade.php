@@ -221,6 +221,8 @@
                     class="bi bi-cash-coin"></i> เรทค่าจ้าง / ค่ารถ</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#availability"><i
                     class="bi bi-calendar-week"></i> Availability</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#courses"><i
+                    class="bi bi-mortarboard"></i> คอร์สที่สอน</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history"><i
                     class="bi bi-journal-text"></i> ประวัติการสอน</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#teacherLeaves"><i
@@ -479,6 +481,58 @@
                     </div>
                     <button class="btn btn-accent btn-sm mt-2"><i class="bi bi-save"></i> บันทึก Availability</button>
                 </form>
+            </div>
+        </div>
+
+        {{-- ===== คอร์สที่สอน ===== --}}
+        <div class="tab-pane fade" id="courses">
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="title-left"><i class="bi bi-mortarboard"></i> คอร์สที่สอน และจำนวนครั้งคงเหลือของนักเรียน</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-clean">
+                        <thead>
+                            <tr>
+                                <th>คอร์ส</th>
+                                <th>นักเรียน</th>
+                                <th>สถานะ</th>
+                                <th>เรียนไปแล้ว</th>
+                                <th>ทั้งหมด</th>
+                                <th>คงเหลือ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($coursesEnrollments as $courseId => $enrollmentsForCourse)
+                                @php $course = $enrollmentsForCourse->first()->course; @endphp
+                                @foreach ($enrollmentsForCourse as $i => $enr)
+                                    <tr>
+                                        @if ($i === 0)
+                                            <td rowspan="{{ $enrollmentsForCourse->count() }}" class="fw-semibold align-middle">
+                                                {{ $course->name ?? '-' }}
+                                            </td>
+                                        @endif
+                                        <td>{{ optional($enr->student)->full_name }}</td>
+                                        <td><span class="badge {{ $enr->statusBadgeClass() }}">{{ $enr->statusLabel() }}</span></td>
+                                        <td>{{ $enr->sessions_used }}</td>
+                                        <td>{{ $course->total_sessions ?? 'ไม่จำกัด' }}</td>
+                                        <td class="fw-semibold">
+                                            @if ($enr->remainingSessions() === null)
+                                                <span class="text-muted">ไม่จำกัด</span>
+                                            @else
+                                                <span class="{{ $enr->remainingSessions() <= 2 ? 'text-danger' : '' }}">{{ $enr->remainingSessions() }} ครั้ง</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">ยังไม่มีคอร์สที่สอน</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

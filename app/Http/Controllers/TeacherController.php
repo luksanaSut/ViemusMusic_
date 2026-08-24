@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTeacherRequest;
 use App\Http\Requests\UpdateTeacherRequest;
+use App\Models\ClassSchedule;
 use App\Models\Instrument;
 use App\Models\Level;
 use App\Models\Teacher;
@@ -120,7 +121,17 @@ class TeacherController extends Controller
         $totalHours  = $teacher->totalHours($from, $to);
         $totalIncome = $teacher->totalIncome($from, $to);
 
-        return view('teachers.show', compact('teacher', 'sessions', 'from', 'to', 'totalHours', 'totalIncome'));
+        // ที่มา: ตารางสอนจริง (class_schedules.teacher_id) ไม่ใช่ enrollments.teacher_id
+        // เพราะ enrollments.teacher_id เป็นแค่อาจารย์ที่เลือกไว้ตอนสมัคร/ซื้อคอร์ส และไม่ถูกอัปเดตเมื่อมีการจัดตาราง/เปลี่ยนอาจารย์ภายหลัง
+        $coursesEnrollments = ClassSchedule::forTeacher($teacher->id)
+            ->whereHas('enrollment', fn($q) => $q->whereIn('status', ['active', 'paused']))
+            ->with(['enrollment.course', 'enrollment.student'])
+            ->get()
+            ->pluck('enrollment')
+            ->unique('id')
+            ->groupBy('course_id');
+
+        return view('teachers.show', compact('teacher', 'sessions', 'from', 'to', 'totalHours', 'totalIncome', 'coursesEnrollments'));
     }
 
     // GET /teachers/{teacher}/edit
