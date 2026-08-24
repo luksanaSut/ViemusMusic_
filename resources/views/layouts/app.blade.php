@@ -792,6 +792,16 @@
                     {{ auth()->user()->isStudent() ? 'การเรียนของฉัน' : 'การเรียนของนักเรียน' }}
                 </div>
 
+                <a href="{{ route('enrollments.my-index') }}"
+                    class="nav-link {{ request()->routeIs('enrollments.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-journal-bookmark"></i> คอร์สเรียนของฉัน
+                </a>
+
+                <a href="{{ route('schedules.my-index') }}"
+                    class="nav-link {{ request()->routeIs('schedules.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-week"></i> ตารางเรียนของฉัน
+                </a>
+
                 <a href="{{ route('teaching-reports.my-index') }}"
                     class="nav-link {{ request()->routeIs('teaching-reports.my-index') ? 'active' : '' }}">
                     <i class="bi bi-journal-text"></i> ผลการสอน

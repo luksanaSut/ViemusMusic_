@@ -9,6 +9,8 @@ use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\MyCoursesController;
+use App\Http\Controllers\MyScheduleController;
 use App\Http\Controllers\MembershipTierController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentEnrollmentController;
@@ -164,6 +166,9 @@ if (!app()->environment('testing')) {
     array_unshift($customerMiddleware, 'throttle:30,1');
 }
 Route::middleware($customerMiddleware)->group(function () {
+    Route::get('my-courses', [MyCoursesController::class, 'index'])->name('enrollments.my-index');
+    Route::get('my-schedule', [MyScheduleController::class, 'index'])->name('schedules.my-index');
+
     Route::get('my-leaves', [MyLeavesController::class, 'index'])->name('leaves.index');
     Route::get('my-leaves/create', [MyLeavesController::class, 'create'])->name('leaves.create');
 

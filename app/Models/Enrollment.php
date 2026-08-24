@@ -59,6 +59,17 @@ class Enrollment extends Model
         };
     }
 
+    public function statusBadgeClass(): string
+    {
+        return match ($this->status) {
+            'active'    => 'text-bg-success',
+            'paused'    => 'text-bg-warning',
+            'completed' => 'text-bg-secondary',
+            'cancelled' => 'text-bg-secondary',
+            default     => 'text-bg-light',
+        };
+    }
+
     // จำนวนครั้งเรียนคงเหลือ (เฉพาะคอร์สแบบปกติที่นับจำนวนครั้ง)
     public function remainingSessions(): ?int
     {
