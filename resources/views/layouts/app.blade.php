@@ -479,7 +479,10 @@
 
 
             {{-- ==================== บุคคล ==================== --}}
-            @if ($u->hasModulePermission('students.manage') || $u->hasModulePermission('guardians.manage') || $u->hasModulePermission('teachers.manage'))
+            @if (
+                $u->hasModulePermission('students.manage') ||
+                    $u->hasModulePermission('guardians.manage') ||
+                    $u->hasModulePermission('teachers.manage'))
                 <div class="nav-section-label">บุคคล</div>
 
                 @if ($u->hasModulePermission('students.manage'))
@@ -506,7 +509,10 @@
 
 
             {{-- ==================== หลักสูตรและตารางเรียน ==================== --}}
-            @if ($u->hasModulePermission('courses.manage') || $u->hasModulePermission('rooms.manage') || $u->hasModulePermission('schedules.manage'))
+            @if (
+                $u->hasModulePermission('courses.manage') ||
+                    $u->hasModulePermission('rooms.manage') ||
+                    $u->hasModulePermission('schedules.manage'))
                 <div class="nav-section-label">หลักสูตรและตารางเรียน</div>
 
                 @if ($u->hasModulePermission('courses.manage'))
@@ -517,7 +523,8 @@
                 @endif
 
                 @if ($u->hasModulePermission('rooms.manage'))
-                    <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
+                    <a href="{{ route('rooms.index') }}"
+                        class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
                         <i class="bi bi-door-open"></i> จัดการห้องเรียน
                     </a>
                 @endif
@@ -528,10 +535,10 @@
                         <i class="bi bi-calendar3"></i> จัดตารางเรียน
                     </a>
 
-                    <a href="{{ route('schedule.index') }}"
+                    {{-- <a href="{{ route('schedule.index') }}"
                         class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
                         <i class="bi bi-calendar-week"></i> ตารางเรียน
-                    </a>
+                    </a> --}}
                 @endif
             @endif
 
@@ -594,11 +601,16 @@
 
 
             {{-- ==================== งานขาย ==================== --}}
-            @if ($u->hasModulePermission('sales.manage') || $u->hasModulePermission('course_transfers.manage') || $u->hasModulePermission('promotions.manage') || $u->hasModulePermission('membership.manage'))
+            @if (
+                $u->hasModulePermission('sales.manage') ||
+                    $u->hasModulePermission('course_transfers.manage') ||
+                    $u->hasModulePermission('promotions.manage') ||
+                    $u->hasModulePermission('membership.manage'))
                 <div class="nav-section-label">งานขาย</div>
 
                 @if ($u->hasModulePermission('sales.manage'))
-                    <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
+                    <a href="{{ route('sales.index') }}"
+                        class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
                         <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
                     </a>
                 @endif
@@ -636,7 +648,8 @@
                         <i class="bi bi-box-seam"></i> จัดการสินค้า
                     </a>
 
-                    <a href="{{ route('stock.index') }}" class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                    <a href="{{ route('stock.index') }}"
+                        class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
                         <i class="bi bi-boxes"></i> ระบบสต็อกสินค้า
                     </a>
                 @endif
@@ -651,7 +664,10 @@
 
 
             {{-- ==================== การเงิน ==================== --}}
-            @if ($u->hasModulePermission('finance.manage') || $u->hasModulePermission('payroll.manage') || $u->hasModulePermission('transport_fees.manage'))
+            @if (
+                $u->hasModulePermission('finance.manage') ||
+                    $u->hasModulePermission('payroll.manage') ||
+                    $u->hasModulePermission('transport_fees.manage'))
                 <div class="nav-section-label">การเงิน</div>
 
                 @if ($u->hasModulePermission('finance.manage'))
@@ -703,7 +719,8 @@
                 <div class="nav-section-label">ระบบ</div>
 
                 @if ($u->isAdmin())
-                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <a href="{{ route('users.index') }}"
+                        class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                         <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
                     </a>
 

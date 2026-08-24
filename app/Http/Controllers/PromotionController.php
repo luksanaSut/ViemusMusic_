@@ -44,6 +44,7 @@ class PromotionController extends Controller
     {
         $data = $request->validated();
         $data['applies_to_all'] = $request->boolean('applies_to_all');
+        $data['is_active'] = $request->boolean('is_active');
 
         $promotion = Promotion::create($data);
 
@@ -74,6 +75,7 @@ class PromotionController extends Controller
     {
         $data = $request->validated();
         $data['applies_to_all'] = $request->boolean('applies_to_all');
+        $data['is_active'] = $request->boolean('is_active');
 
         $promotion->update($data);
 

@@ -181,9 +181,10 @@ class ClassScheduleController extends Controller
     {
         $enrollments = Enrollment::where('status', 'active')
             ->with([
-                'student' => fn($q) => $q->withTrashed(),
-                'course'  => fn($q) => $q->withTrashed()->with('teachers'),
+                'student'   => fn($q) => $q->withTrashed(),
+                'course'    => fn($q) => $q->withTrashed()->with(['teachers', 'level', 'instrument']),
                 'teacher',
+                'saleOrder',
             ])
             ->get();
 

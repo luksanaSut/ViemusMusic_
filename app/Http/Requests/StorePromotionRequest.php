@@ -33,6 +33,7 @@ class StorePromotionRequest extends FormRequest
             'valid_to'            => ['nullable', 'date', 'after_or_equal:valid_from'],
             'scope'               => ['required', 'in:course,product,both'],
             'applies_to_all'      => ['nullable', 'boolean'],
+            'is_active'           => ['nullable', 'boolean'],
             'course_ids'          => ['nullable', 'array'],
             'course_ids.*'        => ['integer', 'exists:courses,id'],
             'product_ids'         => ['nullable', 'array'],

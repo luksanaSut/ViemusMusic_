@@ -101,6 +101,39 @@
             color: #b3392c;
         }
 
+        .course-info-card {
+            background: var(--accent-soft, #e7ebf1);
+            border-radius: 12px;
+            padding: .9rem 1.1rem;
+            margin-top: .8rem;
+        }
+
+        .course-info-card .course-info-title {
+            font-weight: 700;
+            font-family: 'Prompt', sans-serif;
+            color: var(--accent-dark, #13233a);
+            margin-bottom: .5rem;
+        }
+
+        .course-info-card .course-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: .35rem .8rem;
+            font-size: .82rem;
+        }
+
+        .course-info-card .course-info-grid .label {
+            color: var(--muted, #6b655e);
+        }
+
+        .course-info-card.full {
+            background: #fbeae7;
+        }
+
+        .course-info-card.full .course-info-title {
+            color: #b3392c;
+        }
+
         .step-indicator {
             display: flex;
             align-items: center;
@@ -239,8 +272,20 @@
                 @foreach ($enrollments as $e)
                     @continue(!$e->student)
                     <option value="{{ $e->id }}" data-teacher-id="{{ $e->teacher_id }}"
+                        data-teacher-name="{{ $e->teacher?->nickname ?: $e->teacher?->full_name ?? '' }}"
                         data-structure-type="{{ $e->course->structure_type ?? 'regular' }}"
+                        data-course-name="{{ $e->course->name ?? 'ไม่พบคอร์ส' }}"
+                        data-course-code="{{ $e->course->course_code ?? '-' }}"
+                        data-class-type="{{ $e->course?->classTypeLabel() }}"
+                        data-delivery-mode="{{ $e->course?->deliveryModeLabel() }}"
+                        data-level="{{ $e->course->level->name ?? '' }}"
+                        data-instrument="{{ $e->course->instrument->name ?? '' }}"
                         data-total-sessions="{{ $e->course->total_sessions ?? '' }}"
+                        data-sessions-used="{{ $e->sessions_used }}"
+                        data-remaining-sessions="{{ $e->remainingSessions() ?? '' }}"
+                        data-preferred-day="{{ $e->saleOrder?->preferredDayLabel() }}"
+                        data-preferred-start="{{ $e->saleOrder?->preferred_start_time ? \Carbon\Carbon::parse($e->saleOrder->preferred_start_time)->format('H:i') : '' }}"
+                        data-preferred-end="{{ $e->saleOrder?->preferred_end_time ? \Carbon\Carbon::parse($e->saleOrder->preferred_end_time)->format('H:i') : '' }}"
                         data-course-start="{{ optional($e->course->course_start_date)->format('d/m/Y') }}"
                         data-course-end="{{ optional($e->course->course_end_date)->format('d/m/Y') }}"
                         {{ old('enrollment_id', $preselectedEnrollment->id ?? '') == $e->id ? 'selected' : '' }}>
@@ -249,7 +294,7 @@
                     </option>
                 @endforeach
             </select>
-            <div id="sessionInfoBox" class="status-box ok d-none"></div>
+            <div id="sessionInfoBox" class="course-info-card d-none"></div>
             @if ($enrollments->isEmpty())
                 <div class="alert alert-warning small mt-2 mb-0">ยังไม่มีนักเรียนที่ลงทะเบียนเรียนอยู่ในระบบ</div>
             @endif
@@ -444,6 +489,35 @@
                     sessionCountHint.textContent = 'คอร์สนี้ไม่ได้จำกัดจำนวนครั้ง';
                 }
             }
+            function renderCourseInfo(opt) {
+                const d = opt.dataset;
+                const preferredParts = [];
+                if (d.preferredDay) preferredParts.push(d.preferredDay);
+                if (d.preferredStart && d.preferredEnd) preferredParts.push(`${d.preferredStart}-${d.preferredEnd}`);
+                const rows = [
+                    ['ประเภทคอร์ส', [d.classType, d.deliveryMode].filter(Boolean).join(' · ') || '-'],
+                    ['ระดับ / เครื่องดนตรี', [d.level, d.instrument].filter(Boolean).join(' · ') || '-'],
+                    ['อาจารย์ที่ระบุตอนสมัคร', d.teacherName || 'ให้ทางโรงเรียนจัดให้'],
+                    ['วัน/เวลาที่สะดวก', preferredParts.length ? preferredParts.join(' ') : 'ไม่ได้ระบุ'],
+                ];
+                if (d.structureType === 'special') {
+                    rows.push(['ช่วงวันที่คอร์สกำหนด', `${d.courseStart || '-'} ถึง ${d.courseEnd || '-'}`]);
+                } else {
+                    rows.push(['จำนวนครั้งเรียน', d.totalSessions ?
+                        `ใช้ไป ${d.sessionsUsed || 0}/${d.totalSessions} ครั้ง (คงเหลือ ${d.remainingSessions ?? '-'} ครั้ง)` :
+                        'ไม่จำกัดจำนวนครั้ง'
+                    ]);
+                }
+                const isFull = d.totalSessions && Number(d.remainingSessions) <= 0;
+                sessionInfoBox.className = 'course-info-card' + (isFull ? ' full' : '');
+                sessionInfoBox.innerHTML = `
+                <div class="course-info-title"><i class="bi bi-info-circle"></i> ${d.courseName} (${d.courseCode})</div>
+                <div class="course-info-grid">
+                    ${rows.map(([label, value]) => `<div><span class="label">${label}:</span> <strong>${value}</strong></div>`).join('')}
+                </div>
+            `;
+                sessionInfoBox.classList.remove('d-none');
+            }
             enrollmentSelect.addEventListener('change', function() {
                 const opt = this.options[this.selectedIndex];
                 if (!opt || !opt.value) {
@@ -453,6 +527,7 @@
                 switchMode(opt.dataset.structureType, opt.dataset.totalSessions, opt.dataset.courseStart, opt
                     .dataset.courseEnd);
                 if (opt.dataset.teacherId) teacherSelect.value = opt.dataset.teacherId;
+                renderCourseInfo(opt);
             });
             enrollmentSelect.dispatchEvent(new Event('change'));
             generateBtn.addEventListener('click', async function() {

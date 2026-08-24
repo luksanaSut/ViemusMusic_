@@ -379,9 +379,10 @@ class SaleOrderController extends Controller
         $data = $request->validate([
             'payment_method'    => ['required', 'in:promptpay,transfer,credit_card'],
             'payment_reference' => ['required_if:payment_method,credit_card', 'nullable', 'string', 'max:100'],
-            'payment_proof'     => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+            'payment_proof'     => ['required_if:payment_method,promptpay,transfer', 'nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ], [
             'payment_reference.required_if' => 'กรุณากรอกเลขอ้างอิงการทำรายการบัตร (Ref. no / Auth code)',
+            'payment_proof.required_if'     => 'กรุณาแนบสลิป/หลักฐานการชำระเงินก่อนยืนยัน',
         ]);
 
         $course = $saleOrder->course;

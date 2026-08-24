@@ -535,6 +535,11 @@
                 alert('กรุณากรอกเลขอ้างอิงการทำรายการบัตรก่อนยืนยัน');
                 return;
             }
+            if ((method === 'promptpay' || method === 'transfer') && !document.querySelector(
+                    'input[name="payment_proof"]').files.length) {
+                alert('กรุณาแนบสลิป/หลักฐานการชำระเงินก่อนยืนยัน');
+                return;
+            }
             if (!confirm('ยืนยันว่าตรวจสอบการชำระเงินแล้ว และต้องการยืนยันการสมัครเรียน?')) return;
             const form = document.getElementById('paymentForm');
             this.disabled = true;

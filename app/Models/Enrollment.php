@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 
@@ -46,6 +47,12 @@ class Enrollment extends Model
     public function leaves(): HasMany
     {
         return $this->hasMany(StudentLeave::class);
+    }
+
+    // ใบสั่งซื้อที่ทำให้เกิดการลงทะเบียนนี้ (เก็บวัน/เวลาที่สะดวกตอนสมัคร)
+    public function saleOrder(): HasOne
+    {
+        return $this->hasOne(SaleOrder::class)->latestOfMany();
     }
 
     public function statusLabel(): string

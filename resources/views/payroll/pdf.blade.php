@@ -4,8 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        @font-face {
+            font-family: 'Sarabun';
+            src: url('{{ resource_path('fonts/sarabun/Sarabun-Regular.ttf') }}') format('truetype');
+            font-weight: normal;
+        }
+
+        @font-face {
+            font-family: 'Sarabun';
+            src: url('{{ resource_path('fonts/sarabun/Sarabun-Bold.ttf') }}') format('truetype');
+            font-weight: bold;
+        }
+
         body {
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'Sarabun', 'DejaVu Sans', sans-serif;
             font-size: 12px;
             color: #1c1a17;
         }
