@@ -12,7 +12,7 @@ class DashboardController extends Controller
         $user = $request->user();
 
         return match ($user->role) {
-            'admin'    => redirect()->route('teachers.index'),
+            'admin', 'staff' => redirect()->route('teachers.index'),
             'teacher'  => $this->teacherDashboard($user),
             'student'  => $this->studentDashboard($user),
             'guardian' => $this->guardianDashboard($user),

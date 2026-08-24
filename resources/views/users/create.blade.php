@@ -22,6 +22,7 @@
                     <label class="form-label">บทบาท *</label>
                     <select name="role" id="roleSelect" class="form-select" required>
                         <option value="admin">ผู้ดูแลระบบ</option>
+                        <option value="staff">เจ้าหน้าที่ (Staff)</option>
                         <option value="teacher">อาจารย์</option>
                         <option value="student">นักเรียน</option>
                         <option value="guardian">ผู้ปกครอง</option>

@@ -41,7 +41,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name'        => ['required', 'string', 'max:150'],
             'email'       => ['required', 'email', 'max:150', 'unique:users,email'],
-            'role'        => ['required', 'in:admin,teacher,student,guardian'],
+            'role'        => ['required', 'in:admin,staff,teacher,student,guardian'],
             'teacher_id'  => ['nullable', 'exists:teachers,id', 'unique:users,teacher_id'],
             'student_id'  => ['nullable', 'exists:students,id', 'unique:users,student_id'],
             'guardian_id' => ['nullable', 'exists:guardians,id', 'unique:users,guardian_id'],

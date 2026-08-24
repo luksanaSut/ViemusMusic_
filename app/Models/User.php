@@ -53,6 +53,10 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
     public function isTeacher(): bool
     {
         return $this->role === 'teacher';
@@ -66,10 +70,19 @@ class User extends Authenticatable
         return $this->role === 'guardian';
     }
 
+    // admin มีสิทธิ์ทุกโมดูลเสมอ; staff ต้องได้รับสิทธิ์ผ่านตาราง role_permissions ก่อน
+    public function hasModulePermission(string $key): bool
+    {
+        if ($this->isAdmin()) return true;
+
+        return RolePermission::isGranted($this->role, $key);
+    }
+
     public function roleLabel(): string
     {
         return match ($this->role) {
             'admin'    => 'ผู้ดูแลระบบ',
+            'staff'    => 'เจ้าหน้าที่',
             'teacher'  => 'อาจารย์',
             'student'  => 'นักเรียน',
             'guardian' => 'ผู้ปกครอง',
@@ -81,6 +94,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             'admin'    => 'text-bg-dark',
+            'staff'    => 'text-bg-info',
             'teacher'  => 'text-bg-primary',
             'student'  => 'text-bg-success',
             'guardian' => 'text-bg-warning',

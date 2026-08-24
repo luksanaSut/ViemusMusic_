@@ -27,6 +27,7 @@
                     <select name="role" class="form-select">
                         <option value="">ทุกบทบาท</option>
                         <option value="admin" @selected(request('role') == 'admin')>ผู้ดูแลระบบ</option>
+                        <option value="staff" @selected(request('role') == 'staff')>เจ้าหน้าที่ (Staff)</option>
                         <option value="teacher" @selected(request('role') == 'teacher')>อาจารย์</option>
                         <option value="student" @selected(request('role') == 'student')>นักเรียน</option>
                         <option value="guardian" @selected(request('role') == 'guardian')>ผู้ปกครอง</option>

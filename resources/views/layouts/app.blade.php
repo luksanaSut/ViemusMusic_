@@ -465,186 +465,261 @@
             </div>
         </div>
 
-        @if (auth()->user()->isAdmin())
+        @if (auth()->user()->isAdmin() || auth()->user()->isStaff())
+            @php $u = auth()->user(); @endphp
 
             {{-- ==================== ภาพรวม ==================== --}}
-            <div class="nav-section-label">ภาพรวม</div>
+            @if ($u->hasModulePermission('teachers.manage'))
+                <div class="nav-section-label">ภาพรวม</div>
 
-            <a href="{{ route('teachers.index') }}" class="nav-link">
-                <i class="bi bi-grid-1x2"></i> Dashboard
-            </a>
+                <a href="{{ route('teachers.index') }}" class="nav-link">
+                    <i class="bi bi-grid-1x2"></i> Dashboard
+                </a>
+            @endif
 
 
             {{-- ==================== บุคคล ==================== --}}
-            <div class="nav-section-label">บุคคล</div>
+            @if ($u->hasModulePermission('students.manage') || $u->hasModulePermission('guardians.manage') || $u->hasModulePermission('teachers.manage'))
+                <div class="nav-section-label">บุคคล</div>
 
-            <a href="{{ route('students.index') }}"
-                class="nav-link {{ request()->routeIs('students.*') ? 'active' : '' }}">
-                <i class="bi bi-mortarboard"></i> จัดการนักเรียน
-            </a>
+                @if ($u->hasModulePermission('students.manage'))
+                    <a href="{{ route('students.index') }}"
+                        class="nav-link {{ request()->routeIs('students.*') ? 'active' : '' }}">
+                        <i class="bi bi-mortarboard"></i> จัดการนักเรียน
+                    </a>
+                @endif
 
-            <a href="{{ route('guardians.index') }}"
-                class="nav-link {{ request()->routeIs('guardians.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> จัดการผู้ปกครอง
-            </a>
+                @if ($u->hasModulePermission('guardians.manage'))
+                    <a href="{{ route('guardians.index') }}"
+                        class="nav-link {{ request()->routeIs('guardians.*') ? 'active' : '' }}">
+                        <i class="bi bi-people"></i> จัดการผู้ปกครอง
+                    </a>
+                @endif
 
-            <a href="{{ route('teachers.index') }}"
-                class="nav-link {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i> จัดการอาจารย์
-            </a>
+                @if ($u->hasModulePermission('teachers.manage'))
+                    <a href="{{ route('teachers.index') }}"
+                        class="nav-link {{ request()->routeIs('teachers.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-badge"></i> จัดการอาจารย์
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== หลักสูตรและตารางเรียน ==================== --}}
-            <div class="nav-section-label">หลักสูตรและตารางเรียน</div>
+            @if ($u->hasModulePermission('courses.manage') || $u->hasModulePermission('rooms.manage') || $u->hasModulePermission('schedules.manage'))
+                <div class="nav-section-label">หลักสูตรและตารางเรียน</div>
 
-            <a href="{{ route('courses.index') }}"
-                class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
-            </a>
+                @if ($u->hasModulePermission('courses.manage'))
+                    <a href="{{ route('courses.index') }}"
+                        class="nav-link {{ request()->routeIs('courses.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-bookmark"></i> จัดการคอร์สเรียน
+                    </a>
+                @endif
 
-            <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
-                <i class="bi bi-door-open"></i> จัดการห้องเรียน
-            </a>
+                @if ($u->hasModulePermission('rooms.manage'))
+                    <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
+                        <i class="bi bi-door-open"></i> จัดการห้องเรียน
+                    </a>
+                @endif
 
-            <a href="{{ route('schedules.index') }}"
-                class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> จัดตารางเรียน
-            </a>
+                @if ($u->hasModulePermission('schedules.manage'))
+                    <a href="{{ route('schedules.index') }}"
+                        class="nav-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar3"></i> จัดตารางเรียน
+                    </a>
 
-            <a href="{{ route('schedule.index') }}"
-                class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-week"></i> ตารางเรียน
-            </a>
+                    <a href="{{ route('schedule.index') }}"
+                        class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-week"></i> ตารางเรียน
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== การเรียนการสอน ==================== --}}
-            <div class="nav-section-label">การเรียนการสอน</div>
+            @if ($u->isAdmin() || $u->hasModulePermission('courses.manage'))
+                <div class="nav-section-label">การเรียนการสอน</div>
 
-            <a href="{{ route('teaching-logs.index') }}"
-                class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-check"></i> บันทึกการสอน
-            </a>
+                @if ($u->isAdmin())
+                    <a href="{{ route('teaching-logs.index') }}"
+                        class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-check"></i> บันทึกการสอน
+                    </a>
 
-            <a href="{{ route('homework-submissions.index') }}"
-                class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
-                <i class="bi bi-pencil-square"></i> ตรวจการบ้าน
-            </a>
+                    <a href="{{ route('homework-submissions.index') }}"
+                        class="nav-link {{ request()->routeIs('homework-submissions.index') ? 'active' : '' }}">
+                        <i class="bi bi-pencil-square"></i> ตรวจการบ้าน
+                    </a>
 
-            <a href="{{ route('run-throughs.index') }}"
-                class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-repeat"></i> Run Through
-            </a>
+                    <a href="{{ route('run-throughs.index') }}"
+                        class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
+                        <i class="bi bi-arrow-repeat"></i> Run Through
+                    </a>
+                @endif
 
-            <a href="{{ route('evaluation-categories.index') }}"
-                class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
-                <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
-            </a>
+                @if ($u->hasModulePermission('courses.manage'))
+                    <a href="{{ route('evaluation-categories.index') }}"
+                        class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== คำร้องและการเปลี่ยนแปลง ==================== --}}
-            <div class="nav-section-label">คำร้องและการเปลี่ยนแปลง</div>
+            @if ($u->hasModulePermission('makeup_reschedule.manage') || $u->hasModulePermission('teachers.manage'))
+                <div class="nav-section-label">คำร้องและการเปลี่ยนแปลง</div>
 
-            <a href="{{ route('reschedule-requests.index') }}"
-                class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-left-right"></i> สลับคลาส
-            </a>
+                @if ($u->hasModulePermission('makeup_reschedule.manage'))
+                    <a href="{{ route('reschedule-requests.index') }}"
+                        class="nav-link {{ request()->routeIs('reschedule-requests.*') ? 'active' : '' }}">
+                        <i class="bi bi-arrow-left-right"></i> สลับคลาส
+                    </a>
+                @endif
 
-            <a href="{{ route('teacher-leaves.index') }}"
-                class="nav-link {{ request()->routeIs('teacher-leaves.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-x"></i> คำขอลาหยุดสอน
-            </a>
+                @if ($u->hasModulePermission('teachers.manage'))
+                    <a href="{{ route('teacher-leaves.index') }}"
+                        class="nav-link {{ request()->routeIs('teacher-leaves.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-x"></i> คำขอลาหยุดสอน
+                    </a>
+                @endif
 
-            <a href="{{ route('makeup-requests.index') }}"
-                class="nav-link {{ request()->routeIs('makeup-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-plus"></i> จัดการเรียนชดเชย
-            </a>
+                @if ($u->hasModulePermission('makeup_reschedule.manage'))
+                    <a href="{{ route('makeup-requests.index') }}"
+                        class="nav-link {{ request()->routeIs('makeup-requests.*') ? 'active' : '' }}">
+                        <i class="bi bi-calendar-plus"></i> จัดการเรียนชดเชย
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== งานขาย ==================== --}}
-            <div class="nav-section-label">งานขาย</div>
+            @if ($u->hasModulePermission('sales.manage') || $u->hasModulePermission('course_transfers.manage') || $u->hasModulePermission('promotions.manage') || $u->hasModulePermission('membership.manage'))
+                <div class="nav-section-label">งานขาย</div>
 
-            <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
-                <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
-            </a>
+                @if ($u->hasModulePermission('sales.manage'))
+                    <a href="{{ route('sales.index') }}" class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}">
+                        <i class="bi bi-cart-check"></i> ระบบขายคอร์สเรียน
+                    </a>
+                @endif
 
-            <a href="{{ route('course-transfers.index') }}"
-                class="nav-link {{ request()->routeIs('course-transfers.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-left-right"></i> เปลี่ยนคอร์สเรียน
-            </a>
+                @if ($u->hasModulePermission('course_transfers.manage'))
+                    <a href="{{ route('course-transfers.index') }}"
+                        class="nav-link {{ request()->routeIs('course-transfers.*') ? 'active' : '' }}">
+                        <i class="bi bi-arrow-left-right"></i> เปลี่ยนคอร์สเรียน
+                    </a>
+                @endif
 
-            <a href="{{ route('promotions.index') }}"
-                class="nav-link {{ request()->routeIs('promotions.*') ? 'active' : '' }}">
-                <i class="bi bi-tags"></i> โปรโมชัน / คูปอง
-            </a>
+                @if ($u->hasModulePermission('promotions.manage'))
+                    <a href="{{ route('promotions.index') }}"
+                        class="nav-link {{ request()->routeIs('promotions.*') ? 'active' : '' }}">
+                        <i class="bi bi-tags"></i> โปรโมชัน / คูปอง
+                    </a>
+                @endif
 
-            <a href="{{ route('membership-tiers.index') }}"
-                class="nav-link {{ request()->routeIs('membership-tiers.*') ? 'active' : '' }}">
-                <i class="bi bi-award"></i> ระดับสมาชิก
-            </a>
+                @if ($u->hasModulePermission('membership.manage'))
+                    <a href="{{ route('membership-tiers.index') }}"
+                        class="nav-link {{ request()->routeIs('membership-tiers.*') ? 'active' : '' }}">
+                        <i class="bi bi-award"></i> ระดับสมาชิก
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== Music Store ==================== --}}
-            <div class="nav-section-label">Music Store</div>
+            @if ($u->hasModulePermission('products.manage') || $u->hasModulePermission('store_sales.manage'))
+                <div class="nav-section-label">Music Store</div>
 
-            <a href="{{ route('products.index') }}"
-                class="nav-link {{ request()->routeIs('products.*') || request()->routeIs('product-categories.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i> จัดการสินค้า
-            </a>
+                @if ($u->hasModulePermission('products.manage'))
+                    <a href="{{ route('products.index') }}"
+                        class="nav-link {{ request()->routeIs('products.*') || request()->routeIs('product-categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-box-seam"></i> จัดการสินค้า
+                    </a>
 
-            <a href="{{ route('stock.index') }}" class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-                <i class="bi bi-boxes"></i> ระบบสต็อกสินค้า
-            </a>
+                    <a href="{{ route('stock.index') }}" class="nav-link {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                        <i class="bi bi-boxes"></i> ระบบสต็อกสินค้า
+                    </a>
+                @endif
 
-            <a href="{{ route('store-sales.index') }}"
-                class="nav-link {{ request()->routeIs('store-sales.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> ขายสินค้า
-            </a>
+                @if ($u->hasModulePermission('store_sales.manage'))
+                    <a href="{{ route('store-sales.index') }}"
+                        class="nav-link {{ request()->routeIs('store-sales.*') ? 'active' : '' }}">
+                        <i class="bi bi-receipt"></i> ขายสินค้า
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== การเงิน ==================== --}}
-            <div class="nav-section-label">การเงิน</div>
+            @if ($u->hasModulePermission('finance.manage') || $u->hasModulePermission('payroll.manage') || $u->hasModulePermission('transport_fees.manage'))
+                <div class="nav-section-label">การเงิน</div>
 
-            <a href="{{ route('finance.dashboard') }}"
-                class="nav-link {{ request()->routeIs('finance.dashboard') ? 'active' : '' }}">
-                <i class="bi bi-graph-up-arrow"></i> ภาพรวมการเงิน
-            </a>
+                @if ($u->hasModulePermission('finance.manage'))
+                    <a href="{{ route('finance.dashboard') }}"
+                        class="nav-link {{ request()->routeIs('finance.dashboard') ? 'active' : '' }}">
+                        <i class="bi bi-graph-up-arrow"></i> ภาพรวมการเงิน
+                    </a>
 
-            <a href="{{ route('expenses.index') }}"
-                class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt-cutoff"></i> บันทึกรายจ่าย
-            </a>
+                    <a href="{{ route('expenses.index') }}"
+                        class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
+                        <i class="bi bi-receipt-cutoff"></i> บันทึกรายจ่าย
+                    </a>
 
-            <a href="{{ route('finance.report') }}"
-                class="nav-link {{ request()->routeIs('finance.report') ? 'active' : '' }}">
-                <i class="bi bi-bar-chart-line"></i> รายงานการเงิน
-            </a>
+                    <a href="{{ route('finance.report') }}"
+                        class="nav-link {{ request()->routeIs('finance.report') ? 'active' : '' }}">
+                        <i class="bi bi-bar-chart-line"></i> รายงานการเงิน
+                    </a>
+                @endif
 
-            <a href="{{ route('payroll.index') }}"
-                class="nav-link {{ request()->routeIs('payroll.*') && !request()->routeIs('payroll.my-index') ? 'active' : '' }}">
-                <i class="bi bi-cash-stack"></i> เงินเดือนอาจารย์
-            </a>
+                @if ($u->hasModulePermission('payroll.manage'))
+                    <a href="{{ route('payroll.index') }}"
+                        class="nav-link {{ request()->routeIs('payroll.*') && !request()->routeIs('payroll.my-index') ? 'active' : '' }}">
+                        <i class="bi bi-cash-stack"></i> เงินเดือนอาจารย์
+                    </a>
+                @endif
 
-            <a href="{{ route('transport-fees.index') }}"
-                class="nav-link {{ request()->routeIs('transport-fees.*') && !request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
-                <i class="bi bi-car-front"></i> ค่ารถอาจารย์
-            </a>
+                @if ($u->hasModulePermission('transport_fees.manage'))
+                    <a href="{{ route('transport-fees.index') }}"
+                        class="nav-link {{ request()->routeIs('transport-fees.*') && !request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
+                        <i class="bi bi-car-front"></i> ค่ารถอาจารย์
+                    </a>
+                @endif
+            @endif
 
 
             {{-- ==================== รายงาน ==================== --}}
-            <div class="nav-section-label">รายงาน</div>
+            @if ($u->hasModulePermission('reports.view'))
+                <div class="nav-section-label">รายงาน</div>
 
-            <a href="{{ route('reports.index') }}"
-                class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i> รายงาน
-            </a>
+                <a href="{{ route('reports.index') }}"
+                    class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i> รายงาน
+                </a>
+            @endif
 
 
             {{-- ==================== ระบบ ==================== --}}
-            <div class="nav-section-label">ระบบ</div>
+            @if ($u->isAdmin() || $u->hasModulePermission('audit_logs.view'))
+                <div class="nav-section-label">ระบบ</div>
 
-            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
-            </a>
+                @if ($u->isAdmin())
+                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="bi bi-people-fill"></i> จัดการผู้ใช้งานระบบ
+                    </a>
+
+                    <a href="{{ route('role-permissions.index') }}"
+                        class="nav-link {{ request()->routeIs('role-permissions.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-lock"></i> จัดการสิทธิ์
+                    </a>
+                @endif
+
+                @if ($u->hasModulePermission('audit_logs.view'))
+                    <a href="{{ route('audit-logs.index') }}"
+                        class="nav-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
+                        <i class="bi bi-clock-history"></i> ประวัติการใช้งาน
+                    </a>
+                @endif
+            @endif
         @else
             {{-- ==================== เมนูหลัก ==================== --}}
             <div class="nav-section-label">เมนูหลัก</div>
