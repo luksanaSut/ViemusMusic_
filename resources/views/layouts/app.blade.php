@@ -630,6 +630,15 @@
             </a>
 
 
+            {{-- ==================== รายงาน ==================== --}}
+            <div class="nav-section-label">รายงาน</div>
+
+            <a href="{{ route('reports.index') }}"
+                class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-bar-graph"></i> รายงาน
+            </a>
+
+
             {{-- ==================== ระบบ ==================== --}}
             <div class="nav-section-label">ระบบ</div>
 

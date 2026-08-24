@@ -46,6 +46,7 @@ use App\Http\Controllers\HomeworkSubmissionController;
 use App\Http\Controllers\RunThroughController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\TransportFeeController;
 use App\Http\Controllers\ProductCategoryController;
@@ -378,6 +379,21 @@ Route::middleware($adminMiddleware)->group(function () {
     Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
     Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+    // ----- รายงาน -----
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+    Route::get('reports/students', [ReportController::class, 'students'])->name('reports.students');
+    Route::get('reports/students/export-excel', [ReportController::class, 'exportStudentsExcel'])->name('reports.students.export-excel');
+    Route::get('reports/students/export-pdf', [ReportController::class, 'exportStudentsPdf'])->name('reports.students.export-pdf');
+
+    Route::get('reports/revenue', [ReportController::class, 'revenue'])->name('reports.revenue');
+    Route::get('reports/revenue/export-excel', [ReportController::class, 'exportRevenueExcel'])->name('reports.revenue.export-excel');
+    Route::get('reports/revenue/export-pdf', [ReportController::class, 'exportRevenuePdf'])->name('reports.revenue.export-pdf');
+
+    Route::get('reports/teacher-performance', [ReportController::class, 'teacherPerformance'])->name('reports.teacher-performance');
+    Route::get('reports/teacher-performance/export-excel', [ReportController::class, 'exportTeacherPerformanceExcel'])->name('reports.teacher-performance.export-excel');
+    Route::get('reports/teacher-performance/export-pdf', [ReportController::class, 'exportTeacherPerformancePdf'])->name('reports.teacher-performance.export-pdf');
 
     // ----- Music Store: จัดการสินค้า -----
     Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');
