@@ -36,6 +36,10 @@ class TeacherLeaveController extends Controller
     // POST /teachers/{teacher}/leaves — อาจารย์แจ้งลาหยุดสอน
     public function store(Request $request, Teacher $teacher)
     {
+        if ($request->user()->isTeacher() && $request->user()->teacher_id !== $teacher->id) {
+            abort(403, 'คุณสามารถแจ้งลาหยุดสอนได้เฉพาะบัญชีของตัวเองเท่านั้น');
+        }
+
         $data = $request->validate([
             'leave_date_from' => ['required', 'date'],
             'leave_date_to'   => ['required', 'date', 'after_or_equal:leave_date_from'],

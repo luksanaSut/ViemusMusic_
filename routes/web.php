@@ -53,6 +53,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\TransportFeeController;
+use App\Http\Controllers\TeacherWorkspaceController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockController;
@@ -199,6 +200,9 @@ if (!app()->environment('testing')) {
     array_unshift($teacherMiddleware, 'throttle:30,1');
 }
 Route::middleware($teacherMiddleware)->group(function () {
+    Route::get('my-teaching-schedule', [TeacherWorkspaceController::class, 'schedule'])->name('teacher.schedule');
+    Route::get('my-teaching-tasks', [TeacherWorkspaceController::class, 'tasks'])->name('teacher.tasks');
+    Route::get('my-students', [TeacherWorkspaceController::class, 'students'])->name('teacher.students');
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
     Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
     Route::get('my-payroll', [PayrollController::class, 'myIndex'])->name('payroll.my-index');

@@ -55,6 +55,11 @@ class Enrollment extends Model
         return $this->hasOne(SaleOrder::class)->latestOfMany();
     }
 
+    public function courseEvaluation(): HasOne
+    {
+        return $this->hasOne(CourseEvaluation::class)->latestOfMany();
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {

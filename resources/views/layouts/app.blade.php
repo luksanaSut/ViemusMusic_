@@ -753,6 +753,24 @@
             @if (auth()->user()->isTeacher())
                 <div class="nav-section-label">การเรียนการสอน</div>
 
+                <a href="{{ route('teacher.schedule') }}"
+                    class="nav-link {{ request()->routeIs('teacher.schedule') ? 'active' : '' }}">
+                    <i class="bi bi-calendar3"></i> ตารางสอนของฉัน
+                </a>
+
+                <a href="{{ route('teacher.tasks') }}"
+                    class="nav-link {{ request()->routeIs('teacher.tasks') ? 'active' : '' }}">
+                    <i class="bi bi-list-check"></i> งานที่ต้องทำ
+                    @if (($teacherPendingTaskCount ?? 0) > 0)
+                        <span class="badge rounded-pill text-bg-danger ms-auto">{{ $teacherPendingTaskCount > 99 ? '99+' : $teacherPendingTaskCount }}</span>
+                    @endif
+                </a>
+
+                <a href="{{ route('teacher.students') }}"
+                    class="nav-link {{ request()->routeIs('teacher.students') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> นักเรียนของฉัน
+                </a>
+
                 <a href="{{ route('teaching-logs.index') }}"
                     class="nav-link {{ request()->routeIs('teaching-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-journal-check"></i> บันทึกการสอนของฉัน
@@ -790,13 +808,8 @@
                 <div class="nav-section-label">รายได้</div>
 
                 <a href="{{ route('payroll.my-index') }}"
-                    class="nav-link {{ request()->routeIs('payroll.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-cash-stack"></i> เงินเดือนของฉัน
-                </a>
-
-                <a href="{{ route('transport-fees.my-index') }}"
-                    class="nav-link {{ request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-car-front"></i> ค่ารถของฉัน
+                    class="nav-link {{ request()->routeIs('payroll.my-index') || request()->routeIs('transport-fees.my-index') ? 'active' : '' }}">
+                    <i class="bi bi-wallet2"></i> รายได้ของฉัน
                 </a>
             @endif
 

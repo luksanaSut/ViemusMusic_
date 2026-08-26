@@ -1,8 +1,12 @@
 @extends('layouts.app')
-@section('title', 'เงินเดือนของฉัน')
+@section('title', 'รายได้ของฉัน')
 
 @section('content')
-    <h1 class="page-title mb-3"><i class="bi bi-cash-stack"></i> ประวัติเงินเดือนของฉัน</h1>
+    <h1 class="page-title mb-3"><i class="bi bi-wallet2"></i> รายได้ของฉัน</h1>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{{ route('payroll.my-index') }}" class="btn btn-sm btn-accent"><i class="bi bi-pie-chart"></i> สรุปและประวัติการจ่าย</a>
+        <a href="{{ route('transport-fees.my-index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-car-front"></i> รายละเอียดค่ารถ</a>
+    </div>
 
     <div class="card">
         <div class="table-responsive">
