@@ -826,7 +826,7 @@
 
                 <a href="{{ route('homework-submissions.my-index') }}"
                     class="nav-link {{ request()->routeIs('homework-submissions.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-journal-check"></i> การบ้าน
+                    <i class="bi bi-journal-check"></i> การบ้านของฉัน
                 </a>
 
                 <a href="{{ route('run-throughs.my-index') }}"

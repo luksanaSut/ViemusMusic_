@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AppNotification;
 use App\Models\ClassSchedule;
+use App\Models\MakeupRequest;
 use App\Models\StudentLeave;
 use App\Models\Teacher;
 use App\Models\TeachingLog;
@@ -13,36 +14,131 @@ use Illuminate\Support\Facades\DB;
 
 class TeachingLogController extends Controller
 {
-    // GET /teaching-logs — ประวัติการเข้าเรียนทั้งหมด + ค้นหา + รายการที่รอเช็คชื่อ
+    // GET /teaching-logs — แดชบอร์ดเช็คชื่อเข้าเรียน แยกตามช่วงวัน/สัปดาห์/เดือน
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $logs = TeachingLog::with(['classSchedule', 'student', 'teacher', 'enrollment.course'])
-            ->when($user->isTeacher() && $user->teacher_id, fn($q) => $q->where('teacher_id', $user->teacher_id))
-            ->when($request->filled('q'), function ($q) use ($request) {
-                $term = $request->q;
-                $q->whereHas('student', fn($qq) => $qq->where('full_name', 'like', "%{$term}%"))
-                    ->orWhereHas('teacher', fn($qq) => $qq->where('full_name', 'like', "%{$term}%"));
-            })
-            ->when($request->filled('status'), fn($q) => $q->where('attendance_status', $request->status))
-            ->when($request->filled('date_from'), fn($q) => $q->whereHas('classSchedule', fn($qq) => $qq->where('schedule_date', '>=', $request->date_from)))
-            ->when($request->filled('date_to'), fn($q) => $q->whereHas('classSchedule', fn($qq) => $qq->where('schedule_date', '<=', $request->date_to)))
-            ->orderByDesc('created_at')
-            ->paginate(20)
-            ->withQueryString();
+        $range = in_array($request->get('range'), ['day', 'week', 'month']) ? $request->get('range') : 'day';
 
-        // ===== คาบที่ยังไม่เคยเปิดเช็คชื่อเลย (ยังไม่มี TeachingLog) แสดงให้กดเข้าไปเช็คชื่อได้ทันที =====
-        $pendingSchedules = ClassSchedule::with(['enrollment.student', 'enrollment.course', 'teacher'])
-            ->where('status', 'scheduled')
-            ->where('schedule_date', '<=', now()->toDateString()) // เฉพาะคาบที่ถึงวันแล้วหรือผ่านไปแล้ว
-            ->doesntHave('teachingLog')
+        $refDate = now();
+        if ($request->filled('date')) {
+            try {
+                $refDate = \Carbon\Carbon::parse($request->get('date'))->startOfDay();
+            } catch (\Exception $e) {
+                $refDate = now();
+            }
+        }
+
+        [$rangeStart, $rangeEnd, $rangeLabel, $prevDate, $nextDate, $isCurrentPeriod] = $this->resolveRange($range, $refDate);
+
+        $schedules = ClassSchedule::with(['enrollment.student', 'enrollment.course', 'teacher', 'room', 'teachingLog'])
+            ->whereIn('status', ['scheduled', 'completed', 'no_show'])
+            ->whereBetween('schedule_date', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
             ->when($user->isTeacher() && $user->teacher_id, fn($q) => $q->where('teacher_id', $user->teacher_id))
-            ->orderByDesc('schedule_date')
-            ->limit(20)
+            ->orderBy('schedule_date')
+            ->orderBy('start_time')
+            ->limit(500)
             ->get();
 
-        return view('teaching-logs.index', compact('logs', 'pendingSchedules'));
+        $scheduleIds = $schedules->pluck('id');
+
+        // คาบที่มีคำขอลาที่อนุมัติแล้วผูกอยู่ (แม้ยังไม่เคยเปิดหน้าเช็คชื่อจึงยังไม่มี TeachingLog ก็ต้องนับเป็น "ลา")
+        $approvedLeaveScheduleIds = StudentLeave::where('status', 'approved')
+            ->whereIn('class_schedule_id', $scheduleIds)
+            ->pluck('class_schedule_id')
+            ->flip();
+
+        // คาบที่เป็นคาบเรียนชดเชย (ถูกสร้างจากคำขอสอนชดเชยที่อนุมัติแล้ว)
+        $makeupScheduleIds = MakeupRequest::whereIn('class_schedule_id', $scheduleIds)
+            ->pluck('class_schedule_id')
+            ->flip();
+
+        $stats = ['total' => $schedules->count(), 'pending' => 0, 'checked' => 0, 'absent' => 0, 'leave' => 0, 'makeup' => 0];
+        $pendingItems = collect();
+        $historyItems = collect();
+
+        foreach ($schedules as $s) {
+            $log = $s->teachingLog;
+            $status = $log->attendance_status ?? null;
+            $isMakeup = $makeupScheduleIds->has($s->id);
+            $hasApprovedLeave = $approvedLeaveScheduleIds->has($s->id);
+
+            $bucket = match (true) {
+                $hasApprovedLeave || $status === 'excused_leave' => 'leave',
+                $status === 'absent' => 'absent',
+                in_array($status, ['present', 'late']) => 'checked',
+                default => 'pending',
+            };
+
+            $stats[$bucket]++;
+            if ($isMakeup) $stats['makeup']++;
+
+            $s->uiBucket = $bucket;
+            $s->isMakeup = $isMakeup;
+
+            // ยังต้องดำเนินการต่อจนกว่าจะยืนยันเวลาสอนจริงแล้ว (แก้ไขไม่ได้อีก) — ถึงจะถือว่าเสร็จสมบูรณ์
+            if (!$log || !$log->confirmed_at) {
+                $pendingItems->push($s);
+            } else {
+                $historyItems->push($s);
+            }
+        }
+
+        $branches = $schedules->pluck('teacher.branch')->filter()->unique()->sort()->values();
+
+        $teacherLabel = ($user->isTeacher() && $user->teacher)
+            ? 'ครู' . ($user->teacher->nickname ?: $user->teacher->full_name)
+            : $user->displayName();
+
+        return view('teaching-logs.index', compact(
+            'range',
+            'rangeLabel',
+            'teacherLabel',
+            'stats',
+            'pendingItems',
+            'historyItems',
+            'branches',
+            'refDate',
+            'prevDate',
+            'nextDate',
+            'isCurrentPeriod',
+            'rangeStart'
+        ));
+    }
+
+    // คำนวณช่วงวันที่ + ป้ายแสดงผลภาษาไทย (ปี พ.ศ.) + วันที่ก่อนหน้า/ถัดไป ตามมุมมองที่เลือก (รายวัน/สัปดาห์/เดือน)
+    // โดยอิงจาก $refDate (วันที่ผู้ใช้เลือกไว้ ไม่ใช่วันนี้เสมอไป) เพื่อให้เลื่อนดูเดือน/สัปดาห์/วันอื่นได้
+    private function resolveRange(string $range, \Carbon\Carbon $refDate): array
+    {
+        $today = now();
+        $monthsShort = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        $monthsFull = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+        if ($range === 'week') {
+            $start = $refDate->copy()->startOfWeek();
+            $end = $refDate->copy()->endOfWeek();
+            $label = "{$start->day} {$monthsShort[$start->month]} - {$end->day} {$monthsShort[$end->month]} " . ($end->year + 543);
+            $prev = $start->copy()->subWeek();
+            $next = $start->copy()->addWeek();
+            $isCurrent = $today->between($start, $end);
+        } elseif ($range === 'month') {
+            $start = $refDate->copy()->startOfMonth();
+            $end = $refDate->copy()->endOfMonth();
+            $label = $monthsFull[$start->month] . ' ' . ($start->year + 543);
+            $prev = $start->copy()->subMonthNoOverflow();
+            $next = $start->copy()->addMonthNoOverflow();
+            $isCurrent = $today->isSameMonth($start) && $today->isSameYear($start);
+        } else {
+            $start = $refDate->copy()->startOfDay();
+            $end = $refDate->copy()->endOfDay();
+            $label = "{$start->day} {$monthsShort[$start->month]} " . ($start->year + 543);
+            $prev = $start->copy()->subDay();
+            $next = $start->copy()->addDay();
+            $isCurrent = $today->isSameDay($start);
+        }
+
+        return [$start, $end, $label, $prev, $next, $isCurrent];
     }
 
     // GET /schedules/{classSchedule}/attendance — หน้าเช็คชื่อ + ยืนยันเวลาสอนของคาบนั้น

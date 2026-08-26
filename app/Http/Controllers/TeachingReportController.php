@@ -92,7 +92,13 @@ class TeachingReportController extends Controller
 
         $studentIds = $students->pluck('id');
 
-        $reports = TeachingReport::with(['teachingLog.classSchedule', 'teachingLog.enrollment.course', 'attachments'])
+        $reports = TeachingReport::with([
+            'teachingLog.classSchedule',
+            'teachingLog.student',
+            'teachingLog.enrollment.course',
+            'teachingLog.evidences',
+            'attachments',
+        ])
             ->whereHas('teachingLog', fn($q) => $q->whereIn('student_id', $studentIds))
             ->orderByDesc('created_at')
             ->paginate(15);

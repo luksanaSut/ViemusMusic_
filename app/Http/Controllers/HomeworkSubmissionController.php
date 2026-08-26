@@ -21,11 +21,13 @@ class HomeworkSubmissionController extends Controller
         }
 
         $data = $request->validate([
-            'student_note' => ['nullable', 'string', 'max:1000'],
-            'files'         => ['required', 'array', 'min:1', 'max:10'],
-            'files.*'       => ['file', 'max:51200', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,mp3,mp4,mov,m4a'],
+            'student_note' => ['nullable', 'string', 'max:10000', 'required_without:files'],
+            'files'         => ['nullable', 'array', 'min:1', 'max:10', 'required_without:student_note'],
+            'files.*'       => ['file', 'max:51200', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,mp3,wav,m4a,aac,ogg,flac,mp4,mov'],
         ], [
-            'files.*.mimes' => 'รองรับเฉพาะไฟล์รูปภาพ, PDF, เอกสาร, เสียง หรือวิดีโอเท่านั้น',
+            'student_note.required_without' => 'กรุณาพิมพ์เนื้อหาคำตอบหรือแนบไฟล์งานอย่างน้อยหนึ่งรายการ',
+            'files.required_without' => 'กรุณาพิมพ์เนื้อหาคำตอบหรือแนบไฟล์งานอย่างน้อยหนึ่งรายการ',
+            'files.*.mimes' => 'รองรับเฉพาะไฟล์รูปภาพ, PDF, เอกสาร, ไฟล์เสียง หรือวิดีโอเท่านั้น',
         ]);
 
         // Business rule: ส่งใหม่กรณีแก้ไขงาน -> version เพิ่มขึ้นทุกครั้ง ไม่ทับของเดิม
@@ -42,7 +44,7 @@ class HomeworkSubmissionController extends Controller
                 'submitted_by'        => $request->user()->displayName(),
             ]);
 
-            foreach ($request->file('files') as $file) {
+            foreach ($request->file('files', []) as $file) {
                 $path = $file->store('homework-submissions', 'public');
                 $submission->files()->create([
                     'file_path'     => $path,
@@ -69,15 +71,25 @@ class HomeworkSubmissionController extends Controller
     {
         $user = $request->user();
 
-        $submissions = HomeworkSubmission::with(['student', 'teachingReport.teachingLog.enrollment.course', 'files'])
-            ->when($user->isTeacher() && $user->teacher_id, fn($q) => $q->whereHas('teachingReport.teachingLog', fn($qq) => $qq->where('teacher_id', $user->teacher_id)))
-            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
-            ->orderByRaw("status = 'submitted' desc")
-            ->orderByDesc('created_at')
-            ->paginate(20)
-            ->withQueryString();
+        $base = HomeworkSubmission::with(['student', 'teachingReport.teachingLog.student', 'teachingReport.teachingLog.enrollment.course', 'files'])
+            ->when($user->isTeacher() && $user->teacher_id, fn($q) => $q->whereHas('teachingReport.teachingLog', fn($qq) => $qq->where('teacher_id', $user->teacher_id)));
 
-        return view('homework-submissions.index', compact('submissions'));
+        $stats = [
+            'total'          => (clone $base)->count(),
+            'pending'        => (clone $base)->where('status', 'submitted')->count(),
+            'approved'       => (clone $base)->where('status', 'approved')->count(),
+            'needs_revision' => (clone $base)->where('status', 'needs_revision')->count(),
+        ];
+
+        $pendingSubmissions = (clone $base)->where('status', 'submitted')
+            ->orderBy('created_at')
+            ->get();
+
+        $historySubmissions = (clone $base)->whereIn('status', ['approved', 'needs_revision'])
+            ->orderByDesc('reviewed_at')
+            ->paginate(20, ['*'], 'history_page');
+
+        return view('homework-submissions.index', compact('pendingSubmissions', 'historySubmissions', 'stats'));
     }
 
     // POST /homework-submissions/{homeworkSubmission}/review — อาจารย์ตรวจและให้ Feedback
@@ -114,7 +126,7 @@ class HomeworkSubmissionController extends Controller
         return back()->with('success', 'บันทึกผลการตรวจการบ้านเรียบร้อยแล้ว');
     }
 
-    // GET /my-homework — นักเรียน/ผู้ปกครองดูประวัติการบ้านย้อนหลัง
+    // GET /my-homework — งานที่ต้องส่ง/แก้ไข + ประวัติการส่งของนักเรียน/ผู้ปกครอง
     public function myIndex(Request $request)
     {
         $user = $request->user();
@@ -128,12 +140,35 @@ class HomeworkSubmissionController extends Controller
 
         $studentIds = $students->pluck('id');
 
-        $submissions = HomeworkSubmission::with(['teachingReport.teachingLog.enrollment.course', 'files'])
+        $assignments = TeachingReport::with([
+            'teachingLog.student',
+            'teachingLog.teacher',
+            'teachingLog.classSchedule',
+            'teachingLog.enrollment.course',
+            'homeworkSubmissions.files',
+        ])
+            ->whereNotNull('homework')
+            ->where('homework', '!=', '')
+            ->whereHas('teachingLog', fn($q) => $q->whereIn('student_id', $studentIds))
+            ->orderByDesc('created_at')
+            ->get();
+
+        $actionableAssignments = $assignments->filter(function (TeachingReport $report) {
+            $latest = $report->latestHomeworkSubmission();
+            return !$latest || $latest->status === 'needs_revision';
+        });
+
+        $submissions = HomeworkSubmission::with([
+            'teachingReport.teachingLog.classSchedule',
+            'teachingReport.teachingLog.student',
+            'teachingReport.teachingLog.enrollment.course',
+            'files',
+        ])
             ->whereIn('student_id', $studentIds)
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate(15, ['*'], 'history_page');
 
-        return view('homework-submissions.my-index', compact('submissions'));
+        return view('homework-submissions.my-index', compact('actionableAssignments', 'submissions', 'students'));
     }
 
     private function authorizeStudentOrGuardian(Request $request, int $studentId): void
