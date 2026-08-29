@@ -85,6 +85,8 @@ Route::middleware($publicMiddleware)->group(function () {
 // กลุ่ม 2: AUTH ทุก ROLE — ล็อกอินแล้วเข้าได้หมด ไม่จำกัดบทบาท
 // ===================================================================
 Route::middleware('auth')->group(function () {
+    Route::get('teacher-leave-attachments/{attachment}/download', [TeacherLeaveController::class, 'downloadAttachment'])->middleware('force-password-change')->name('teacher-leaves.attachments.download');
+    Route::delete('teacher-leave-attachments/{attachment}', [TeacherLeaveController::class, 'destroyAttachment'])->middleware('force-password-change')->name('teacher-leaves.attachments.destroy');
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('change-password', [PasswordController::class, 'edit'])->name('password.change');
@@ -200,6 +202,7 @@ if (!app()->environment('testing')) {
     array_unshift($teacherMiddleware, 'throttle:30,1');
 }
 Route::middleware($teacherMiddleware)->group(function () {
+    Route::get('my-reschedule-requests', [RescheduleRequestController::class, 'myIndex'])->name('reschedule-requests.my-index');
     Route::get('my-teaching-schedule', [TeacherWorkspaceController::class, 'schedule'])->name('teacher.schedule');
     Route::get('my-teaching-tasks', [TeacherWorkspaceController::class, 'tasks'])->name('teacher.tasks');
     Route::get('my-students', [TeacherWorkspaceController::class, 'students'])->name('teacher.students');

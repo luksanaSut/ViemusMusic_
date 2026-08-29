@@ -131,9 +131,158 @@
 
         .locked-box {
             background: var(--success-soft, #e7f2ec);
-            border-radius: 12px;
-            padding: 1.2rem;
+            border: 1px solid #cfe6da;
+            border-radius: 14px;
+            padding: 1.4rem;
             text-align: center;
+        }
+
+        .locked-facts {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: .4rem 1rem;
+            margin-top: .6rem;
+        }
+
+        .locked-facts span {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .field-icon-group {
+            position: relative;
+            max-width: 220px;
+        }
+
+        .field-icon-group i {
+            position: absolute;
+            left: .8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted, #6b655e);
+            font-size: .9rem;
+            pointer-events: none;
+        }
+
+        .field-icon-group .form-control {
+            padding-left: 2.1rem;
+        }
+
+        .empty-state {
+            padding: 2.6rem 1rem;
+            text-align: center;
+            color: var(--muted, #6b655e);
+        }
+
+        .empty-state i {
+            font-size: 2.2rem;
+            color: var(--border, #e4e1dc);
+            margin-bottom: .6rem;
+            display: block;
+        }
+
+        .file-dropzone {
+            border: 2px dashed var(--border, #e4e1dc);
+            border-radius: 14px;
+            padding: 1.6rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            background: var(--surface, #f7f6f4);
+            transition: .15s;
+        }
+
+        .file-dropzone:hover,
+        .file-dropzone:focus-visible {
+            border-color: var(--accent, #1f3350);
+            background: var(--accent-soft, #e7ebf1);
+        }
+
+        .file-dropzone.dragover {
+            border-color: var(--accent, #1f3350);
+            background: var(--accent-soft, #e7ebf1);
+        }
+
+        .file-dropzone i {
+            font-size: 1.9rem;
+            color: var(--accent, #1f3350);
+            opacity: .75;
+        }
+
+        .file-dropzone .dz-text {
+            font-family: 'Prompt', sans-serif;
+            font-weight: 600;
+            font-size: .88rem;
+            margin-top: .5rem;
+        }
+
+        .file-dropzone .dz-hint {
+            font-size: .74rem;
+            margin-top: .2rem;
+        }
+
+        .file-dropzone input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-top: .8rem;
+        }
+
+        .file-chip {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .5rem .7rem;
+            border: 1px solid var(--border, #e4e1dc);
+            border-radius: 10px;
+            background: var(--card, #fff);
+            font-size: .82rem;
+        }
+
+        .file-chip i.bi-file-earmark {
+            color: var(--accent, #1f3350);
+            font-size: 1rem;
+        }
+
+        .file-chip .file-chip-name {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-chip .file-chip-size {
+            color: var(--muted, #6b655e);
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .file-chip button {
+            border: 0;
+            background: none;
+            color: #b3392c;
+            padding: 0 .1rem;
+            line-height: 1;
+            font-size: 1.1rem;
+        }
+
+        .evidence-card {
+            transition: .15s;
+        }
+
+        .evidence-card:hover {
+            box-shadow: 0 8px 18px rgba(28, 26, 23, .07);
+            border-color: #c9c4bb;
         }
 
         .attendance-header {
@@ -308,6 +457,7 @@
             .submit-bar .btn { width: 100%; }
             .report-grid { grid-template-columns: 1fr; }
             .report-panel { padding: .9rem; }
+            .file-dropzone { padding: 1.2rem .8rem; }
         }
     </style>
 
@@ -315,6 +465,7 @@
         <div>
             <div class="breadcrumb-sm">งานวิชาการ <i class="bi bi-chevron-right small"></i> เช็คชื่อเข้าเรียน</div>
             <h1 class="page-title mb-0"><i class="bi bi-clipboard-check"></i> เช็คชื่อเข้าเรียน</h1>
+            <div class="page-sub">เช็คชื่อ ยืนยันเวลาสอนจริง และบันทึกผลการสอนของคาบนี้</div>
         </div>
         <a href="{{ route('teaching-logs.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> กลับหน้ารวม</a>
     </div>
@@ -349,17 +500,21 @@
         @if ($log->confirmed_at)
             {{-- เสร็จสิ้นแล้วทั้งสองขั้นตอน --}}
             <div class="locked-box">
-                <i class="bi bi-check-circle-fill fs-3 text-success"></i>
-                <div class="fw-bold mt-1" style="font-family:'Prompt',sans-serif;">
+                <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+                <div class="fw-bold mt-2" style="font-family:'Prompt',sans-serif; font-size:1.05rem;">
                     {{ $log->attendanceStatusLabel() }} — {{ $log->durationLabel() }}
                 </div>
                 <div class="text-muted small mt-1">ยืนยันเมื่อ {{ $log->confirmed_at->format('d/m/Y H:i') }} โดย
                     {{ $log->confirmed_by }}</div>
-                @if ($log->session_deducted)
-                    <div class="text-muted small">✓ ตัดจำนวนครั้งเรียนของคอร์สแล้ว</div>
-                @endif
-                @if ($log->teaching_session_id)
-                    <div class="text-muted small">✓ บันทึกลงระบบเงินเดือนแล้ว</div>
+                @if ($log->session_deducted || $log->teaching_session_id)
+                    <div class="locked-facts text-muted small">
+                        @if ($log->session_deducted)
+                            <span><i class="bi bi-check2 text-success"></i> ตัดจำนวนครั้งเรียนของคอร์สแล้ว</span>
+                        @endif
+                        @if ($log->teaching_session_id)
+                            <span><i class="bi bi-check2 text-success"></i> บันทึกลงระบบเงินเดือนแล้ว</span>
+                        @endif
+                    </div>
                 @endif
             </div>
         @else
@@ -404,17 +559,22 @@
                 </div>
 
                 <div id="extraMinutesBox" class="d-none mb-3">
-                    <label class="form-label small">ระบุจำนวนนาทีที่สอนจริง</label>
-                    <input type="number" id="extraMinutesInput" class="form-control" min="1" max="600"
-                        style="max-width:200px;">
+                    <label class="form-label small" for="extraMinutesInput">ระบุจำนวนนาทีที่สอนจริง</label>
+                    <div class="field-icon-group">
+                        <i class="bi bi-stopwatch"></i>
+                        <input type="number" id="extraMinutesInput" class="form-control" min="1" max="600" placeholder="เช่น 40">
+                    </div>
                 </div>
 
                 @php $transportFee = $classSchedule->teacher?->activeTransportFee(); @endphp
                 @if ($transportFee && $transportFee->fee_type === 'per_km')
                     <div class="mb-3">
-                        <label class="form-label small">ระยะทางเดินทาง (กิโลเมตร) — ใช้คำนวณค่ารถ</label>
-                        <input type="number" step="0.1" id="kmTraveledInput" class="form-control"
-                            style="max-width:200px;" placeholder="เช่น 12.5" min="0">
+                        <label class="form-label small" for="kmTraveledInput">ระยะทางเดินทาง (กิโลเมตร) — ใช้คำนวณค่ารถ</label>
+                        <div class="field-icon-group">
+                            <i class="bi bi-signpost-split"></i>
+                            <input type="number" step="0.1" id="kmTraveledInput" class="form-control"
+                                placeholder="เช่น 12.5" min="0">
+                        </div>
                         <small class="text-muted">อัตรา ฿{{ number_format($transportFee->fee_amount, 2) }}/กม.</small>
                     </div>
                 @endif
@@ -482,10 +642,17 @@
 
                     <div class="report-attachments">
                             <label class="form-label fw-semibold"><i class="bi bi-paperclip me-1"></i> ไฟล์ประกอบบทเรียน <span class="text-muted small fw-normal">(สูงสุด 5 ไฟล์)</span></label>
-                            <input type="file" name="attachments[]" class="form-control" multiple
-                                accept=".pdf,.jpg,.jpeg,.png,.mp3,.mp4,.mscz,.xml,.doc,.docx">
+                            <div class="file-dropzone" id="attachDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์ประกอบบทเรียน">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                <div class="dz-text">ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+                                <div class="dz-hint text-muted">PDF, JPG, PNG, MP3, MP4, MSCZ, XML, DOC, DOCX</div>
+                                <input type="file" name="attachments[]" id="attachInput" multiple
+                                    accept=".pdf,.jpg,.jpeg,.png,.mp3,.mp4,.mscz,.xml,.doc,.docx">
+                            </div>
+                            <div class="file-list" id="attachFileList"></div>
                             @if ($report && $report->attachments->count())
-                                <div class="mt-2">
+                                <div class="mt-3">
+                                    <div class="text-muted small mb-1">ไฟล์ที่แนบไว้แล้ว</div>
                                     @foreach ($report->attachments as $att)
                                         <span class="badge text-bg-light border me-1 mb-1">
                                             <a href="{{ $att->url() }}" target="_blank"
@@ -511,22 +678,22 @@
                 <form action="{{ route('teaching-evidences.store', $log) }}" method="POST"
                     enctype="multipart/form-data" class="mb-3">
                     @csrf
-                    <label class="form-label">อัปโหลดรูปภาพ / วิดีโอ / เอกสาร (สูงสุด 10 ไฟล์ต่อครั้ง, ไม่เกิน
-                        50MB/ไฟล์)</label>
-                    <div class="d-flex gap-2">
-                        <input type="file" name="files[]" class="form-control" multiple
-                            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx" required>
-                        <button class="btn btn-accent flex-shrink-0"><i class="bi bi-upload"></i> อัปโหลด</button>
+                    <div class="file-dropzone" id="evidenceDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์หลักฐานการสอน">
+                        <i class="bi bi-camera"></i>
+                        <div class="dz-text">ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+                        <div class="dz-hint text-muted">รูปภาพ, วิดีโอ, PDF, DOC, XLS · สูงสุด 10 ไฟล์ · ไม่เกิน 50MB/ไฟล์</div>
+                        <input type="file" name="files[]" id="evidenceInput" multiple required
+                            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx">
                     </div>
-                    <small class="text-muted d-block mt-1"><i class="bi bi-info-circle"></i> รองรับ: รูปภาพ
-                        (JPG/PNG/WEBP/GIF), วิดีโอ (MP4/MOV/AVI/WEBM), เอกสาร (PDF/DOC/XLS)</small>
+                    <div class="file-list" id="evidenceFileList"></div>
+                    <button class="btn btn-accent mt-2" id="evidenceUploadBtn"><i class="bi bi-upload"></i> อัปโหลด</button>
                 </form>
 
                 @if ($log->evidences->count())
                     <div class="row g-2">
                         @foreach ($log->evidences as $ev)
                             <div class="col-md-4">
-                                <div class="border rounded p-2 h-100 d-flex flex-column">
+                                <div class="evidence-card border rounded p-2 h-100 d-flex flex-column">
                                     @if ($ev->file_type === 'image')
                                         <img src="{{ $ev->url() }}" class="rounded mb-2"
                                             style="width:100%; height:110px; object-fit:cover;">
@@ -564,7 +731,10 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="text-muted small mb-0">ยังไม่มีหลักฐานการสอนที่อัปโหลดไว้</p>
+                    <div class="empty-state">
+                        <i class="bi bi-camera"></i>
+                        ยังไม่มีหลักฐานการสอนที่อัปโหลดไว้
+                    </div>
                 @endif
             </div>
         </div>
@@ -574,6 +744,73 @@
         กลับหน้ารวมเช็คชื่อ</a>
 
     <script>
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function initFileDropzone(zoneId, inputId, listId) {
+            const zone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            const list = document.getElementById(listId);
+            if (!zone || !input || !list) return;
+
+            function renderList() {
+                list.innerHTML = '';
+                Array.from(input.files).forEach((file, index) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'file-chip';
+                    chip.innerHTML = `<i class="bi bi-file-earmark"></i>
+                        <span class="file-chip-name">${file.name}</span>
+                        <span class="file-chip-size">${formatFileSize(file.size)}</span>
+                        <button type="button" aria-label="เอาไฟล์ออก">&times;</button>`;
+                    chip.querySelector('button').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const dt = new DataTransfer();
+                        Array.from(input.files).forEach((f, i) => { if (i !== index) dt.items.add(f); });
+                        input.files = dt.files;
+                        renderList();
+                    });
+                    list.appendChild(chip);
+                });
+            }
+
+            zone.addEventListener('click', () => input.click());
+            zone.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+            });
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('change', renderList);
+
+            ['dragenter', 'dragover'].forEach(evt => {
+                zone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.add('dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach(evt => {
+                zone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.remove('dragover');
+                });
+            });
+            zone.addEventListener('drop', (e) => {
+                const dt = new DataTransfer();
+                Array.from(input.files).forEach(f => dt.items.add(f));
+                Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+                input.files = dt.files;
+                renderList();
+            });
+
+            renderList();
+        }
+
+        initFileDropzone('attachDropzone', 'attachInput', 'attachFileList');
+        initFileDropzone('evidenceDropzone', 'evidenceInput', 'evidenceFileList');
+
         function updateCombinedSubmitState() {
             const btn = document.getElementById('combinedSubmitBtn');
             if (!btn) return;

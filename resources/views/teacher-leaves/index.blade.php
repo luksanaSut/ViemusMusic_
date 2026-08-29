@@ -33,6 +33,7 @@
                         <th>ช่วงวันที่ลา</th>
                         <th>เหตุผล</th>
                         <th>สถานะ</th>
+                        <th>ไฟล์แนบ</th>
                         <th class="text-end">จัดการ</th>
                     </tr>
                 </thead>
@@ -45,6 +46,7 @@
                             <td>{{ $lv->leave_date_from->format('d/m/Y') }} - {{ $lv->leave_date_to->format('d/m/Y') }}</td>
                             <td>{{ $lv->reason ?: '-' }}</td>
                             <td><span class="badge {{ $lv->statusBadgeClass() }}">{{ $lv->statusLabel() }}</span></td>
+                            <td>@forelse($lv->attachments as $attachment)<a href="{{ route('teacher-leaves.attachments.download',$attachment) }}" class="badge text-bg-light border text-decoration-none d-inline-block mb-1"><i class="bi bi-paperclip"></i> {{ $attachment->original_name }} <span class="text-muted">{{ $attachment->formattedSize() }}</span></a>@empty<span class="text-muted">-</span>@endforelse</td>
                             <td class="text-end">
                                 @if ($lv->status === 'pending')
                                     <form action="{{ route('teacher-leaves.approve', $lv) }}" method="POST"
@@ -66,7 +68,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">ยังไม่มีคำขอลาหยุดสอน</td>
+                            <td colspan="6" class="text-center text-muted py-4">ยังไม่มีคำขอลาหยุดสอน</td>
                         </tr>
                     @endforelse
                 </tbody>

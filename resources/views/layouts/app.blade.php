@@ -469,13 +469,11 @@
             @php $u = auth()->user(); @endphp
 
             {{-- ==================== ภาพรวม ==================== --}}
-            @if ($u->hasModulePermission('teachers.manage'))
-                <div class="nav-section-label">ภาพรวม</div>
+            <div class="nav-section-label">ภาพรวม</div>
 
-                <a href="{{ route('teachers.index') }}" class="nav-link">
-                    <i class="bi bi-grid-1x2"></i> Dashboard
-                </a>
-            @endif
+            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
 
 
             {{-- ==================== บุคคล ==================== --}}
@@ -789,8 +787,8 @@
 
                 <div class="nav-section-label">ตารางและคำร้อง</div>
 
-                <a href="{{ route('reschedule-requests.create') }}"
-                    class="nav-link {{ request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
+                <a href="{{ route('reschedule-requests.my-index') }}"
+                    class="nav-link {{ request()->routeIs('reschedule-requests.my-index') || request()->routeIs('reschedule-requests.create') ? 'active' : '' }}">
                     <i class="bi bi-arrow-left-right"></i> ขอเปลี่ยนตารางสอน
                 </a>
 

@@ -676,16 +676,7 @@
                 <div class="form-section-title">
                     <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> แจ้งลาหยุดสอน
                 </div>
-                <form action="{{ route('teachers.leaves.store', $teacher) }}" method="POST" class="row g-2">
-                    @csrf
-                    <div class="col-md-3"><input type="date" name="leave_date_from"
-                            class="form-control form-control-sm" placeholder="ตั้งแต่วันที่" required></div>
-                    <div class="col-md-3"><input type="date" name="leave_date_to"
-                            class="form-control form-control-sm" placeholder="ถึงวันที่" required></div>
-                    <div class="col-md-4"><input type="text" name="reason" class="form-control form-control-sm"
-                            placeholder="เหตุผล เช่น ลาป่วย, ธุระส่วนตัว"></div>
-                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">ส่งคำขอลา</button></div>
-                </form>
+                @include('teacher-leaves._form')
             </div>
             <div class="form-section">
                 <div class="form-section-title">
@@ -697,6 +688,7 @@
                             <th>ช่วงวันที่ลา</th>
                             <th>เหตุผล</th>
                             <th>สถานะ</th>
+                            <th>ไฟล์แนบ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -707,10 +699,11 @@
                                 <td>{{ $tl->reason ?: '-' }}</td>
                                 <td><span class="badge {{ $tl->statusBadgeClass() }}">{{ $tl->statusLabel() }}</span>
                                 </td>
+                                <td>@forelse($tl->attachments as $attachment)<a href="{{ route('teacher-leaves.attachments.download',$attachment) }}" class="badge text-bg-light border text-decoration-none d-inline-block mb-1"><i class="bi bi-paperclip"></i> {{ $attachment->original_name }}</a>@empty<span class="text-muted">-</span>@endforelse</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3">
+                                <td colspan="4">
                                     <div class="empty-state"><i class="bi bi-calendar-x"></i>ยังไม่มีประวัติการแจ้งลา
                                     </div>
                                 </td>

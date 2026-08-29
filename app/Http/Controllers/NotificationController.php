@@ -10,11 +10,15 @@ class NotificationController extends Controller
     // GET /notifications
     public function index(Request $request)
     {
-        $notifications = AppNotification::forUser($request->user())
+        $filter = $request->get('filter') === 'unread' ? 'unread' : 'all';
+        $base = AppNotification::forUser($request->user());
+        $unreadCount = (clone $base)->where('is_read', false)->count();
+        $notifications = $base
+            ->when($filter === 'unread', fn ($query) => $query->where('is_read', false))
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate(20)->withQueryString();
 
-        return view('notifications.index', compact('notifications'));
+        return view('notifications.index', compact('notifications', 'filter', 'unreadCount'));
     }
 
     // GET /notifications/{notification}/read — เปิดดู + ไปยังลิงก์ที่เกี่ยวข้อง

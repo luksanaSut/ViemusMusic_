@@ -3,7 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClassSchedule;
+use App\Models\Course;
 use App\Models\MakeupRequest;
+use App\Models\Payment;
+use App\Models\RescheduleRequest;
+use App\Models\SaleOrder;
+use App\Models\Student;
+use App\Models\StudentLeave;
+use App\Models\Teacher;
+use App\Models\TeacherLeave;
+use App\Services\FinanceService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -14,12 +23,69 @@ class DashboardController extends Controller
         $user = $request->user();
 
         return match ($user->role) {
-            'admin', 'staff' => redirect()->route('teachers.index'),
+            'admin', 'staff' => $this->adminDashboard($user),
             'teacher'  => $this->teacherDashboard($user),
             'student'  => $this->studentDashboard($user),
             'guardian' => $this->guardianDashboard($user),
             default    => redirect()->route('login'),
         };
+    }
+
+    private function adminDashboard($user)
+    {
+        $today = now()->toDateString();
+
+        $stats = [
+            'students_active' => Student::where('status', 'active')->count(),
+            'teachers_total'  => Teacher::count(),
+            'courses_active'  => Course::where('is_active', true)->count(),
+            'today_classes'   => ClassSchedule::whereDate('schedule_date', $today)
+                ->whereIn('status', ['scheduled', 'completed'])->count(),
+        ];
+
+        $pending = [
+            'teacher_leaves'      => TeacherLeave::where('status', 'pending')->count(),
+            'student_leaves'      => StudentLeave::where('status', 'pending')->count(),
+            'reschedule_requests' => RescheduleRequest::where('status', 'pending')->count(),
+            'makeup_requests'     => MakeupRequest::where('overall_status', 'pending')->count(),
+        ];
+
+        $finance = null;
+        if ($user->hasModulePermission('finance.manage')) {
+            $service = app(FinanceService::class);
+            [$start, $end] = $service->resolvePeriod('monthly');
+            $finance = $service->summary($start, $end);
+        }
+
+        $overduePaymentsCount = 0;
+        $overduePaymentsAmount = 0.0;
+        if ($user->hasModulePermission('students.manage')) {
+            $overdueQuery = Payment::whereIn('status', ['pending', 'partial', 'overdue'])
+                ->where(function ($q) use ($today) {
+                    $q->where('status', 'overdue')->orWhere('due_date', '<', $today);
+                });
+            $overduePaymentsCount = (clone $overdueQuery)->count();
+            $overduePaymentsAmount = (clone $overdueQuery)->get()
+                ->sum(fn ($payment) => $payment->outstandingAmount());
+        }
+
+        $recentSales = collect();
+        if ($user->hasModulePermission('sales.manage')) {
+            $recentSales = SaleOrder::with(['student', 'course'])
+                ->latest()->limit(5)->get();
+        }
+
+        $todaySchedules = ClassSchedule::whereDate('schedule_date', $today)
+            ->whereIn('status', ['scheduled', 'completed'])
+            ->with(['teacher', 'room', 'enrollment.student', 'enrollment.course'])
+            ->orderBy('start_time')
+            ->limit(8)
+            ->get();
+
+        return view('dashboard.admin', compact(
+            'stats', 'pending', 'finance', 'overduePaymentsCount', 'overduePaymentsAmount',
+            'recentSales', 'todaySchedules'
+        ));
     }
 
     private function teacherDashboard($user)

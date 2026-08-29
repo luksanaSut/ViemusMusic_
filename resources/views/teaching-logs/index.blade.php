@@ -11,19 +11,25 @@
             flex-wrap: wrap;
             gap: .75rem;
             margin-bottom: 1.5rem;
+            padding: .85rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--card);
+            box-shadow: 0 8px 24px rgba(28, 26, 23, .04);
         }
 
         .date-nav {
             display: flex;
             align-items: center;
-            gap: .6rem;
+            gap: .75rem;
+            flex: 1;
         }
 
         .date-nav .label {
             font-family: 'Prompt', sans-serif;
             font-weight: 600;
-            font-size: .95rem;
-            min-width: 11rem;
+            font-size: 1.05rem;
+            min-width: 12rem;
             text-align: center;
         }
 
@@ -36,21 +42,40 @@
         }
 
         .nav-arrow {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--muted);
+            color: var(--ink);
+            border: 1px solid var(--border);
+            background: var(--surface);
             text-decoration: none;
             flex-shrink: 0;
         }
 
         .nav-arrow:hover {
-            background: var(--surface);
-            color: var(--ink);
+            background: var(--accent-soft);
+            border-color: #c7cfda;
+            color: var(--accent-dark);
         }
+
+        .today-shortcut { white-space:nowrap; border-radius:10px; }
+
+        .month-jump {
+            display:flex;
+            align-items:center;
+            gap:.35rem;
+            padding:.25rem;
+            border:1px solid var(--border);
+            border-radius:11px;
+            background:var(--surface);
+        }
+
+        .month-jump i { color:var(--muted); margin-left:.45rem; }
+        .month-jump select { border:0; background:transparent; color:var(--ink); font-family:'Prompt',sans-serif; font-weight:600; font-size:.82rem; padding:.35rem 1.6rem .35rem .35rem; outline:none; }
+        .month-jump select + select { border-left:1px solid var(--border); border-radius:0; }
 
         .tl-right-controls {
             display: flex;
@@ -403,8 +428,10 @@
         @media (max-width: 767.98px) {
             .attendance-intro { align-items: flex-start; }
             .tl-toolbar-row { align-items: stretch; margin-bottom: 1rem; }
-            .date-nav { justify-content: space-between; width: 100%; }
+            .date-nav { justify-content: space-between; width: 100%; flex-wrap:wrap; }
             .date-nav .label { min-width: 0; flex: 1; }
+            .month-jump { order:4; width:100%; justify-content:center; }
+            .today-shortcut { order:5; width:100%; }
             .tl-right-controls, .range-toggle { width: 100%; }
             .range-toggle a { flex: 1; text-align: center; }
             .stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; }
@@ -452,12 +479,22 @@
 
             @unless ($isCurrentPeriod)
                 <a href="{{ route('teaching-logs.index', ['range' => $range]) }}"
-                    class="btn btn-sm btn-outline-secondary">วันนี้</a>
+                    class="btn btn-sm btn-outline-secondary today-shortcut"><i class="bi bi-calendar-check"></i> วันนี้</a>
             @endunless
 
             @if ($range == 'month')
-                <input type="month" id="monthPicker" class="form-control form-control-sm" style="width:auto;"
-                    value="{{ $rangeStart->format('Y-m') }}">
+                @php
+                    $thaiMonthNames = [1=>'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                @endphp
+                <div class="month-jump" title="เลือกเดือนที่ต้องการดู">
+                    <i class="bi bi-calendar3"></i>
+                    <select id="monthSelect" aria-label="เลือกเดือน">
+                        @foreach($thaiMonthNames as $monthNumber=>$monthName)<option value="{{ $monthNumber }}" @selected($rangeStart->month===$monthNumber)>{{ $monthName }}</option>@endforeach
+                    </select>
+                    <select id="yearSelect" aria-label="เลือกปี">
+                        @for($year=$rangeStart->year-3;$year<=$rangeStart->year+3;$year++)<option value="{{ $year }}" @selected($rangeStart->year===$year)>พ.ศ. {{ $year+543 }}</option>@endfor
+                    </select>
+                </div>
             @endif
         </div>
 
@@ -597,11 +634,15 @@
             const branch = document.getElementById('workBranch');
             const status = document.getElementById('workStatus');
 
-            document.getElementById('monthPicker')?.addEventListener('change', function() {
-                if (!this.value) return;
-                window.location.href =
-                    `{{ route('teaching-logs.index') }}?range=month&date=${this.value}-01`;
-            });
+            const monthSelect = document.getElementById('monthSelect');
+            const yearSelect = document.getElementById('yearSelect');
+            function goToSelectedMonth() {
+                if (!monthSelect?.value || !yearSelect?.value) return;
+                const month = String(monthSelect.value).padStart(2, '0');
+                window.location.href = `{{ route('teaching-logs.index') }}?range=month&date=${yearSelect.value}-${month}-01`;
+            }
+            monthSelect?.addEventListener('change', goToSelectedMonth);
+            yearSelect?.addEventListener('change', goToSelectedMonth);
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {

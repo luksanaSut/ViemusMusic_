@@ -26,6 +26,39 @@ class RescheduleRequestController extends Controller
         return view('reschedule-requests.index', compact('requests'));
     }
 
+    // GET /my-reschedule-requests — อาจารย์ดูเฉพาะคำขอของตัวเอง
+    public function myIndex(Request $request)
+    {
+        $teacher = $request->user()->teacher;
+        abort_unless($teacher, 404, 'บัญชีนี้ยังไม่ได้ผูกกับข้อมูลอาจารย์');
+
+        $base = RescheduleRequest::with([
+            'classSchedule.enrollment.student', 'classSchedule.enrollment.course',
+            'swapWithClassSchedule.enrollment.student', 'swapWithClassSchedule.enrollment.course',
+            'newTeacher', 'newRoom',
+        ])->where(function ($query) use ($teacher) {
+            $query->where('snapshot_before->teacher_id', $teacher->id)
+                ->orWhere('new_teacher_id', $teacher->id)
+                ->orWhereHas('classSchedule', fn ($schedule) => $schedule->where('teacher_id', $teacher->id))
+                ->orWhereHas('swapWithClassSchedule', fn ($schedule) => $schedule->where('teacher_id', $teacher->id));
+        });
+
+        $stats = [
+            'all' => (clone $base)->count(),
+            'pending' => (clone $base)->where('status', 'pending')->count(),
+            'approved' => (clone $base)->where('status', 'approved')->count(),
+            'rejected' => (clone $base)->where('status', 'rejected')->count(),
+        ];
+
+        $status = in_array($request->get('status'), ['pending', 'approved', 'rejected'], true)
+            ? $request->get('status') : null;
+        $requests = $base->when($status, fn ($query) => $query->where('status', $status))
+            ->orderByRaw("status = 'pending' desc")->orderByDesc('created_at')
+            ->paginate(12)->withQueryString();
+
+        return view('reschedule-requests.my-index', compact('teacher', 'requests', 'stats', 'status'));
+    }
+
     // GET /reschedule-requests/create?class_schedule_id=
     public function create(Request $request)
     {
@@ -96,7 +129,9 @@ class RescheduleRequestController extends Controller
 
         $this->notifyStakeholders($reschedule, $isAdminSubmitting ? 'applied' : 'submitted');
 
-        return redirect()->route('reschedule-requests.index')->with(
+        $redirectRoute = $user->isTeacher() ? 'reschedule-requests.my-index' : 'reschedule-requests.index';
+
+        return redirect()->route($redirectRoute)->with(
             'success',
             $isAdminSubmitting ? 'เปลี่ยนแปลงตารางเรียนเรียบร้อยแล้ว' : 'ส่งคำขอเปลี่ยนแปลงตารางเรียนแล้ว รอ Admin อนุมัติ'
         );
@@ -230,15 +265,15 @@ class RescheduleRequestController extends Controller
 
         // แจ้งอาจารย์เดิม + อาจารย์ใหม่ (ถ้ามีการเปลี่ยน)
         if ($schedule->teacher_id) {
-            AppNotification::notifyTeacher($schedule->teacher_id, $title, $message, route('reschedule-requests.index'));
+            AppNotification::notifyTeacher($schedule->teacher_id, $title, $message, route('reschedule-requests.my-index'));
         }
         if ($reschedule->new_teacher_id && $reschedule->new_teacher_id !== $schedule->teacher_id) {
-            AppNotification::notifyTeacher($reschedule->new_teacher_id, $title, $message, route('reschedule-requests.index'));
+            AppNotification::notifyTeacher($reschedule->new_teacher_id, $title, $message, route('reschedule-requests.my-index'));
         }
 
         // แลกคาบ: แจ้งอาจารย์ของคาบที่แลกด้วย
         if ($reschedule->type === 'swap' && $reschedule->swapWithClassSchedule?->teacher_id) {
-            AppNotification::notifyTeacher($reschedule->swapWithClassSchedule->teacher_id, $title, $message, route('reschedule-requests.index'));
+            AppNotification::notifyTeacher($reschedule->swapWithClassSchedule->teacher_id, $title, $message, route('reschedule-requests.my-index'));
         }
 
         AppNotification::notifyStudentAndGuardians($student, $title, $message, route('leaves.index'));
