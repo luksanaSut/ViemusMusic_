@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppNotification;
+use App\Models\ClassSchedule;
 use App\Models\Enrollment;
 use App\Models\RunThrough;
 use Illuminate\Http\Request;
@@ -44,6 +45,17 @@ class RunThroughController extends Controller
             abort(403);
         }
 
+        $teacherId = $user->isTeacher() && $user->teacher_id ? $user->teacher_id : $enrollment->teacher_id;
+        if (!$teacherId) {
+            $teacherId = ClassSchedule::where('enrollment_id', $enrollment->id)
+                ->whereNotNull('teacher_id')
+                ->latest('schedule_date')
+                ->value('teacher_id');
+        }
+        if (!$teacherId) {
+            return back()->withInput()->with('error', 'ไม่สามารถสร้างแบบฝึกหัดได้ เนื่องจากยังไม่มีอาจารย์ผู้สอนของนักเรียนคนนี้ กรุณาจัดตารางเรียนหรือระบุอาจารย์ในการลงทะเบียนก่อน');
+        }
+
         $data = $request->validate([
             'title'        => ['required', 'string', 'max:200'],
             'description'  => ['nullable', 'string', 'max:2000'],
@@ -52,10 +64,10 @@ class RunThroughController extends Controller
         ]);
 
         $runThrough = null;
-        DB::transaction(function () use ($request, $data, $enrollment, $user, &$runThrough) {
+        DB::transaction(function () use ($request, $data, $enrollment, $teacherId, $user, &$runThrough) {
             $runThrough = RunThrough::create([
                 'enrollment_id' => $enrollment->id,
-                'teacher_id'    => $user->isTeacher() ? $user->teacher_id : $enrollment->teacher_id,
+                'teacher_id'    => $teacherId,
                 'title'          => $data['title'],
                 'description'    => $data['description'] ?? null,
                 'created_by'     => $user->displayName(),
