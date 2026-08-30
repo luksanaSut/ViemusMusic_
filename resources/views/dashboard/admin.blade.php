@@ -4,24 +4,50 @@
 @section('content')
     @php $u = auth()->user(); @endphp
     <style>
-        .admin-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; margin-bottom:1rem; }
-        .stat-card { border:1px solid var(--border); border-radius:14px; background:var(--card); padding:1rem; height:100%; }
-        .stat-icon { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent); flex-shrink:0; }
-        .stat-value { font-family:'Prompt',sans-serif; font-size:1.35rem; font-weight:700; line-height:1; }
-        .info-card { border-radius:16px; height:100%; }
-        .info-row { display:flex; gap:.65rem; align-items:flex-start; padding:.65rem 0; border-bottom:1px solid var(--border); }
-        .info-row:last-child { border-bottom:0; }
-        .approval-card { border:1px solid var(--border); border-radius:14px; background:var(--card); padding:1rem; height:100%; text-decoration:none; color:inherit; display:block; transition:.15s ease; }
-        .approval-card:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(28,26,23,.08); color:inherit; }
-        .approval-card.is-empty { opacity:.55; pointer-events:none; }
-        .empty-note { text-align:center; color:var(--muted); font-size:.82rem; padding:1.5rem .5rem; }
+        .admin-dashboard { --dash-radius:18px; max-width:1440px; margin:0 auto; }
+        .admin-hero { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+        .admin-hero .eyebrow { color:var(--muted); font-size:.78rem; font-weight:600; letter-spacing:.04em; margin-bottom:.25rem; }
+        .date-pill { display:inline-flex; align-items:center; gap:.45rem; background:var(--card); border:1px solid var(--border); border-radius:999px; color:var(--muted); font-size:.8rem; padding:.48rem .8rem; white-space:nowrap; }
+        .stat-card { border:1px solid var(--border); border-radius:var(--dash-radius); background:var(--card); padding:1.05rem; min-height:88px; height:100%; transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease; }
+        .stat-card:hover { border-color:#d4d0ca; box-shadow:0 8px 24px rgba(28,26,23,.055); transform:translateY(-1px); }
+        .stat-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent); flex-shrink:0; font-size:1rem; }
+        .stat-value { font-family:'Prompt',sans-serif; font-size:1.45rem; font-weight:600; line-height:1.15; letter-spacing:-.02em; }
+        .section-heading { display:flex; align-items:center; justify-content:space-between; margin:1.5rem 0 .7rem; }
+        .section-heading h6 { font-family:'Prompt',sans-serif; font-size:.92rem; font-weight:600; margin:0; }
+        .section-heading .section-count { display:inline-flex; min-width:25px; height:25px; padding:0 .45rem; align-items:center; justify-content:center; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:.72rem; }
+        .info-card { border:1px solid var(--border); border-radius:var(--dash-radius); height:100%; box-shadow:none; overflow:hidden; }
+        .info-card .card-body { padding:1.2rem; }
+        .info-card .card-title-row { padding-bottom:.8rem; border-bottom:1px solid var(--border); }
+        .info-card a.small { color:var(--muted); text-decoration:none; }
+        .info-card a.small:hover { color:var(--accent); }
+        .info-row { display:flex; gap:.75rem; align-items:center; padding:.8rem 0; border-bottom:1px solid var(--border); }
+        .info-row:last-child { border-bottom:0; padding-bottom:0; }
+        a.info-row { border-radius:10px; transition:background .15s ease; }
+        a.info-row:hover { background:var(--surface); margin-inline:-.45rem; padding-inline:.45rem; }
+        .approval-card { border:1px solid var(--border); border-radius:var(--dash-radius); background:var(--card); padding:1.05rem; min-height:88px; height:100%; text-decoration:none; color:inherit; display:block; transition:.18s ease; }
+        .approval-card:hover { border-color:#d4d0ca; transform:translateY(-1px); box-shadow:0 8px 24px rgba(28,26,23,.055); color:inherit; }
+        .approval-card.is-empty { opacity:.5; pointer-events:none; }
+        .empty-note { text-align:center; color:var(--muted); font-size:.82rem; padding:2.25rem .5rem; }
+        @media (max-width:575.98px) {
+            .admin-hero { align-items:flex-start; margin-bottom:1.1rem; }
+            .date-pill { width:40px; height:40px; justify-content:center; padding:0; }
+            .date-pill span { display:none; }
+            .stat-card,.approval-card { min-height:108px; padding:.9rem; }
+            .stat-card > .d-flex,.approval-card .d-flex { align-items:flex-start!important; flex-direction:column; gap:.65rem!important; }
+            .stat-value { font-size:1.3rem; }
+            .info-card .card-body { padding:1rem; }
+            .info-row { align-items:flex-start; }
+            .info-row > .badge { max-width:90px; white-space:normal; text-align:center; }
+        }
     </style>
 
+    <div class="admin-dashboard">
     <div class="admin-hero">
         <div>
-            <h1 class="page-title mb-1">สวัสดี, {{ $u->displayName() }} 👋</h1>
-            <p class="text-muted small mb-0">ภาพรวมระบบวันนี้ · {{ now()->translatedFormat('d M Y') }}</p>
+            <div class="eyebrow">ADMIN OVERVIEW</div>
+            <h1 class="page-title mb-0">สวัสดี, {{ $u->displayName() }}</h1>
         </div>
+        <div class="date-pill"><i class="bi bi-calendar3"></i><span>{{ now()->translatedFormat('d M Y') }}</span></div>
     </div>
 
     {{-- ===== สรุปภาพรวม ===== --}}
@@ -85,7 +111,10 @@
 
     {{-- ===== คำขอรออนุมัติ ===== --}}
     @if ($u->hasModulePermission('teachers.manage') || $u->hasModulePermission('makeup_reschedule.manage') || $u->hasModulePermission('student_leaves.manage'))
-        <h6 class="fw-bold mb-2" style="font-family:'Prompt',sans-serif;"><i class="bi bi-hourglass-split"></i> คำขอรออนุมัติ</h6>
+        <div class="section-heading">
+            <h6>คำขอรออนุมัติ</h6>
+            <span class="section-count">{{ collect($pending)->sum() }}</span>
+        </div>
         <div class="row g-2 mb-3">
             @if ($u->hasModulePermission('teachers.manage'))
                 <div class="col-6 col-lg-3">
@@ -132,7 +161,7 @@
         {{-- ===== ตารางเรียนวันนี้ ===== --}}
         @if ($u->hasModulePermission('schedules.manage'))
             <div class="col-lg-7"><div class="card info-card"><div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <div class="card-title-row d-flex justify-content-between align-items-center mb-1">
                     <h6 class="fw-bold mb-0" style="font-family:'Prompt',sans-serif;"><i class="bi bi-calendar3"></i> คาบเรียนวันนี้</h6>
                     <a href="{{ route('schedules.index') }}" class="small">ดูตารางทั้งหมด</a>
                 </div>
@@ -166,7 +195,7 @@
         {{-- ===== รายการขายล่าสุด ===== --}}
         @if ($u->hasModulePermission('sales.manage'))
             <div class="col-lg-5"><div class="card info-card"><div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <div class="card-title-row d-flex justify-content-between align-items-center mb-1">
                     <h6 class="fw-bold mb-0" style="font-family:'Prompt',sans-serif;"><i class="bi bi-cart-check"></i> การขายล่าสุด</h6>
                     <a href="{{ route('sales.index') }}" class="small">ดูทั้งหมด</a>
                 </div>
@@ -184,5 +213,6 @@
                 @endforelse
             </div></div></div>
         @endif
+    </div>
     </div>
 @endsection
