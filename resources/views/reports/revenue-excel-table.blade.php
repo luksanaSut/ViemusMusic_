@@ -26,12 +26,16 @@
         <td>{{ $courseIncome }}</td>
     </tr>
     <tr>
+        <td>รายได้ค่าทดลองเรียน</td>
+        <td>{{ $trialIncome }}</td>
+    </tr>
+    <tr>
         <td>รายได้ขายสินค้า</td>
         <td>{{ $productIncome }}</td>
     </tr>
     <tr>
         <td>รวมรายได้</td>
-        <td>{{ $courseIncome + $productIncome }}</td>
+        <td>{{ $courseIncome + $trialIncome + $productIncome }}</td>
     </tr>
     <tr><td></td><td></td></tr>
 

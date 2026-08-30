@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class MakeupRequest extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'student_leave_id',
         'student_id',

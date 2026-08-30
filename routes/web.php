@@ -57,6 +57,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StoreSaleController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\TrialLeadController;
+use App\Http\Controllers\TrialPaymentController;
 
 
 
@@ -201,6 +203,11 @@ Route::middleware($teacherMiddleware)->group(function () {
     Route::get('my-reschedule-requests', [RescheduleRequestController::class, 'myIndex'])->name('reschedule-requests.my-index');
     Route::get('my-teaching-schedule', [TeacherWorkspaceController::class, 'schedule'])->name('teacher.schedule');
     Route::get('my-teaching-tasks', [TeacherWorkspaceController::class, 'tasks'])->name('teacher.tasks');
+    Route::get('my-trial-leads', [TrialLeadController::class, 'myIndex'])->name('trial-leads.my-index');
+    Route::get('my-trial-leads/{trialLead}', [TrialLeadController::class, 'myShow'])->name('trial-leads.my-show');
+    Route::post('my-trial-leads/{trialLead}/confirm', [TrialLeadController::class, 'teacherConfirm'])->name('trial-leads.teacher-confirm');
+    Route::post('my-trial-leads/{trialLead}/check-in', [TrialLeadController::class, 'checkIn'])->name('trial-leads.check-in');
+    Route::post('my-trial-leads/{trialLead}/result', [TrialLeadController::class, 'submitResult'])->name('trial-leads.submit-result');
     Route::get('my-students', [TeacherWorkspaceController::class, 'students'])->name('teacher.students');
     Route::get('my-students/{student}', [TeacherWorkspaceController::class, 'studentShow'])->name('teacher.students.show');
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
@@ -225,6 +232,18 @@ if (!app()->environment('testing')) {
 }
 
 Route::middleware($adminMiddleware)->group(function () {
+
+    // ----- ผู้สนใจและทดลองเรียน -----
+    Route::middleware('permission:trial_leads.manage')->group(function () {
+        Route::resource('trial-leads', TrialLeadController::class)->except(['edit', 'destroy']);
+        Route::post('trial-leads/{trialLead}/convert', [TrialLeadController::class, 'convert'])->name('trial-leads.convert');
+        Route::post('trial-leads/{trialLead}/confirmation-status', [TrialLeadController::class, 'updateConfirmationStatus'])->name('trial-leads.confirmation-status');
+        Route::post('trial-leads/{trialLead}/payments', [TrialPaymentController::class, 'store'])->name('trial-payments.store');
+        Route::post('trial-payments/{trialPayment}/confirm', [TrialPaymentController::class, 'confirm'])->name('trial-payments.confirm');
+        Route::post('trial-payments/{trialPayment}/cancel', [TrialPaymentController::class, 'cancel'])->name('trial-payments.cancel');
+        Route::post('trial-payments/{trialPayment}/refund', [TrialPaymentController::class, 'refund'])->name('trial-payments.refund');
+        Route::get('trial-payments/{trialPayment}/proof', [TrialPaymentController::class, 'downloadProof'])->name('trial-payments.proof');
+    });
 
     // ----- อาจารย์ -----
     Route::middleware('permission:teachers.manage')->group(function () {

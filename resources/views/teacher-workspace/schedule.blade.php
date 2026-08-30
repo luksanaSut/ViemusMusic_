@@ -36,7 +36,12 @@
         <div class="card-body">
             @forelse($schedules as $s)
                 <div class="schedule-list-item"><div><strong>{{ substr($s->start_time,0,5) }}</strong><div class="small text-muted">ถึง {{ substr($s->end_time,0,5) }}</div></div><div><strong>{{ $s->enrollment->student->full_name??'ไม่ระบุนักเรียน' }}</strong><div class="small text-muted">{{ $s->enrollment->course->name??'-' }} · {{ $s->deliveryModeLabel() }}{{ $s->room?' · '.$s->room->name:'' }} @if($makeupScheduleIds->has($s->id))<span class="badge text-bg-warning">ชดเชย</span>@endif</div>@if($s->notes)<div class="small mt-1"><i class="bi bi-sticky"></i> {{ $s->notes }}</div>@endif</div><a href="{{ route('teaching-logs.show',$s) }}" class="btn btn-sm btn-outline-primary">เปิดคาบ</a></div>
-            @empty<div class="text-center text-muted py-5"><i class="bi bi-calendar-x fs-2"></i><p class="small mt-2 mb-0">ไม่มีตารางสอนในวันนี้</p></div>@endforelse
+            @empty
+                @if($trialLeads->get($focusDate->toDateString(),collect())->isEmpty())<div class="text-center text-muted py-5"><i class="bi bi-calendar-x fs-2"></i><p class="small mt-2 mb-0">ไม่มีตารางสอนในวันนี้</p></div>@endif
+            @endforelse
+            @foreach($trialLeads->get($focusDate->toDateString(),collect()) as $tr)
+                <div class="schedule-list-item"><div><strong>{{ $tr->trial_start_time?substr($tr->trial_start_time,0,5):'-' }}</strong>@if($tr->trial_end_time)<div class="small text-muted">ถึง {{ substr($tr->trial_end_time,0,5) }}</div>@endif</div><div><strong>{{ $tr->student_name }}</strong> <span class="badge text-bg-warning">นัดทดลอง</span><div class="small text-muted">{{ $tr->course->name??$tr->interest??'-' }}{{ $tr->room?' · '.$tr->room->name:'' }} · <span class="badge {{ $tr->confirmationStatusBadgeClass() }}">{{ $tr->confirmationStatusLabel() }}</span></div></div><a href="{{ route('trial-leads.my-show',$tr) }}" class="btn btn-sm btn-outline-primary">ดูรายละเอียด</a></div>
+            @endforeach
         </div>
     @else
         <div class="calendar-scroll">
@@ -52,7 +57,14 @@
                                 <div class="text-muted text-truncate">{{ $s->enrollment->course->name??'-' }}</div>
                                 <div class="text-muted text-truncate"><i class="bi {{ $s->delivery_mode==='online'?'bi-camera-video':'bi-geo-alt' }}"></i> {{ $s->delivery_mode==='online'?'ออนไลน์':($s->room->name??$s->deliveryModeLabel()) }}</div>
                             </a>
-                        @empty @if($display==='week')<div class="text-muted text-center small py-3">ไม่มีคาบ</div>@endif @endforelse
+                        @empty @if($display==='week' && $trialLeads->get($date->toDateString(),collect())->isEmpty())<div class="text-muted text-center small py-3">ไม่มีคาบ</div>@endif @endforelse
+                        @foreach($trialLeads->get($date->toDateString(),collect()) as $tr)
+                            <a href="{{ route('trial-leads.my-show',$tr) }}" class="event" style="border-left-color:var(--amber,#8a5a2b);" title="นัดทดลองเรียน">
+                                <strong>{{ $tr->trial_start_time?substr($tr->trial_start_time,0,5):'' }}</strong> <i class="bi bi-person-check"></i>
+                                <div class="event-name">{{ $tr->student_name }}</div>
+                                <div class="text-muted text-truncate">{{ $tr->course->name??$tr->interest??'นัดทดลองเรียน' }}</div>
+                            </a>
+                        @endforeach
                     </div>
                 @endfor
             </div>

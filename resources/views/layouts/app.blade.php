@@ -552,10 +552,18 @@
 
             {{-- ==================== บุคคล ==================== --}}
             @if (
+                $u->hasModulePermission('trial_leads.manage') ||
                 $u->hasModulePermission('students.manage') ||
                     $u->hasModulePermission('guardians.manage') ||
                     $u->hasModulePermission('teachers.manage'))
                 <div class="nav-section-label">บุคคล</div>
+
+                @if ($u->hasModulePermission('trial_leads.manage'))
+                    <a href="{{ route('trial-leads.index') }}"
+                        class="nav-link {{ request()->routeIs('trial-leads.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-plus"></i> ผู้สนใจ / ทดลองเรียน
+                    </a>
+                @endif
 
                 @if ($u->hasModulePermission('students.manage'))
                     <a href="{{ route('students.index') }}"
@@ -821,6 +829,11 @@
                 <a href="{{ route('teacher.schedule') }}"
                     class="nav-link {{ request()->routeIs('teacher.schedule') ? 'active' : '' }}">
                     <i class="bi bi-calendar3"></i> ตารางสอนของฉัน
+                </a>
+
+                <a href="{{ route('trial-leads.my-index') }}"
+                    class="nav-link {{ request()->routeIs('trial-leads.my-index') || request()->routeIs('trial-leads.my-show') ? 'active' : '' }}">
+                    <i class="bi bi-person-check"></i> นัดทดลองของฉัน
                 </a>
 
                 <a href="{{ route('teacher.tasks') }}"

@@ -12,6 +12,7 @@ use App\Models\Student;
 use App\Models\StudentLeave;
 use App\Models\Teacher;
 use App\Models\TeacherLeave;
+use App\Models\TrialLead;
 use App\Services\FinanceService;
 use Illuminate\Http\Request;
 
@@ -82,9 +83,16 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $todayTrialLeads = TrialLead::whereDate('trial_date', $today)
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->with(['teacher', 'room', 'course'])
+            ->orderBy('trial_start_time')
+            ->get();
+        $stats['today_trials'] = $todayTrialLeads->count();
+
         return view('dashboard.admin', compact(
             'stats', 'pending', 'finance', 'overduePaymentsCount', 'overduePaymentsAmount',
-            'recentSales', 'todaySchedules'
+            'recentSales', 'todaySchedules', 'todayTrialLeads'
         ));
     }
 
@@ -122,6 +130,15 @@ class DashboardController extends Controller
             fn ($schedule) => $schedule->schedule_date->betweenIncluded($calendarStart, $calendarStart->copy()->endOfWeek())
         );
 
+        $trialsUpcoming = TrialLead::where('teacher_id', $teacher->id)
+            ->whereNotNull('trial_date')
+            ->whereBetween('trial_date', [$calendarStart->toDateString(), $calendarEnd->toDateString()])
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->with(['course', 'room'])
+            ->orderBy('trial_start_time')
+            ->get();
+        $todayTrialLeads = $trialsUpcoming->filter(fn ($trial) => $trial->trial_date->isToday());
+
         $dashboardStats = [
             'today_classes' => $scheduleUpcoming->filter(fn ($schedule) => $schedule->schedule_date->isToday())->count(),
             'week_classes' => $thisWeekSchedules->count(),
@@ -130,11 +147,12 @@ class DashboardController extends Controller
             }), 1),
             'students' => $scheduleUpcoming->pluck('enrollment.student_id')->filter()->unique()->count(),
             'pending_makeups' => $pendingMakeups->count(),
+            'today_trials' => $todayTrialLeads->count(),
         ];
 
         return view('dashboard.teacher', compact(
             'teacher', 'upcoming', 'scheduleUpcoming', 'pendingMakeups',
-            'calendarStart', 'dashboardStats'
+            'calendarStart', 'dashboardStats', 'todayTrialLeads', 'trialsUpcoming'
         ));
     }
 

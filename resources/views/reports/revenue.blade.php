@@ -102,22 +102,28 @@
     </div>
 
     <div class="row g-3 mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="stat-tile">
                 <div class="label"><i class="bi bi-journal-bookmark me-1"></i> รายได้คอร์สเรียน</div>
                 <div class="value text-success">฿{{ number_format($courseIncome, 2) }}</div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="stat-tile">
+                <div class="label"><i class="bi bi-person-plus me-1"></i> รายได้ทดลองเรียน</div>
+                <div class="value text-success">฿{{ number_format($trialIncome, 2) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="stat-tile">
                 <div class="label"><i class="bi bi-box-seam me-1"></i> รายได้ขายสินค้า</div>
                 <div class="value text-success">฿{{ number_format($productIncome, 2) }}</div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="stat-tile">
                 <div class="label"><i class="bi bi-cash-stack me-1"></i> รวมรายได้</div>
-                <div class="value">฿{{ number_format($courseIncome + $productIncome, 2) }}</div>
+                <div class="value">฿{{ number_format($courseIncome + $trialIncome + $productIncome, 2) }}</div>
             </div>
         </div>
     </div>

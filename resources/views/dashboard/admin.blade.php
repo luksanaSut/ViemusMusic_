@@ -50,6 +50,12 @@
                 <div><div class="stat-value">{{ $stats['today_classes'] }}</div><div class="small text-muted">คาบเรียนวันนี้</div></div>
             </div></div>
         @endif
+        @if ($u->hasModulePermission('trial_leads.manage'))
+            <div class="col-6 col-lg-3"><div class="stat-card d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background:var(--amber-soft,#f3ece2);color:var(--amber,#8a5a2b);"><i class="bi bi-person-check"></i></div>
+                <div><div class="stat-value">{{ $stats['today_trials'] }}</div><div class="small text-muted">นัดทดลองวันนี้</div></div>
+            </div></div>
+        @endif
     </div>
 
     {{-- ===== การเงินเดือนนี้ ===== --}}
@@ -140,8 +146,20 @@
                         <span class="badge {{ $schedule->statusBadgeClass() }} flex-shrink-0 align-self-center">{{ $schedule->statusLabel() }}</span>
                     </div>
                 @empty
-                    <div class="empty-note"><i class="bi bi-calendar-x fs-4 d-block mb-1"></i>วันนี้ไม่มีคาบเรียน</div>
+                    @if($todayTrialLeads->isEmpty())
+                        <div class="empty-note"><i class="bi bi-calendar-x fs-4 d-block mb-1"></i>วันนี้ไม่มีคาบเรียน</div>
+                    @endif
                 @endforelse
+                @foreach ($todayTrialLeads as $trial)
+                    <a href="{{ route('trial-leads.show', $trial) }}" class="info-row text-decoration-none text-reset">
+                        <div class="stat-icon flex-shrink-0"><i class="bi bi-person-check"></i></div>
+                        <div class="flex-grow-1 small">
+                            <div class="fw-semibold">{{ $trial->trial_start_time ? substr($trial->trial_start_time, 0, 5).'–'.substr($trial->trial_end_time, 0, 5) : 'ไม่ระบุเวลา' }} · {{ $trial->student_name }} <span class="badge text-bg-warning">นัดทดลอง</span></div>
+                            <div class="text-muted">{{ $trial->course->name ?? $trial->interest ?? 'ไม่ระบุคอร์ส' }} · อ.{{ $trial->teacher->nickname ?? $trial->teacher->full_name ?? '-' }}@if($trial->room) · {{ $trial->room->name }}@endif</div>
+                        </div>
+                        <span class="badge {{ $trial->confirmationStatusBadgeClass() }} flex-shrink-0 align-self-center">{{ $trial->confirmationStatusLabel() }}</span>
+                    </a>
+                @endforeach
             </div></div></div>
         @endif
 

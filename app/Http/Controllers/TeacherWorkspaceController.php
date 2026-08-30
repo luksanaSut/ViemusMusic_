@@ -8,6 +8,7 @@ use App\Models\HomeworkSubmission;
 use App\Models\MakeupRequest;
 use App\Models\Student;
 use App\Models\TeachingLog;
+use App\Models\TrialLead;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -39,6 +40,14 @@ class TeacherWorkspaceController extends Controller
 
         $makeupScheduleIds = MakeupRequest::whereIn('class_schedule_id', $schedules->pluck('id'))
             ->pluck('class_schedule_id')->flip();
+
+        $trialLeads = TrialLead::with(['course', 'room'])
+            ->where('teacher_id', $teacher->id)
+            ->whereNotNull('trial_date')
+            ->whereBetween('trial_date', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->orderBy('trial_start_time')->get()
+            ->groupBy(fn ($t) => $t->trial_date->toDateString());
         $previousDate = match ($display) {
             'day' => $focusDate->copy()->subDay()->toDateString(),
             'month' => $focusDate->copy()->subMonth()->toDateString(),
@@ -52,7 +61,7 @@ class TeacherWorkspaceController extends Controller
 
         return view('teacher-workspace.schedule', compact(
             'teacher', 'display', 'focusDate', 'rangeStart', 'rangeEnd', 'schedules',
-            'makeupScheduleIds', 'previousDate', 'nextDate'
+            'makeupScheduleIds', 'previousDate', 'nextDate', 'trialLeads'
         ));
     }
 
@@ -68,7 +77,12 @@ class TeacherWorkspaceController extends Controller
         $homeworkTasks = HomeworkSubmission::where('status', 'submitted')
             ->whereHas('teachingReport.teachingLog', fn ($q) => $q->where('teacher_id', $teacher->id))->get();
         $makeupTasks = MakeupRequest::where('teacher_id', $teacher->id)->where('instructor_approval_status', 'pending')->get();
-        return view('teacher-workspace.tasks', compact('attendanceTasks', 'reportTasks', 'homeworkTasks', 'makeupTasks'));
+        $trialTasks = TrialLead::with(['course'])->where('teacher_id', $teacher->id)
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->where(fn ($q) => $q->whereNull('teacher_confirmed_at')
+                ->orWhere(fn ($q2) => $q2->whereDate('trial_date', '<=', now())->whereNull('checked_in_at')))
+            ->orderByRaw('trial_date is null')->orderBy('trial_date')->get();
+        return view('teacher-workspace.tasks', compact('attendanceTasks', 'reportTasks', 'homeworkTasks', 'makeupTasks', 'trialTasks'));
     }
 
     public function students(Request $request)

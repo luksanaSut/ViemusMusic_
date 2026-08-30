@@ -85,6 +85,10 @@
                         <span class="fw-semibold">฿{{ number_format($summary['income']['course'], 2) }}</span>
                     </div>
                     <div class="breakdown-row">
+                        <span>ค่าทดลองเรียน</span>
+                        <span class="fw-semibold">฿{{ number_format($summary['income']['trial'], 2) }}</span>
+                    </div>
+                    <div class="breakdown-row">
                         <span>ขายสินค้า</span>
                         <span class="fw-semibold">฿{{ number_format($summary['income']['product'], 2) }}</span>
                     </div>

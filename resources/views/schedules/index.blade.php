@@ -133,6 +133,18 @@
             text-decoration: line-through;
         }
 
+        .calendar-chip.trial-chip,
+        .week-event.trial-chip {
+            background: var(--amber-soft, #f3ece2);
+            color: var(--amber, #8a5a2b);
+        }
+
+        .calendar-chip.trial-chip:hover,
+        .week-event.trial-chip:hover {
+            background: var(--amber, #8a5a2b);
+            color: #fff;
+        }
+
         .calendar-more {
             font-size: .68rem;
             color: var(--accent, #1f3350);
@@ -349,6 +361,7 @@
                     $isDim = !$cursor->between($from, $to);
                     $isToday = $cursor->isToday();
                     $dayEvents = $eventsByDate->get($cursor->toDateString(), collect())->sortBy('start_time');
+                    $dayTrials = $trialLeads->get($cursor->toDateString(), collect());
                 @endphp
                 <div class="calendar-cell {{ $isDim ? 'dim' : '' }} {{ $isToday ? 'today' : '' }}">
                     <div class="calendar-date">{{ $cursor->day }}</div>
@@ -365,6 +378,12 @@
                                 onclick="openDayModal('{{ $cursor->toDateString() }}')">+{{ $dayEvents->count() - 4 }}
                                 เพิ่มเติม</span>
                         @endif
+                        @foreach ($dayTrials as $tr)
+                            <a href="{{ route('trial-leads.show', $tr) }}" class="calendar-chip trial-chip"
+                                title="ทดลองเรียน: {{ $tr->student_name }}">
+                                <i class="bi bi-person-check"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) : '' }} {{ $tr->student_name }}
+                            </a>
+                        @endforeach
                     </div>
                 </div>
                 @php $cursor->addDay(); @endphp
@@ -378,6 +397,7 @@
                 @php
                     $isToday = $cursor->isToday();
                     $dayEvents = $eventsByDate->get($cursor->toDateString(), collect())->sortBy('start_time');
+                    $dayTrials = $trialLeads->get($cursor->toDateString(), collect());
                 @endphp
                 <div class="week-col">
                     <div class="week-col-header {{ $isToday ? 'today' : '' }}">
@@ -394,8 +414,17 @@
                                     {{ $ev->teacher->nickname ?? ($ev->teacher->full_name ?? 'ไม่ระบุอาจารย์') }}</div>
                             </a>
                         @empty
-                            <div class="text-muted small text-center py-2">ว่าง</div>
+                            @if ($dayTrials->isEmpty())
+                                <div class="text-muted small text-center py-2">ว่าง</div>
+                            @endif
                         @endforelse
+                        @foreach ($dayTrials as $tr)
+                            <a href="{{ route('trial-leads.show', $tr) }}" class="week-event trial-chip">
+                                <div class="t"><i class="bi bi-person-check"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . '-' . substr($tr->trial_end_time, 0, 5) : 'ทดลองเรียน' }}</div>
+                                <div>{{ $tr->student_name }}</div>
+                                <div class="text-muted">{{ $tr->teacher->nickname ?? ($tr->teacher->full_name ?? 'ยังไม่เลือกอาจารย์') }}</div>
+                            </a>
+                        @endforeach
                     </div>
                 </div>
                 @php $cursor->addDay(); @endphp
@@ -403,6 +432,31 @@
         </div>
     @else
         {{-- ===== รายวัน: คงรูปแบบรายการเดิม (อ่านง่ายสุดสำหรับ 1 วัน) ===== --}}
+        @php $dayTrialLeads = $trialLeads->get($from->toDateString(), collect()); @endphp
+        @if ($dayTrialLeads->isNotEmpty())
+            <div class="form-section">
+                <div class="form-section-title" style="border-bottom:0; margin-bottom:.5rem; padding-bottom:0;">
+                    <div class="icon-badge"><i class="bi bi-person-check"></i></div>
+                    นัดทดลองเรียน
+                </div>
+                @foreach ($dayTrialLeads as $tr)
+                    <div class="schedule-row">
+                        <div class="schedule-time"><i class="bi bi-clock"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . ' - ' . substr($tr->trial_end_time, 0, 5) : 'ไม่ระบุเวลา' }}</div>
+                        <div class="schedule-info">
+                            <div class="main">{{ $tr->student_name }} — {{ $tr->course->name ?? $tr->interest ?? '-' }}</div>
+                            <div class="meta">
+                                <i class="bi bi-person-badge"></i> {{ $tr->teacher->full_name ?? 'ไม่ระบุอาจารย์' }}
+                                @if ($tr->room)
+                                    · <i class="bi bi-door-open"></i> {{ $tr->room->name }}
+                                @endif
+                            </div>
+                        </div>
+                        <span class="badge {{ $tr->confirmationStatusBadgeClass() }}">{{ $tr->confirmationStatusLabel() }}</span>
+                        <a href="{{ route('trial-leads.show', $tr) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
         @forelse($schedules as $dateKey => $daySchedules)
             <div class="form-section">
                 <div class="form-section-title" style="border-bottom:0; margin-bottom:.5rem; padding-bottom:0;">

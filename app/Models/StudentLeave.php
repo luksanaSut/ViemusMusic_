@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class StudentLeave extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'student_id',
         'enrollment_id',

@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\Room;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Models\TrialLead;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,11 +47,20 @@ class ClassScheduleController extends Controller
             ->get()
             ->groupBy(fn($s) => $s->schedule_date->toDateString());
 
+        $trialLeads = TrialLead::with(['teacher', 'room'])
+            ->whereNotNull('trial_date')
+            ->whereBetween('trial_date', [$from->toDateString(), $to->toDateString()])
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->when($request->filled('teacher_id'), fn ($q) => $q->where('teacher_id', $request->teacher_id))
+            ->when($request->filled('room_id'), fn ($q) => $q->where('room_id', $request->room_id))
+            ->get()
+            ->groupBy(fn ($t) => $t->trial_date->toDateString());
+
         $students = Student::orderBy('full_name')->get(['id', 'full_name', 'student_code']);
         $teachers = Teacher::where('is_active', true)->orderBy('full_name')->get(['id', 'full_name', 'nickname']);
         $rooms    = Room::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        return view('schedules.index', compact('schedules', 'view', 'date', 'from', 'to', 'students', 'teachers', 'rooms'));
+        return view('schedules.index', compact('schedules', 'trialLeads', 'view', 'date', 'from', 'to', 'students', 'teachers', 'rooms'));
     }
 
     // GET /schedules/create

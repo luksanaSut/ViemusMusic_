@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\RoomBooking;
+use App\Models\TrialLead;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -29,8 +30,19 @@ class RoomScheduleController extends Controller
             ->get()
             ->groupBy(fn($b) => $b->booking_date->toDateString());
 
+        $trialLeads = TrialLead::with(['room', 'teacher', 'course'])
+            ->whereNotNull('room_id')
+            ->whereNotNull('trial_date')
+            ->whereBetween('trial_date', [$from->toDateString(), $to->toDateString()])
+            ->whereNotIn('status', ['converted', 'lost'])
+            ->when($request->filled('room_id'), fn ($q) => $q->where('room_id', $request->room_id))
+            ->orderBy('trial_date')->orderBy('trial_start_time')
+            ->get()
+            ->groupBy(fn ($t) => $t->trial_date->toDateString());
+
+        $dateKeys = $bookings->keys()->merge($trialLeads->keys())->unique()->sort()->values();
         $rooms = Room::where('is_active', true)->orderBy('name')->get();
 
-        return view('rooms.schedule', compact('bookings', 'view', 'date', 'from', 'to', 'rooms'));
+        return view('rooms.schedule', compact('bookings', 'trialLeads', 'dateKeys', 'view', 'date', 'from', 'to', 'rooms'));
     }
 }

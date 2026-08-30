@@ -82,12 +82,16 @@
             <td style="text-align:right;">฿{{ number_format($courseIncome, 2) }}</td>
         </tr>
         <tr>
+            <td>รายได้ค่าทดลองเรียน</td>
+            <td style="text-align:right;">฿{{ number_format($trialIncome, 2) }}</td>
+        </tr>
+        <tr>
             <td>รายได้ขายสินค้า</td>
             <td style="text-align:right;">฿{{ number_format($productIncome, 2) }}</td>
         </tr>
         <tr class="grand">
             <td>รวมรายได้</td>
-            <td style="text-align:right;">฿{{ number_format($courseIncome + $productIncome, 2) }}</td>
+            <td style="text-align:right;">฿{{ number_format($courseIncome + $trialIncome + $productIncome, 2) }}</td>
         </tr>
     </table>
 

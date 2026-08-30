@@ -122,6 +122,7 @@ class ReportController extends Controller
             'period'        => $period,
             'courseIncome'  => $finance->courseIncome($start, $end),
             'productIncome' => $finance->productIncome($start, $end),
+            'trialIncome'   => $finance->trialIncome($start, $end),
             'byMethod'      => $report->revenueByPaymentMethod($start, $end),
             'byBranch'      => $report->revenueByBranch($start, $end),
         ];

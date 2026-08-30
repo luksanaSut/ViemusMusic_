@@ -48,6 +48,7 @@
         <div class="col-6 col-lg-3"><div class="stat-card d-flex align-items-center gap-3"><div class="stat-icon"><i class="bi bi-clock"></i></div><div><div class="stat-value">{{ $dashboardStats['week_hours'] }}</div><div class="small text-muted">ชั่วโมงสัปดาห์นี้ · {{ $dashboardStats['week_classes'] }} คาบ</div></div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card d-flex align-items-center gap-3"><div class="stat-icon"><i class="bi bi-people"></i></div><div><div class="stat-value">{{ $dashboardStats['students'] }}</div><div class="small text-muted">นักเรียนใน 4 สัปดาห์</div></div></div></div>
         <div class="col-6 col-lg-3"><div class="stat-card d-flex align-items-center gap-3"><div class="stat-icon"><i class="bi bi-arrow-repeat"></i></div><div><div class="stat-value">{{ $dashboardStats['pending_makeups'] }}</div><div class="small text-muted">ชดเชยรออนุมัติ</div></div></div></div>
+        <div class="col-6 col-lg-3"><a href="{{ route('trial-leads.my-index') }}" class="text-decoration-none text-reset"><div class="stat-card d-flex align-items-center gap-3"><div class="stat-icon" style="background:var(--amber-soft,#f3ece2);color:var(--amber,#8a5a2b);"><i class="bi bi-person-check"></i></div><div><div class="stat-value">{{ $dashboardStats['today_trials'] }}</div><div class="small text-muted">นัดทดลองวันนี้</div></div></div></a></div>
     </div>
 
     <section class="calendar-card mb-3">
@@ -60,6 +61,7 @@
             $thaiDays = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
             $thaiMonths = [1 => 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
             $schedulesByDate = $scheduleUpcoming->groupBy(fn ($schedule) => $schedule->schedule_date->toDateString());
+            $trialsByDate = $trialsUpcoming->groupBy(fn ($trial) => $trial->trial_date->toDateString());
         @endphp
         <div class="calendar-scroll">
             @for ($week = 0; $week < 4; $week++)
@@ -73,6 +75,7 @@
                         @php
                             $date = $weekStart->copy()->addDays($day);
                             $daySchedules = $schedulesByDate->get($date->toDateString(), collect());
+                            $dayTrials = $trialsByDate->get($date->toDateString(), collect());
                         @endphp
                         <div class="calendar-day {{ $date->isToday() ? 'is-today' : '' }}">
                             <div class="day-heading"><div class="day-name">{{ $thaiDays[$day] }}</div><div class="day-number">{{ $date->day }}</div></div>
@@ -85,8 +88,17 @@
                                     @if($schedule->notes)<div class="class-meta text-truncate"><i class="bi bi-sticky"></i> {{ $schedule->notes }}</div>@endif
                                 </a>
                             @empty
-                                <div class="empty-day"><i class="bi bi-dash-circle"></i><br>ไม่มีคาบสอน</div>
+                                @if($dayTrials->isEmpty())
+                                    <div class="empty-day"><i class="bi bi-dash-circle"></i><br>ไม่มีคาบสอน</div>
+                                @endif
                             @endforelse
+                            @foreach ($dayTrials as $trial)
+                                <a href="{{ route('trial-leads.my-show', $trial) }}" class="class-event" style="border-left-color:var(--amber,#8a5a2b);" title="นัดทดลองเรียน">
+                                    <div class="class-time"><i class="bi bi-person-check"></i> {{ $trial->trial_start_time ? substr($trial->trial_start_time, 0, 5).'–'.substr($trial->trial_end_time, 0, 5) : 'ทดลองเรียน' }}</div>
+                                    <div class="class-student">{{ $trial->student_name }}</div>
+                                    <div class="class-meta">{{ $trial->course->name ?? $trial->interest ?? 'นัดทดลองเรียน' }}</div>
+                                </a>
+                            @endforeach
                         </div>
                     @endfor
                 </div>

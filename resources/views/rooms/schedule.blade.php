@@ -35,7 +35,7 @@
 
     <p class="text-muted">ช่วงวันที่: {{ $from->format('d/m/Y') }} - {{ $to->format('d/m/Y') }}</p>
 
-    @forelse($bookings as $dateKey => $dayBookings)
+    @forelse($dateKeys as $dateKey)
         <div class="card mb-3">
             <div class="card-header fw-semibold">{{ \Carbon\Carbon::parse($dateKey)->translatedFormat('l d/m/Y') }}</div>
             <table class="table table-sm mb-0">
@@ -49,13 +49,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($dayBookings as $b)
+                    @foreach ($bookings->get($dateKey, collect()) as $b)
                         <tr>
                             <td>{{ $b->start_time }} - {{ $b->end_time }}</td>
                             <td><a href="{{ route('rooms.show', $b->room) }}">{{ $b->room->name }}</a></td>
                             <td>{{ $b->purpose ?: '-' }}</td>
                             <td>{{ $b->attendees_count }} คน</td>
                             <td>{{ optional($b->teacher)->full_name }} {{ optional($b->course)->name }}</td>
+                        </tr>
+                    @endforeach
+                    @foreach ($trialLeads->get($dateKey, collect()) as $tr)
+                        <tr>
+                            <td>{{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . ' - ' . substr($tr->trial_end_time, 0, 5) : '-' }}</td>
+                            <td><a href="{{ route('rooms.show', $tr->room) }}">{{ $tr->room->name }}</a></td>
+                            <td><span class="badge text-bg-warning">นัดทดลองเรียน</span> {{ $tr->student_name }}</td>
+                            <td>-</td>
+                            <td>{{ optional($tr->teacher)->full_name }} {{ optional($tr->course)->name }}
+                                <a href="{{ route('trial-leads.show', $tr) }}" class="btn btn-sm btn-outline-primary ms-1"><i class="bi bi-eye"></i></a>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

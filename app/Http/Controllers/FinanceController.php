@@ -44,6 +44,7 @@ class FinanceController extends Controller
 
             fputcsv($handle, ['รายรับ', 'จำนวนเงิน']);
             fputcsv($handle, ['รายได้จากคอร์สเรียน', $summary['income']['course']]);
+            fputcsv($handle, ['รายได้ค่าทดลองเรียน', $summary['income']['trial']]);
             fputcsv($handle, ['รายได้จากการขายสินค้า', $summary['income']['product']]);
             fputcsv($handle, ['รวมรายรับ', $summary['income']['total']]);
             fputcsv($handle, []);

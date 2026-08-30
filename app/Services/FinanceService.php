@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\PayrollRun;
 use App\Models\SaleOrder;
 use App\Models\StoreSale;
+use App\Models\TrialPayment;
 use Carbon\Carbon;
 
 class FinanceService
@@ -23,6 +24,14 @@ class FinanceService
         return (float) StoreSale::where('status', 'completed')
             ->whereBetween('updated_at', [$start, $end])
             ->selectRaw('COALESCE(SUM(COALESCE(net_payable, total_amount)), 0) as total')
+            ->value('total');
+    }
+
+    public function trialIncome(Carbon $start, Carbon $end): float
+    {
+        return (float) TrialPayment::where('status', 'confirmed')
+            ->whereBetween('transaction_at', [$start, $end])
+            ->selectRaw("COALESCE(SUM(CASE WHEN type = 'refund' THEN -amount ELSE amount END), 0) as total")
             ->value('total');
     }
 
@@ -56,6 +65,7 @@ class FinanceService
     {
         $courseIncome = $this->courseIncome($start, $end);
         $productIncome = $this->productIncome($start, $end);
+        $trialIncome = $this->trialIncome($start, $end);
 
         $manual = $this->manualExpensesByCategory($start, $end);
         $teacherPayroll = $this->teacherPayrollExpense($start, $end);
@@ -63,13 +73,14 @@ class FinanceService
         $expense = $manual;
         $expense['staff'] = $manual['staff'] + $teacherPayroll;
 
-        $incomeTotal = $courseIncome + $productIncome;
+        $incomeTotal = $courseIncome + $productIncome + $trialIncome;
         $expenseTotal = array_sum($expense);
 
         return [
             'income' => [
                 'course'  => $courseIncome,
                 'product' => $productIncome,
+                'trial'   => $trialIncome,
                 'total'   => $incomeTotal,
             ],
             'expense' => [

@@ -62,6 +62,8 @@ class ResetTransactionalData extends Command
         'teaching_reports',
         'teaching_sessions',
         'transport_compensations',
+        'trial_leads',
+        'trial_payments',
     ];
 
     public function handle(): int

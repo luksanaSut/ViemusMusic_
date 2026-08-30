@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\StoreSale;
 use App\Models\Teacher;
 use App\Models\TeacherLeave;
+use App\Models\TrialPayment;
 use App\Models\TeachingSession;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -93,6 +94,7 @@ class ReportService
             'end'     => $end,
             'course'  => $this->finance->courseIncome($start, $end),
             'product' => $this->finance->productIncome($start, $end),
+            'trial'   => $this->finance->trialIncome($start, $end),
         ];
     }
 
@@ -112,9 +114,14 @@ class ReportService
             ->groupBy('payment_method')
             ->pluck('total', 'payment_method');
 
+        $trialByMethod = TrialPayment::where('status', 'confirmed')
+            ->whereBetween('transaction_at', [$start, $end])
+            ->selectRaw("payment_method, SUM(CASE WHEN type = 'refund' THEN -amount ELSE amount END) as total")
+            ->groupBy('payment_method')->pluck('total', 'payment_method');
+
         $result = [];
         foreach ($methods as $method) {
-            $result[$method] = (float) ($courseByMethod[$method] ?? 0) + (float) ($productByMethod[$method] ?? 0);
+            $result[$method] = (float) ($courseByMethod[$method] ?? 0) + (float) ($productByMethod[$method] ?? 0) + (float) ($trialByMethod[$method] ?? 0);
         }
 
         return $result;
@@ -135,7 +142,8 @@ class ReportService
         }
 
         $productTotal = $this->finance->productIncome($start, $end);
-        $result[self::UNSPECIFIED_BRANCH] = ($result[self::UNSPECIFIED_BRANCH] ?? 0) + $productTotal;
+        $trialTotal = $this->finance->trialIncome($start, $end);
+        $result[self::UNSPECIFIED_BRANCH] = ($result[self::UNSPECIFIED_BRANCH] ?? 0) + $productTotal + $trialTotal;
 
         return $result;
     }
