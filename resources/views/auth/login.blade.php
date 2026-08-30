@@ -324,6 +324,32 @@
             background: rgba(76, 175, 120, .18);
             color: #a9e8c4;
         }
+
+        @media (max-width: 575.98px), (max-height: 680px) {
+            body {
+                align-items: flex-start;
+                overflow-y: auto;
+                padding: 1rem .75rem;
+            }
+
+            .login-card {
+                margin: auto 0;
+                padding: 1.5rem 1.1rem;
+                border-radius: 18px;
+            }
+
+            .brand-mark {
+                width: 54px;
+                height: 54px;
+                margin-bottom: .8rem;
+                font-size: 1.35rem;
+            }
+
+            h1.brand-title { font-size: 1.3rem; }
+            .brand-sub { letter-spacing: 1.8px; }
+            .tagline { margin-bottom: 1.25rem; }
+            .deco { opacity: .2; }
+        }
     </style>
 </head>
 

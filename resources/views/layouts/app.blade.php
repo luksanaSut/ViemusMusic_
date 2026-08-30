@@ -38,6 +38,8 @@
             font-family: 'Sarabun', sans-serif;
             color: var(--ink);
             margin: 0;
+            min-width: 0;
+            overflow-x: hidden;
         }
 
         h1,
@@ -452,11 +454,83 @@
         .user-dropdown-menu .dropdown-item.text-danger:hover i {
             color: #b3392c;
         }
+
+        /* ===== Responsive shell ===== */
+        .mobile-menu-btn,
+        .sidebar-backdrop { display: none; }
+
+        .content img,
+        .content video,
+        .content iframe { max-width: 100%; }
+
+        .content .table-responsive { -webkit-overflow-scrolling: touch; }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                width: min(84vw, 300px);
+                transform: translateX(-105%);
+                transition: transform .25s ease;
+                z-index: 1045;
+                box-shadow: 12px 0 30px rgba(0, 0, 0, .2);
+            }
+            body.sidebar-open { overflow: hidden; }
+            body.sidebar-open .sidebar { transform: translateX(0); }
+            .sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 1040;
+                border: 0;
+                background: rgba(16, 18, 22, .48);
+            }
+            body.sidebar-open .sidebar-backdrop { display: block; }
+            .main-wrap { margin-left: 0; width: 100%; min-width: 0; }
+            .mobile-menu-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                flex: 0 0 40px;
+                padding: 0;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: var(--card);
+                color: var(--ink);
+            }
+            .topbar { padding: .6rem 1rem; }
+            .topbar .search-box { max-width: none; min-width: 0; }
+            .topbar .kbd { display: none; }
+            .content { min-width: 0; padding: 1rem; }
+            .page-title { font-size: 1.25rem; }
+        }
+
+        @media (max-width: 575.98px) {
+            .topbar { gap: .55rem; padding: .55rem .75rem; }
+            .topbar .search-box input { padding-right: .65rem; font-size: .8rem; }
+            .topbar .ms-auto { gap: .65rem !important; }
+            .content { padding: .85rem .75rem 1.25rem; }
+            .content > .d-flex.justify-content-between,
+            .content > form > .d-flex.justify-content-between,
+            .card-header.d-flex.justify-content-between {
+                align-items: stretch !important;
+                flex-direction: column;
+                gap: .75rem;
+            }
+            .content > .d-flex.justify-content-between .btn,
+            .content > form > .d-flex.justify-content-between .btn { width: 100%; }
+            .card-body,
+            .card-header,
+            .card-footer { padding-left: .9rem; padding-right: .9rem; }
+            .mobile-stack { width: 100%; flex-direction: column; }
+            .modal-dialog { margin: .6rem; }
+            .alert { overflow-wrap: anywhere; }
+            .user-dropdown-menu { max-width: calc(100vw - 1.5rem); }
+        }
     </style>
 </head>
 
 <body>
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar" aria-label="เมนูหลัก">
         <div class="brand">
             <div class="brand-mark">V</div>
             <div class="brand-text">
@@ -884,8 +958,14 @@
         @endif
     </aside>
 
+    <button type="button" class="sidebar-backdrop" data-sidebar-close aria-label="ปิดเมนู"></button>
+
     <div class="main-wrap">
         <div class="topbar">
+            <button type="button" class="mobile-menu-btn" data-sidebar-toggle aria-controls="appSidebar"
+                aria-expanded="false" aria-label="เปิดเมนู">
+                <i class="bi bi-list fs-5"></i>
+            </button>
             <div class="search-box">
                 <i class="bi bi-search"></i>
                 <input type="text" placeholder="ค้นหาอาจารย์, คอร์ส...">
@@ -983,6 +1063,39 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (() => {
+            const body = document.body;
+            const sidebar = document.getElementById('appSidebar');
+            const toggle = document.querySelector('[data-sidebar-toggle]');
+            const closeSidebar = () => {
+                body.classList.remove('sidebar-open');
+                toggle?.setAttribute('aria-expanded', 'false');
+            };
+
+            toggle?.addEventListener('click', () => {
+                const isOpen = body.classList.toggle('sidebar-open');
+                toggle.setAttribute('aria-expanded', String(isOpen));
+            });
+            document.querySelector('[data-sidebar-close]')?.addEventListener('click', closeSidebar);
+            sidebar?.querySelectorAll('a.nav-link').forEach(link => link.addEventListener('click', closeSidebar));
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') closeSidebar();
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 992) closeSidebar();
+            });
+
+            document.querySelectorAll('.content table').forEach(table => {
+                if (!table.closest('.table-responsive') && !table.closest('.calendar-scroll')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-responsive';
+                    table.parentNode.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+            });
+        })();
+    </script>
     @yield('scripts')
 </body>
 
