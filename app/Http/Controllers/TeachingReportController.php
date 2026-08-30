@@ -22,10 +22,10 @@ class TeachingReportController extends Controller
         }
 
         $data = $request->validate([
-            'content_taught' => ['nullable', 'string', 'max:3000'],
+            'content_taught' => ['required', 'string', 'max:3000'],
             'homework'        => ['nullable', 'string', 'max:2000'],
-            'progress_notes'  => ['nullable', 'string', 'max:2000'],
-            'notes'           => ['nullable', 'string', 'max:1000'],
+            'progress_notes'  => ['required', 'string', 'max:2000'],
+            'notes'           => ['required', 'string', 'max:1000'],
             'attachments'     => ['nullable', 'array', 'max:5'],
             'attachments.*'   => ['file', 'mimes:pdf,jpg,jpeg,png,mp3,mp4,mscz,xml,doc,docx', 'max:10240'],
         ]);

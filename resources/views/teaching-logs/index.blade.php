@@ -63,19 +63,13 @@
 
         .today-shortcut { white-space:nowrap; border-radius:10px; }
 
-        .month-jump {
-            display:flex;
-            align-items:center;
-            gap:.35rem;
-            padding:.25rem;
-            border:1px solid var(--border);
-            border-radius:11px;
-            background:var(--surface);
+        .date-jump-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
-
-        .month-jump i { color:var(--muted); margin-left:.45rem; }
-        .month-jump select { border:0; background:transparent; color:var(--ink); font-family:'Prompt',sans-serif; font-weight:600; font-size:.82rem; padding:.35rem 1.6rem .35rem .35rem; outline:none; }
-        .month-jump select + select { border-left:1px solid var(--border); border-radius:0; }
 
         .tl-right-controls {
             display: flex;
@@ -228,7 +222,8 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .course-block .body .work-row:last-child {
+        .course-block .body .work-row:last-child,
+        .flat-list .work-row:last-child {
             border-bottom: 0;
         }
 
@@ -430,7 +425,6 @@
             .tl-toolbar-row { align-items: stretch; margin-bottom: 1rem; }
             .date-nav { justify-content: space-between; width: 100%; flex-wrap:wrap; }
             .date-nav .label { min-width: 0; flex: 1; }
-            .month-jump { order:4; width:100%; justify-content:center; }
             .today-shortcut { order:5; width:100%; }
             .tl-right-controls, .range-toggle { width: 100%; }
             .range-toggle a { flex: 1; text-align: center; }
@@ -477,25 +471,13 @@
             <a href="{{ route('teaching-logs.index', ['range' => $range, 'date' => $nextDate->toDateString()]) }}"
                 class="nav-arrow" title="ถัดไป"><i class="bi bi-chevron-right"></i></a>
 
+            <button type="button" class="nav-arrow" id="dateJumpBtn" title="เลือกวันที่"><i class="bi bi-calendar3"></i></button>
+            <input type="date" id="dateJumpInput" class="date-jump-input" value="{{ $refDate->toDateString() }}" aria-label="เลือกวันที่">
+
             @unless ($isCurrentPeriod)
                 <a href="{{ route('teaching-logs.index', ['range' => $range]) }}"
                     class="btn btn-sm btn-outline-secondary today-shortcut"><i class="bi bi-calendar-check"></i> วันนี้</a>
             @endunless
-
-            @if ($range == 'month')
-                @php
-                    $thaiMonthNames = [1=>'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-                @endphp
-                <div class="month-jump" title="เลือกเดือนที่ต้องการดู">
-                    <i class="bi bi-calendar3"></i>
-                    <select id="monthSelect" aria-label="เลือกเดือน">
-                        @foreach($thaiMonthNames as $monthNumber=>$monthName)<option value="{{ $monthNumber }}" @selected($rangeStart->month===$monthNumber)>{{ $monthName }}</option>@endforeach
-                    </select>
-                    <select id="yearSelect" aria-label="เลือกปี">
-                        @for($year=$rangeStart->year-3;$year<=$rangeStart->year+3;$year++)<option value="{{ $year }}" @selected($rangeStart->year===$year)>พ.ศ. {{ $year+543 }}</option>@endfor
-                    </select>
-                </div>
-            @endif
         </div>
 
         <div class="tl-right-controls">
@@ -577,49 +559,71 @@
                 </select>
             </div>
 
-            {{-- ===== Tab: เช็คชื่อ (ยังไม่เสร็จ ต้องดำเนินการต่อ) — แบ่งตามคอร์สเรียน ===== --}}
+            @php
+                $thaiDaysFull = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+                $thaiMonthsShort = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            @endphp
+
+            {{-- ===== Tab: เช็คชื่อ (ยังไม่เสร็จ ต้องดำเนินการต่อ) ===== --}}
             <div class="tab-panel" data-panel="pending">
-                @php $pendingByCourse = $pendingItems->groupBy(fn($s) => $s->enrollment->course->id ?? 0); @endphp
-                @forelse ($pendingByCourse as $courseId => $items)
-                    @php $course = $items->first()->enrollment->course; @endphp
-                    <details class="course-block has-pending" {{ $loop->first ? 'open' : '' }}>
-                        <summary>
-                            <span class="name">{{ $course->name ?? 'ไม่ระบุคอร์ส' }}</span>
-                            <span class="course-count-badge pending">{{ $items->count() }} รอเช็คชื่อ</span>
-                        </summary>
-                        <div class="body">
-                            @foreach ($items as $s)
-                                @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'pending'])
-                            @endforeach
-                        </div>
-                    </details>
-                @empty
+                @if ($pendingItems->isEmpty())
                     <p class="text-muted small text-center py-4 mb-0"><i class="bi bi-check-circle text-success"></i>
                         เช็คชื่อครบทุกคาบแล้ว</p>
-                @endforelse
+                @elseif ($range === 'day')
+                    {{-- มุมมองรายวันมีวันเดียวอยู่แล้ว ไม่ต้องซ้อนกล่องพับ — แสดงลิสต์เรียงตามเวลาไปเลย --}}
+                    <div class="flat-list">
+                        @foreach ($pendingItems as $s)
+                            @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'pending'])
+                        @endforeach
+                    </div>
+                @else
+                    @php $pendingByDate = $pendingItems->groupBy(fn($s) => $s->schedule_date->toDateString()); @endphp
+                    @foreach ($pendingByDate as $dateKey => $items)
+                        @php $d = \Carbon\Carbon::parse($dateKey); @endphp
+                        <details class="course-block has-pending" open>
+                            <summary>
+                                <span class="name">{{ $thaiDaysFull[$d->dayOfWeekIso - 1] }} {{ $d->day }} {{ $thaiMonthsShort[$d->month] }}{{ $d->isToday() ? ' · วันนี้' : '' }}</span>
+                                <span class="course-count-badge pending">{{ $items->count() }} รอเช็คชื่อ</span>
+                            </summary>
+                            <div class="body">
+                                @foreach ($items as $s)
+                                    @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'pending'])
+                                @endforeach
+                            </div>
+                        </details>
+                    @endforeach
+                @endif
                 <p id="pendingEmpty" class="text-muted small text-center py-3 mb-0 d-none">ไม่พบรายการที่ตรงกับตัวกรอง
                 </p>
             </div>
 
-            {{-- ===== Tab: ประวัติการเช็คชื่อ (ยืนยันเวลาสอนจริงแล้ว แก้ไขไม่ได้อีก) — แบ่งตามคอร์สเรียน ===== --}}
+            {{-- ===== Tab: ประวัติการเช็คชื่อ (ยืนยันเวลาสอนจริงแล้ว แก้ไขไม่ได้อีก) ===== --}}
             <div class="tab-panel d-none" data-panel="history">
-                @php $historyByCourse = $historyItems->groupBy(fn($s) => $s->enrollment->course->id ?? 0); @endphp
-                @forelse ($historyByCourse as $courseId => $items)
-                    @php $course = $items->first()->enrollment->course; @endphp
-                    <details class="course-block">
-                        <summary>
-                            <span class="name">{{ $course->name ?? 'ไม่ระบุคอร์ส' }}</span>
-                            <span class="course-count-badge done">{{ $items->count() }} คาบ</span>
-                        </summary>
-                        <div class="body">
-                            @foreach ($items as $s)
-                                @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'history'])
-                            @endforeach
-                        </div>
-                    </details>
-                @empty
+                @if ($historyItems->isEmpty())
                     <p class="text-muted small text-center py-4 mb-0">ยังไม่มีประวัติการเช็คชื่อในช่วงนี้</p>
-                @endforelse
+                @elseif ($range === 'day')
+                    <div class="flat-list">
+                        @foreach ($historyItems as $s)
+                            @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'history'])
+                        @endforeach
+                    </div>
+                @else
+                    @php $historyByDate = $historyItems->groupBy(fn($s) => $s->schedule_date->toDateString()); @endphp
+                    @foreach ($historyByDate as $dateKey => $items)
+                        @php $d = \Carbon\Carbon::parse($dateKey); @endphp
+                        <details class="course-block">
+                            <summary>
+                                <span class="name">{{ $thaiDaysFull[$d->dayOfWeekIso - 1] }} {{ $d->day }} {{ $thaiMonthsShort[$d->month] }}{{ $d->isToday() ? ' · วันนี้' : '' }}</span>
+                                <span class="course-count-badge done">{{ $items->count() }} คาบ</span>
+                            </summary>
+                            <div class="body">
+                                @foreach ($items as $s)
+                                    @include('teaching-logs._session-row', ['s' => $s, 'tab' => 'history'])
+                                @endforeach
+                            </div>
+                        </details>
+                    @endforeach
+                @endif
                 <p id="historyEmpty" class="text-muted small text-center py-3 mb-0 d-none">ไม่พบรายการที่ตรงกับตัวกรอง
                 </p>
             </div>
@@ -634,15 +638,19 @@
             const branch = document.getElementById('workBranch');
             const status = document.getElementById('workStatus');
 
-            const monthSelect = document.getElementById('monthSelect');
-            const yearSelect = document.getElementById('yearSelect');
-            function goToSelectedMonth() {
-                if (!monthSelect?.value || !yearSelect?.value) return;
-                const month = String(monthSelect.value).padStart(2, '0');
-                window.location.href = `{{ route('teaching-logs.index') }}?range=month&date=${yearSelect.value}-${month}-01`;
-            }
-            monthSelect?.addEventListener('change', goToSelectedMonth);
-            yearSelect?.addEventListener('change', goToSelectedMonth);
+            const dateJumpBtn = document.getElementById('dateJumpBtn');
+            const dateJumpInput = document.getElementById('dateJumpInput');
+            dateJumpBtn?.addEventListener('click', () => {
+                if (typeof dateJumpInput.showPicker === 'function') {
+                    dateJumpInput.showPicker();
+                } else {
+                    dateJumpInput.click();
+                }
+            });
+            dateJumpInput?.addEventListener('change', () => {
+                if (!dateJumpInput.value) return;
+                window.location.href = `{{ route('teaching-logs.index') }}?range={{ $range }}&date=${dateJumpInput.value}`;
+            });
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
@@ -660,26 +668,28 @@
                 const statusVal = status?.value || '';
 
                 panels.forEach(panel => {
+                    const rows = panel.querySelectorAll('.work-row');
                     let visibleCount = 0;
 
+                    rows.forEach(row => {
+                        const matchesTerm = !term || row.dataset.search.includes(term);
+                        const matchesBranch = !branchVal || row.dataset.branch === branchVal;
+                        const matchesStatus = !statusVal || row.dataset.status === statusVal;
+                        const show = matchesTerm && matchesBranch && matchesStatus;
+                        row.style.display = show ? '' : 'none';
+                        if (show) visibleCount++;
+                    });
+
+                    // มุมมองรายสัปดาห์/เดือนจะจัดกลุ่มตามวันไว้ในกล่องพับ — ซ่อนกล่องที่ไม่มีแถวเหลือ
                     panel.querySelectorAll('.course-block').forEach(block => {
-                        let visibleInBlock = 0;
-                        block.querySelectorAll('.work-row').forEach(row => {
-                            const matchesTerm = !term || row.dataset.search.includes(term);
-                            const matchesBranch = !branchVal || row.dataset.branch === branchVal;
-                            const matchesStatus = !statusVal || row.dataset.status === statusVal;
-                            const show = matchesTerm && matchesBranch && matchesStatus;
-                            row.style.display = show ? '' : 'none';
-                            if (show) visibleInBlock++;
-                        });
+                        const visibleInBlock = [...block.querySelectorAll('.work-row')]
+                            .filter(row => row.style.display !== 'none').length;
                         block.style.display = visibleInBlock === 0 ? 'none' : '';
                         if (visibleInBlock > 0 && (term || branchVal || statusVal)) block.open = true;
-                        visibleCount += visibleInBlock;
                     });
 
                     const emptyMsg = panel.querySelector('#pendingEmpty, #historyEmpty');
-                    if (emptyMsg) emptyMsg.classList.toggle('d-none', visibleCount !== 0 || panel.querySelectorAll(
-                        '.course-block').length === 0);
+                    if (emptyMsg) emptyMsg.classList.toggle('d-none', visibleCount !== 0 || rows.length === 0);
                 });
             }
 

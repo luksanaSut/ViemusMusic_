@@ -381,58 +381,9 @@
 
         .submit-bar .btn { min-height: 46px; padding-inline: 1.35rem; }
 
-        .report-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr);
-            gap: 1rem;
-        }
-
-        .report-panel {
-            border: 1px solid var(--border, #e4e1dc);
-            border-radius: 14px;
-            padding: 1.1rem;
-            background: var(--card, #fff);
-        }
-
-        .report-panel.homework-panel {
-            border-color: #e5d8bf;
-            background: linear-gradient(180deg, var(--amber-soft, #f3ece2), #fff 55%);
-        }
-
-        .report-panel-heading {
-            display: flex;
-            align-items: flex-start;
-            gap: .7rem;
-            margin-bottom: 1rem;
-        }
-
-        .report-panel-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            background: var(--accent-soft, #e7ebf1);
-            color: var(--accent-dark, #13233a);
-        }
-
-        .homework-panel .report-panel-icon {
+        .icon-badge.homework-icon {
             background: #ead9bc;
             color: var(--amber, #8a5a2b);
-        }
-
-        .report-panel-title {
-            font-family: 'Prompt', sans-serif;
-            font-weight: 700;
-            font-size: .95rem;
-        }
-
-        .report-panel-hint {
-            color: var(--muted, #6b655e);
-            font-size: .75rem;
-            margin-top: .1rem;
         }
 
         .report-attachments {
@@ -455,8 +406,6 @@
             .duration-pill[data-minutes="extra"] { grid-column: 1 / -1; }
             .submit-bar { align-items: stretch; flex-direction: column; }
             .submit-bar .btn { width: 100%; }
-            .report-grid { grid-template-columns: 1fr; }
-            .report-panel { padding: .9rem; }
             .file-dropzone { padding: 1.2rem .8rem; }
         }
     </style>
@@ -551,6 +500,7 @@
                 @endif
 
                 <div class="step-label mt-4"><span class="step-number">2</span><span>เวลาที่สอนจริง</span></div>
+                <p class="text-muted small mb-2" style="margin-top:-.4rem;">ระบบเลือกให้ตามตารางเรียนไว้แล้ว กดเปลี่ยนได้หากสอนไม่ตรงเวลาที่กำหนด</p>
                 <div class="duration-pills mb-2">
                     <button type="button" class="duration-pill" data-minutes="30" aria-pressed="false">30 นาที</button>
                     <button type="button" class="duration-pill" data-minutes="45" aria-pressed="false">45 นาที</button>
@@ -591,152 +541,145 @@
         @endif
     </div>
 
-    {{-- ===== เพิ่มเติม: บันทึกผลการสอน / หลักฐานการสอน ===== --}}
+    {{-- ===== บันทึกการสอน (บังคับกรอกหลังเช็คชื่อ) + การบ้าน (ไม่บังคับ) — อยู่ในฟอร์มเดียวกันเพื่อบันทึกพร้อมกันครั้งเดียว ป้องกันข้อมูลอีกกล่องหายเวลากดบันทึกแค่กล่องเดียว ===== --}}
     @if ($log->attendance_status)
         @php $report = $log->teachingReport; @endphp
-        <div class="form-section">
-            <div class="form-section-title mb-0">
-                <div class="icon-badge"><i class="bi bi-journal-text"></i></div> เพิ่มเติม: บันทึกผลการสอน &amp;
-                หลักฐานการสอน <span class="text-muted small fw-normal ms-1">(ไม่บังคับ)</span>
-            </div>
+        <form action="{{ route('teaching-reports.store', $log) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge"><i class="bi bi-journal-text"></i></div>
+                    <span class="flex-grow-1">บันทึกการสอน</span>
+                    <span class="text-danger small fw-normal">* ต้องกรอก</span>
+                </div>
 
-            <div class="pt-3">
-                <form action="{{ route('teaching-reports.store', $log) }}" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
-                    <div class="report-grid">
-                        <section class="report-panel" aria-labelledby="lesson-content-title">
-                            <div class="report-panel-heading">
-                                <span class="report-panel-icon"><i class="bi bi-music-note-list"></i></span>
-                                <div>
-                                    <div class="report-panel-title" id="lesson-content-title">เนื้อหาที่สอน</div>
-                                    <div class="report-panel-hint">สรุปสิ่งที่เรียนและพัฒนาการในคาบนี้</div>
-                                </div>
-                            </div>
-                            <label class="form-label small fw-semibold" for="contentTaught">รายละเอียดการสอน</label>
-                            <textarea name="content_taught" class="form-control" rows="3"
-                                id="contentTaught"
-                                placeholder="เช่น ฝึกสเกล C Major, เพลง Für Elise ท่อนที่ 1-2">{{ old('content_taught', $report->content_taught ?? '') }}</textarea>
-                            <label class="form-label small fw-semibold mt-3" for="progressNotes">ความก้าวหน้าของนักเรียน</label>
-                            <textarea name="progress_notes" class="form-control" rows="2"
-                                id="progressNotes"
-                                placeholder="เช่น จับจังหวะได้ดีขึ้น ยังต้องฝึกมือซ้าย">{{ old('progress_notes', $report->progress_notes ?? '') }}</textarea>
-                        </section>
+                <label class="form-label small fw-semibold" for="contentTaught">รายละเอียดการสอน <span class="text-danger">*</span></label>
+                <textarea name="content_taught" class="form-control" rows="3" id="contentTaught" required
+                    placeholder="เช่น ฝึกสเกล C Major, เพลง Für Elise ท่อนที่ 1-2">{{ old('content_taught', $report->content_taught ?? '') }}</textarea>
 
-                        <section class="report-panel homework-panel" aria-labelledby="homework-title">
-                            <div class="report-panel-heading">
-                                <span class="report-panel-icon"><i class="bi bi-pencil-square"></i></span>
-                                <div>
-                                    <div class="report-panel-title" id="homework-title">การบ้านครั้งถัดไป</div>
-                                    <div class="report-panel-hint">ระบุสิ่งที่ต้องฝึกให้ชัดเจนและทำตามได้ง่าย</div>
-                                </div>
-                            </div>
-                            <label class="form-label small fw-semibold" for="homeworkInput">โจทย์หรือแบบฝึกหัด</label>
-                            <textarea name="homework" class="form-control" rows="4" id="homeworkInput"
-                                placeholder="เช่น ฝึกเพลงเดิมวันละ 15 นาที เน้นห้องที่ 8–12">{{ old('homework', $report->homework ?? '') }}</textarea>
-                            <label class="form-label small fw-semibold mt-3" for="reportNotes">หมายเหตุสำหรับผู้เรียน</label>
-                            <textarea name="notes" class="form-control" rows="2" id="reportNotes"
-                                placeholder="คำแนะนำเพิ่มเติม (ถ้ามี)">{{ old('notes', $report->notes ?? '') }}</textarea>
-                        </section>
-                    </div>
+                <label class="form-label small fw-semibold mt-3" for="progressNotes">ความก้าวหน้าของนักเรียน <span class="text-danger">*</span></label>
+                <textarea name="progress_notes" class="form-control" rows="2" id="progressNotes" required
+                    placeholder="เช่น จับจังหวะได้ดีขึ้น ยังต้องฝึกมือซ้าย">{{ old('progress_notes', $report->progress_notes ?? '') }}</textarea>
 
-                    <div class="report-attachments">
-                            <label class="form-label fw-semibold"><i class="bi bi-paperclip me-1"></i> ไฟล์ประกอบบทเรียน <span class="text-muted small fw-normal">(สูงสุด 5 ไฟล์)</span></label>
-                            <div class="file-dropzone" id="attachDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์ประกอบบทเรียน">
-                                <i class="bi bi-cloud-arrow-up"></i>
-                                <div class="dz-text">ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
-                                <div class="dz-hint text-muted">PDF, JPG, PNG, MP3, MP4, MSCZ, XML, DOC, DOCX</div>
-                                <input type="file" name="attachments[]" id="attachInput" multiple
-                                    accept=".pdf,.jpg,.jpeg,.png,.mp3,.mp4,.mscz,.xml,.doc,.docx">
-                            </div>
-                            <div class="file-list" id="attachFileList"></div>
-                            @if ($report && $report->attachments->count())
-                                <div class="mt-3">
-                                    <div class="text-muted small mb-1">ไฟล์ที่แนบไว้แล้ว</div>
-                                    @foreach ($report->attachments as $att)
-                                        <span class="badge text-bg-light border me-1 mb-1">
-                                            <a href="{{ $att->url() }}" target="_blank"
-                                                class="text-decoration-none">{{ $att->original_name }}</a>
-                                            <form action="{{ route('teaching-reports.attachments.destroy', $att) }}"
-                                                method="POST" class="d-inline" onsubmit="return confirm('ลบไฟล์นี้?')">
-                                                @csrf @method('DELETE')
-                                                <button class="btn btn-sm border-0 p-0 ms-1"
-                                                    style="color:#b3392c;">✕</button>
-                                            </form>
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @endif
-                    </div>
-                    <button class="btn btn-accent mt-3"><i class="bi bi-save"></i>
-                        {{ $report ? 'อัปเดตผลการสอน' : 'บันทึกผลการสอน' }}</button>
-                </form>
+                <label class="form-label small fw-semibold mt-3" for="reportNotes">หมายเหตุสำหรับผู้เรียน <span class="text-danger">*</span></label>
+                <textarea name="notes" class="form-control" rows="2" id="reportNotes" required
+                    placeholder="เช่น นักเรียนมาสาย 10 นาที">{{ old('notes', $report->notes ?? '') }}</textarea>
 
-                <hr class="my-4">
-
-                <label class="form-label fw-semibold"><i class="bi bi-camera"></i> หลักฐานการสอน</label>
-                <form action="{{ route('teaching-evidences.store', $log) }}" method="POST"
-                    enctype="multipart/form-data" class="mb-3">
-                    @csrf
-                    <div class="file-dropzone" id="evidenceDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์หลักฐานการสอน">
-                        <i class="bi bi-camera"></i>
+                <div class="report-attachments">
+                    <label class="form-label fw-semibold mb-0"><i class="bi bi-paperclip me-1"></i> ไฟล์ประกอบบทเรียน <span class="text-muted small fw-normal">(ไม่บังคับ · สูงสุด 5 ไฟล์)</span></label>
+                    <div class="text-muted small mb-2">โน้ตเพลง/ใบงานที่ต้องการส่งให้นักเรียนเห็นคู่กับผลการสอนนี้</div>
+                    <div class="file-dropzone" id="attachDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์ประกอบบทเรียน">
+                        <i class="bi bi-cloud-arrow-up"></i>
                         <div class="dz-text">ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
-                        <div class="dz-hint text-muted">รูปภาพ, วิดีโอ, PDF, DOC, XLS · สูงสุด 10 ไฟล์ · ไม่เกิน 50MB/ไฟล์</div>
-                        <input type="file" name="files[]" id="evidenceInput" multiple required
-                            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx">
+                        <div class="dz-hint text-muted">PDF, JPG, PNG, MP3, MP4, MSCZ, XML, DOC, DOCX</div>
+                        <input type="file" name="attachments[]" id="attachInput" multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.mp3,.mp4,.mscz,.xml,.doc,.docx">
                     </div>
-                    <div class="file-list" id="evidenceFileList"></div>
-                    <button class="btn btn-accent mt-2" id="evidenceUploadBtn"><i class="bi bi-upload"></i> อัปโหลด</button>
-                </form>
+                    <div class="file-list" id="attachFileList"></div>
+                    @if ($report && $report->attachments->count())
+                        <div class="mt-3">
+                            <div class="text-muted small mb-1">ไฟล์ที่แนบไว้แล้ว</div>
+                            @foreach ($report->attachments as $att)
+                                <span class="badge text-bg-light border me-1 mb-1">
+                                    <a href="{{ $att->url() }}" target="_blank"
+                                        class="text-decoration-none">{{ $att->original_name }}</a>
+                                    <form action="{{ route('teaching-reports.attachments.destroy', $att) }}"
+                                        method="POST" class="d-inline" onsubmit="return confirm('ลบไฟล์นี้?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm border-0 p-0 ms-1"
+                                            style="color:#b3392c;">✕</button>
+                                    </form>
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
 
-                @if ($log->evidences->count())
-                    <div class="row g-2">
-                        @foreach ($log->evidences as $ev)
-                            <div class="col-md-4">
-                                <div class="evidence-card border rounded p-2 h-100 d-flex flex-column">
-                                    @if ($ev->file_type === 'image')
-                                        <img src="{{ $ev->url() }}" class="rounded mb-2"
-                                            style="width:100%; height:110px; object-fit:cover;">
-                                    @elseif($ev->file_type === 'video')
-                                        <video src="{{ $ev->url() }}" controls class="rounded mb-2"
-                                            style="width:100%; height:110px; object-fit:cover;"></video>
-                                    @else
-                                        <div class="d-flex align-items-center justify-content-center rounded mb-2"
-                                            style="height:110px; background:#f4f3f1;">
-                                            <i class="bi {{ $ev->fileTypeIcon() }} fs-1 text-secondary"></i>
-                                        </div>
-                                    @endif
-                                    <div class="small fw-semibold text-truncate" title="{{ $ev->original_name }}">
-                                        {{ $ev->original_name }}</div>
-                                    <div class="small text-muted">{{ $ev->fileTypeLabel() }} ·
-                                        {{ $ev->formattedSize() }}
+            <div class="form-section">
+                <div class="form-section-title">
+                    <div class="icon-badge homework-icon"><i class="bi bi-pencil-square"></i></div>
+                    <span class="flex-grow-1">การบ้าน</span>
+                    <span class="text-muted small fw-normal">(ไม่บังคับ)</span>
+                </div>
+                <label class="form-label small fw-semibold" for="homeworkInput">โจทย์หรือแบบฝึกหัด</label>
+                <textarea name="homework" class="form-control" rows="4" id="homeworkInput"
+                    placeholder="เช่น ฝึกเพลงเดิมวันละ 15 นาที เน้นห้องที่ 8–12">{{ old('homework', $report->homework ?? '') }}</textarea>
+
+                <button class="btn btn-accent mt-3"><i class="bi bi-save"></i>
+                    {{ $report ? 'อัปเดตบันทึกการสอน' : 'บันทึกการสอน' }}</button>
+            </div>
+        </form>
+
+        {{-- ===== หลักฐานการสอน (บังคับแนบอย่างน้อย 1 ไฟล์) ===== --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <div class="icon-badge"><i class="bi bi-camera"></i></div>
+                <span class="flex-grow-1">หลักฐานการสอน</span>
+                <span class="text-danger small fw-normal">* ต้องแนบอย่างน้อย 1 ไฟล์</span>
+            </div>
+            <div class="text-muted small mb-2">รูป/วิดีโอระหว่างสอน แยกจากไฟล์ประกอบบทเรียนด้านบน — นักเรียน/ผู้ปกครองเห็นได้ทั้งสองส่วนในหน้าผลการสอน</div>
+            <form action="{{ route('teaching-evidences.store', $log) }}" method="POST"
+                enctype="multipart/form-data" class="mb-3">
+                @csrf
+                <div class="file-dropzone" id="evidenceDropzone" tabindex="0" role="button" aria-label="เลือกไฟล์หลักฐานการสอน">
+                    <i class="bi bi-camera"></i>
+                    <div class="dz-text">ลากไฟล์มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+                    <div class="dz-hint text-muted">รูปภาพ, วิดีโอ, PDF, DOC, XLS · สูงสุด 10 ไฟล์ · ไม่เกิน 50MB/ไฟล์</div>
+                    <input type="file" name="files[]" id="evidenceInput" multiple required
+                        accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx">
+                </div>
+                <div class="file-list" id="evidenceFileList"></div>
+                <button class="btn btn-accent mt-2" id="evidenceUploadBtn"><i class="bi bi-upload"></i> อัปโหลด</button>
+            </form>
+
+            @if ($log->evidences->count())
+                <div class="row g-2">
+                    @foreach ($log->evidences as $ev)
+                        <div class="col-md-4">
+                            <div class="evidence-card border rounded p-2 h-100 d-flex flex-column">
+                                @if ($ev->file_type === 'image')
+                                    <img src="{{ $ev->url() }}" class="rounded mb-2"
+                                        style="width:100%; height:110px; object-fit:cover;">
+                                @elseif($ev->file_type === 'video')
+                                    <video src="{{ $ev->url() }}" controls class="rounded mb-2"
+                                        style="width:100%; height:110px; object-fit:cover;"></video>
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center rounded mb-2"
+                                        style="height:110px; background:#f4f3f1;">
+                                        <i class="bi {{ $ev->fileTypeIcon() }} fs-1 text-secondary"></i>
                                     </div>
-                                    <div class="small text-muted"><i class="bi bi-person"></i>
-                                        {{ $ev->uploaded_by_name }} ·
-                                        {{ $ev->created_at->format('d/m/Y H:i') }}</div>
-                                    <div class="d-flex gap-1 mt-2">
-                                        <a href="{{ route('teaching-evidences.download', $ev) }}"
-                                            class="btn btn-sm btn-outline-secondary flex-fill"><i
-                                                class="bi bi-download"></i>
-                                            ดาวน์โหลด</a>
-                                        <form action="{{ route('teaching-evidences.destroy', $ev) }}" method="POST"
-                                            onsubmit="return confirm('ลบไฟล์นี้?')">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger"><i
-                                                    class="bi bi-trash"></i></button>
-                                        </form>
-                                    </div>
+                                @endif
+                                <div class="small fw-semibold text-truncate" title="{{ $ev->original_name }}">
+                                    {{ $ev->original_name }}</div>
+                                <div class="small text-muted">{{ $ev->fileTypeLabel() }} ·
+                                    {{ $ev->formattedSize() }}
+                                </div>
+                                <div class="small text-muted"><i class="bi bi-person"></i>
+                                    {{ $ev->uploaded_by_name }} ·
+                                    {{ $ev->created_at->format('d/m/Y H:i') }}</div>
+                                <div class="d-flex gap-1 mt-2">
+                                    <a href="{{ route('teaching-evidences.download', $ev) }}"
+                                        class="btn btn-sm btn-outline-secondary flex-fill"><i
+                                            class="bi bi-download"></i>
+                                        ดาวน์โหลด</a>
+                                    <form action="{{ route('teaching-evidences.destroy', $ev) }}" method="POST"
+                                        onsubmit="return confirm('ลบไฟล์นี้?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger"><i
+                                                class="bi bi-trash"></i></button>
+                                    </form>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="empty-state">
-                        <i class="bi bi-camera"></i>
-                        ยังไม่มีหลักฐานการสอนที่อัปโหลดไว้
-                    </div>
-                @endif
-            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-state" style="color:#b3392c;">
+                    <i class="bi bi-camera"></i>
+                    ยังไม่มีหลักฐานการสอน — กรุณาแนบไฟล์อย่างน้อย 1 ไฟล์
+                </div>
+            @endif
         </div>
     @endif
 
