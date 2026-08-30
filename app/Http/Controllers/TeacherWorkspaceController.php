@@ -6,6 +6,7 @@ use App\Models\ClassSchedule;
 use App\Models\Enrollment;
 use App\Models\HomeworkSubmission;
 use App\Models\MakeupRequest;
+use App\Models\Student;
 use App\Models\TeachingLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -86,6 +87,21 @@ class TeacherWorkspaceController extends Controller
         $nextSchedules = ClassSchedule::whereIn('enrollment_id', $ids)->where('status', 'scheduled')->whereDate('schedule_date', '>=', now())
             ->orderBy('schedule_date')->orderBy('start_time')->get()->unique('enrollment_id')->keyBy('enrollment_id');
         return view('teacher-workspace.students', compact('enrollments', 'lastSchedules', 'nextSchedules', 'search'));
+    }
+
+    public function studentShow(Request $request, Student $student)
+    {
+        $teacher = $this->teacher($request);
+        $enrollments = Enrollment::with(['course', 'courseEvaluation.items'])
+            ->withCount('leaves')
+            ->where('student_id', $student->id)->where('teacher_id', $teacher->id)
+            ->orderByDesc('enrolled_date')->get();
+        abort_if($enrollments->isEmpty(), 404, 'นักเรียนคนนี้ไม่ได้เรียนกับคุณ');
+
+        $schedules = ClassSchedule::whereIn('enrollment_id', $enrollments->pluck('id'))
+            ->orderBy('schedule_date')->orderBy('start_time')->get()->groupBy('enrollment_id');
+
+        return view('teacher-workspace.student-show', compact('student', 'teacher', 'enrollments', 'schedules'));
     }
 
     private function teacher(Request $request)

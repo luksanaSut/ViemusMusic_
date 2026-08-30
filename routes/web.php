@@ -206,6 +206,7 @@ Route::middleware($teacherMiddleware)->group(function () {
     Route::get('my-teaching-schedule', [TeacherWorkspaceController::class, 'schedule'])->name('teacher.schedule');
     Route::get('my-teaching-tasks', [TeacherWorkspaceController::class, 'tasks'])->name('teacher.tasks');
     Route::get('my-students', [TeacherWorkspaceController::class, 'students'])->name('teacher.students');
+    Route::get('my-students/{student}', [TeacherWorkspaceController::class, 'studentShow'])->name('teacher.students.show');
     Route::get('my-teacher-leave', [TeacherLeaveController::class, 'myIndex'])->name('teacher-leaves.my-index');
     Route::get('my-makeup-requests', [MakeupRequestController::class, 'myIndex'])->name('makeup-requests.my-index');
     Route::get('my-payroll', [PayrollController::class, 'myIndex'])->name('payroll.my-index');
