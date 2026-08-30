@@ -12,7 +12,6 @@ class DatabaseSeeder extends Seeder
             MasterDataSeeder::class,   // เครื่องดนตรี, ประเภทอาจารย์, ระดับ (ต้องมาก่อน)
             TeacherSeeder::class,      // ข้อมูลตัวอย่างอาจารย์
             AdminUserSeeder::class,    // จัดการข้อมูลผู้ใช้งานระบบ
-            EvaluationCategorySeeder::class,
         ]);
     }
 }

@@ -22,7 +22,32 @@ class RunThroughController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('run-throughs.index', compact('runThroughs'));
+        $pendingCount = RunThrough::when($user->isTeacher() && $user->teacher_id, fn($q) => $q->where('teacher_id', $user->teacher_id))
+            ->whereNull('result_recorded_at')
+            ->count();
+
+        // นักเรียน/คอร์สที่เลือกได้สำหรับสร้าง Run Through ใหม่ — จำกัดเฉพาะที่กำลังเรียนอยู่ (active)
+        $pickerEnrollments = Enrollment::with(['student', 'course'])
+            ->where('status', 'active')
+            ->when($user->isTeacher() && $user->teacher_id, fn($q) => $q->where('teacher_id', $user->teacher_id))
+            ->orderBy('enrolled_date', 'desc')
+            ->get();
+
+        return view('run-throughs.index', compact('runThroughs', 'pendingCount', 'pickerEnrollments'));
+    }
+
+    // GET /run-throughs/new?enrollment_id= — ตัวเลือกเริ่มสร้าง Run Through จากหน้ารายการ แล้วพาไปหน้าสร้างจริง
+    public function redirectToCreate(Request $request)
+    {
+        $data = $request->validate(['enrollment_id' => ['required', 'exists:enrollments,id']]);
+        $enrollment = Enrollment::findOrFail($data['enrollment_id']);
+
+        $user = $request->user();
+        if ($user->isTeacher() && $user->teacher_id && $enrollment->teacher_id !== $user->teacher_id) {
+            abort(403);
+        }
+
+        return redirect()->route('run-throughs.create', $enrollment);
     }
 
     // GET /enrollments/{enrollment}/run-throughs/create

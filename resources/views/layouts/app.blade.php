@@ -561,13 +561,6 @@
                         <i class="bi bi-arrow-repeat"></i> Run Through
                     </a>
                 @endif
-
-                @if ($u->hasModulePermission('courses.manage'))
-                    <a href="{{ route('evaluation-categories.index') }}"
-                        class="nav-link {{ request()->routeIs('evaluation-categories.*') ? 'active' : '' }}">
-                        <i class="bi bi-list-check"></i> หมวดหมู่ประเมินผล
-                    </a>
-                @endif
             @endif
 
 
@@ -844,12 +837,6 @@
                     class="nav-link {{ request()->routeIs('run-throughs.my-index') ? 'active' : '' }}">
                     <i class="bi bi-arrow-repeat"></i> Run Through
                 </a>
-
-                <a href="{{ route('course-evaluations.my-index') }}"
-                    class="nav-link {{ request()->routeIs('course-evaluations.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-clipboard-data"></i> ผลประเมินจบคอร์ส
-                </a>
-
 
                 <div class="nav-section-label">การลา</div>
 

@@ -43,8 +43,6 @@ use App\Http\Controllers\MyLeavesController;
 use App\Http\Controllers\RescheduleRequestController;
 use App\Http\Controllers\TeachingLogController;
 use App\Http\Controllers\TeachingReportController;
-use App\Http\Controllers\CourseEvaluationController;
-use App\Http\Controllers\EvaluationCategoryController;
 use App\Http\Controllers\TeachingEvidenceController;
 use App\Http\Controllers\HomeworkSubmissionController;
 use App\Http\Controllers\RunThroughController;
@@ -133,8 +131,6 @@ Route::middleware($adminTeacherMiddleware)->group(function () {
 
     Route::post('teaching-logs/{teachingLog}/report', [TeachingReportController::class, 'store'])->name('teaching-reports.store');
     Route::delete('teaching-report-attachments/{attachment}', [TeachingReportController::class, 'destroyAttachment'])->name('teaching-reports.attachments.destroy');
-    Route::get('enrollments/{enrollment}/evaluation', [CourseEvaluationController::class, 'edit'])->name('course-evaluations.edit');
-    Route::post('enrollments/{enrollment}/evaluation', [CourseEvaluationController::class, 'store'])->name('course-evaluations.store');
 
     Route::post('teaching-logs/{teachingLog}/evidences', [TeachingEvidenceController::class, 'store'])->name('teaching-evidences.store');
     Route::delete('teaching-evidences/{teachingEvidence}', [TeachingEvidenceController::class, 'destroy'])->name('teaching-evidences.destroy');
@@ -143,6 +139,7 @@ Route::middleware($adminTeacherMiddleware)->group(function () {
     Route::post('homework-submissions/{homeworkSubmission}/review', [HomeworkSubmissionController::class, 'review'])->name('homework-submissions.review');
 
     Route::get('run-throughs', [RunThroughController::class, 'index'])->name('run-throughs.index');
+    Route::get('run-throughs/new', [RunThroughController::class, 'redirectToCreate'])->name('run-throughs.new');
     Route::get('enrollments/{enrollment}/run-throughs/create', [RunThroughController::class, 'create'])->name('run-throughs.create');
     Route::post('enrollments/{enrollment}/run-throughs', [RunThroughController::class, 'store'])->name('run-throughs.store');
     Route::post('run-throughs/{runThrough}/record-result', [RunThroughController::class, 'recordResult'])->name('run-throughs.record-result');
@@ -176,7 +173,6 @@ Route::middleware($customerMiddleware)->group(function () {
     Route::get('my-leaves/create', [MyLeavesController::class, 'create'])->name('leaves.create');
 
     Route::get('my-teaching-reports', [TeachingReportController::class, 'myIndex'])->name('teaching-reports.my-index');
-    Route::get('my-evaluations', [CourseEvaluationController::class, 'myIndex'])->name('course-evaluations.my-index');
 
     Route::get('my-homework', [HomeworkSubmissionController::class, 'myIndex'])->name('homework-submissions.my-index');
 
@@ -248,7 +244,7 @@ Route::middleware($adminMiddleware)->group(function () {
         Route::post('teacher-leaves/{teacherLeave}/reject', [TeacherLeaveController::class, 'reject'])->name('teacher-leaves.reject');
     });
 
-    // ----- จัดการคอร์สเรียน (รวม instruments/levels/evaluation-categories ซึ่งเป็น master data ของคอร์ส) -----
+    // ----- จัดการคอร์สเรียน (รวม instruments/levels ซึ่งเป็น master data ของคอร์ส) -----
     Route::middleware('permission:courses.manage')->group(function () {
         Route::post('instruments', [InstrumentController::class, 'store'])->name('instruments.store');
 
@@ -256,11 +252,6 @@ Route::middleware($adminMiddleware)->group(function () {
         Route::patch('courses/{course}/toggle-status', [CourseController::class, 'toggleStatus'])->name('courses.toggle-status');
 
         Route::post('levels', [LevelController::class, 'store'])->name('levels.store');
-
-        Route::get('evaluation-categories', [EvaluationCategoryController::class, 'index'])->name('evaluation-categories.index');
-        Route::post('evaluation-categories', [EvaluationCategoryController::class, 'store'])->name('evaluation-categories.store');
-        Route::patch('evaluation-categories/{evaluationCategory}/toggle-active', [EvaluationCategoryController::class, 'toggleActive'])->name('evaluation-categories.toggle-active');
-        Route::delete('evaluation-categories/{evaluationCategory}', [EvaluationCategoryController::class, 'destroy'])->name('evaluation-categories.destroy');
     });
 
     // ----- Promotion / Coupon -----

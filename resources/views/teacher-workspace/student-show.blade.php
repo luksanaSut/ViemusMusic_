@@ -39,10 +39,9 @@
         </div>
         <hr>
         <div class="row small g-2 mb-3">
-            <div class="col-6 col-md-3"><span class="text-muted d-block">คาบคงเหลือ</span><strong>{{ $e->remainingSessions() ?? 'ไม่จำกัด' }}</strong></div>
-            <div class="col-6 col-md-3"><span class="text-muted d-block">ความก้าวหน้า</span><strong>{{ $progress !== null ? $progress.'%' : 'เรียนต่อเนื่อง' }}</strong></div>
-            <div class="col-6 col-md-3"><span class="text-muted d-block">ผลประเมินล่าสุด</span><strong>{{ $e->courseEvaluation ? $e->courseEvaluation->averageScore().'/5' : 'ยังไม่มี' }}</strong></div>
-            <div class="col-6 col-md-3"><span class="text-muted d-block">ประวัติการลา</span><strong>{{ $e->leaves_count }} ครั้ง</strong></div>
+            <div class="col-6 col-md-4"><span class="text-muted d-block">คาบคงเหลือ</span><strong>{{ $e->remainingSessions() ?? 'ไม่จำกัด' }}</strong></div>
+            <div class="col-6 col-md-4"><span class="text-muted d-block">ความก้าวหน้า</span><strong>{{ $progress !== null ? $progress.'%' : 'เรียนต่อเนื่อง' }}</strong></div>
+            <div class="col-6 col-md-4"><span class="text-muted d-block">ประวัติการลา</span><strong>{{ $e->leaves_count }} ครั้ง</strong></div>
         </div>
 
         <div class="row g-3">

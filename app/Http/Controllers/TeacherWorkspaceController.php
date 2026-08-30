@@ -75,7 +75,7 @@ class TeacherWorkspaceController extends Controller
     {
         $teacher = $this->teacher($request);
         $search = trim((string) $request->get('q'));
-        $enrollments = Enrollment::with(['student', 'course', 'courseEvaluation.items'])
+        $enrollments = Enrollment::with(['student', 'course'])
             ->withCount('leaves')->where('teacher_id', $teacher->id)->where('status', 'active')
             ->when($search, fn ($q) => $q->where(fn ($n) => $n
                 ->whereHas('student', fn ($s) => $s->search($search))
@@ -92,7 +92,7 @@ class TeacherWorkspaceController extends Controller
     public function studentShow(Request $request, Student $student)
     {
         $teacher = $this->teacher($request);
-        $enrollments = Enrollment::with(['course', 'courseEvaluation.items'])
+        $enrollments = Enrollment::with(['course'])
             ->withCount('leaves')
             ->where('student_id', $student->id)->where('teacher_id', $teacher->id)
             ->orderByDesc('enrolled_date')->get();
