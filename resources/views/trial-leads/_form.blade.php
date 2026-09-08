@@ -70,35 +70,93 @@
     }
 
     .channel-card {
-        border: 1px solid var(--border, #e4e1dc);
-        border-radius: 10px;
-        padding: .9rem;
+        position: relative;
+        display: block;
+        height: 100%;
+        border: 1.5px solid var(--border, #e4e1dc);
+        border-radius: 12px;
+        padding: 1.2rem 1rem;
         text-align: center;
         cursor: pointer;
-        transition: border-color .15s, background-color .15s;
-        height: 100%;
+        transition: .15s;
+        background: var(--surface, #fff);
     }
 
     .channel-card:hover {
         border-color: #c9c4bb;
+        box-shadow: 0 2px 8px rgba(28, 26, 23, .06);
     }
 
-    .channel-card.active {
+    .channel-card.active,
+    .channel-card:has(input:checked) {
         border-color: var(--accent, #1f3350);
         border-width: 2px;
         background: var(--accent-soft, #e7ebf1);
     }
 
+    .channel-card:focus-within {
+        outline: 2px solid var(--accent, #1f3350);
+        outline-offset: 2px;
+    }
+
+    .channel-card input {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        accent-color: var(--accent, #1f3350);
+    }
+
     .channel-card i {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         color: var(--accent-dark, #13233a);
     }
 
     .channel-card .name {
         font-weight: 700;
-        margin-top: .4rem;
+        margin-top: .5rem;
         font-family: 'Prompt', sans-serif;
-        font-size: .85rem;
+    }
+
+    .channel-card .desc {
+        font-size: .78rem;
+        color: var(--muted, #6b655e);
+    }
+
+    .payment-detail-box {
+        border: 1px solid var(--border, #e4e1dc);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-top: 1rem;
+    }
+
+    .qr-wrap {
+        text-align: center;
+    }
+
+    .qr-wrap img {
+        max-width: 220px;
+        border: 1px solid var(--border, #e4e1dc);
+        border-radius: 10px;
+        padding: 8px;
+        background: #fff;
+    }
+
+    .bank-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .6rem 0;
+        border-bottom: 1px dashed var(--border, #e4e1dc);
+    }
+
+    .bank-info-row .value {
+        font-weight: 700;
+        font-family: 'Prompt', sans-serif;
+    }
+
+    .copy-btn {
+        font-size: .75rem;
+        padding: .2rem .6rem;
     }
 </style>
 
@@ -111,10 +169,8 @@
     <div class="row g-3">
         <div class="col-md-6"><label class="form-label">ชื่อผู้เรียน *</label><input name="student_name"
                 class="form-control" required value="{{ old('student_name', $lead?->student_name) }}"></div>
-        <div class="col-md-3"><label class="form-label">ชื่อเล่น</label><input name="nickname" class="form-control"
+        <div class="col-md-6"><label class="form-label">ชื่อเล่น</label><input name="nickname" class="form-control"
                 value="{{ old('nickname', $lead?->nickname) }}"></div>
-        <div class="col-md-3"><label class="form-label">อายุ</label><input name="age" type="number" min="1"
-                max="100" class="form-control" value="{{ old('age', $lead?->age) }}"></div>
         <div class="col-md-4"><label class="form-label">วันเกิด</label><input name="date_of_birth" type="date"
                 class="form-control" value="{{ old('date_of_birth', $lead?->date_of_birth?->format('Y-m-d')) }}"></div>
         <div class="col-md-4"><label class="form-label">ชื่อผู้ปกครอง</label><input name="guardian_name"
@@ -222,54 +278,69 @@
                 <div class="col-6 col-md-4">
                     <div class="channel-card" data-value="promptpay"><i class="bi bi-qr-code"></i>
                         <div class="name">PromptPay/QR</div>
+                        <div class="desc">สแกนจ่ายผ่านแอปธนาคาร</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4">
                     <div class="channel-card" data-value="transfer"><i class="bi bi-bank"></i>
                         <div class="name">โอนธนาคาร</div>
+                        <div class="desc">แนบหลักฐานการโอน</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4">
                     <div class="channel-card" data-value="credit_card"><i class="bi bi-credit-card-2-front"></i>
                         <div class="name">บัตรเครดิต</div>
+                        <div class="desc">บันทึกจากเครื่องรูดบัตร</div>
                     </div>
                 </div>
             </div>
 
-            <div id="promptpayBox" class="text-center mb-3" style="display:none;">
-                @if (config('payment.promptpay_id'))
-                    <img id="promptpayQr" src="" style="max-width:200px;">
-                    <div class="fw-bold mt-1" id="promptpayAmountLabel"></div>
-                @else
-                    <p class="text-muted small mb-0"><i class="bi bi-exclamation-circle"></i> ยังไม่ได้ตั้งค่าเลข
-                        PromptPay ของโรงเรียน</p>
-                @endif
+            <div id="promptpayBox" class="payment-detail-box" style="display:none;">
+                <div class="qr-wrap">
+                    @if (config('payment.promptpay_id'))
+                        <img id="promptpayQr" src="" alt="PromptPay QR">
+                        <div class="fw-bold mt-2" id="promptpayAmountLabel"></div>
+                        <div class="text-muted small">สแกนด้วยแอปธนาคารเพื่อชำระเงิน จากนั้นแนบสลิปด้านล่าง</div>
+                    @else
+                        <p class="text-muted small mb-0"><i class="bi bi-exclamation-circle"></i> ยังไม่ได้ตั้งค่าเลข
+                            PromptPay ของโรงเรียน</p>
+                    @endif
+                </div>
             </div>
-            <div id="transferBox" class="mb-3" style="display:none;">
-                <div class="info-row">
-                    <div class="label">ธนาคาร</div>
-                    <div class="value">{{ config('payment.bank_name') }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="label">ชื่อบัญชี</div>
-                    <div class="value">{{ config('payment.bank_account_name') }}</div>
-                </div>
-                <div class="info-row">
-                    <div class="label">เลขบัญชี</div>
-                    <div class="value">{{ config('payment.bank_account_no') ?: '-' }}</div>
+            <div id="transferBox" class="payment-detail-box" style="display:none;">
+                <div class="bank-info-row"><span class="text-muted">ธนาคาร</span><span
+                        class="value">{{ config('payment.bank_name') }}</span></div>
+                <div class="bank-info-row"><span class="text-muted">ชื่อบัญชี</span><span
+                        class="value">{{ config('payment.bank_account_name') }}</span></div>
+                <div class="bank-info-row">
+                    <span class="text-muted">เลขบัญชี</span>
+                    <span class="d-flex align-items-center gap-2">
+                        <span class="value">{{ config('payment.bank_account_no') ?: '-' }}</span>
+                        <button type="button" class="btn btn-outline-secondary copy-btn"
+                            onclick="navigator.clipboard.writeText('{{ config('payment.bank_account_no') }}'); this.textContent='คัดลอกแล้ว'">คัดลอก</button>
+                    </span>
                 </div>
             </div>
 
+            <div id="creditCardBox" class="payment-detail-box" style="display:none;">
+                <label for="paymentReferenceInput" class="form-label">เลขอ้างอิงการทำรายการ (Ref. no / Auth code)
+                    *</label>
+                <input type="text" name="payment_reference_no" id="paymentReferenceInput" class="form-control"
+                    placeholder="เช่น เลขอ้างอิงจากใบบันทึกรายการบัตร หรือ 4 ตัวท้ายบัตร"
+                    value="{{ old('payment_reference_no') }}">
+                <div class="text-muted small mt-2"><i class="bi bi-info-circle"></i> ใช้เลขอ้างอิง/Auth code
+                    ที่ปรากฏบนใบบันทึกรายการ (Sales Slip) จากเครื่องรูดบัตร
+                    หรือถ่ายภาพหน้าจอแจ้งเตือนการชำระเงินสำเร็จแนบเป็นหลักฐานเพิ่มเติมด้านล่าง</div>
+            </div>
+
             <div class="row g-3 mb-2">
-                <div class="col-md-4"><label class="form-label">จำนวนเงิน *</label><input type="number"
+                <div class="col-md-6"><label class="form-label">จำนวนเงิน *</label><input type="number"
                         name="payment_amount" id="paymentAmountInput" min="0.01" step="0.01"
                         class="form-control" value="{{ old('payment_amount') }}"></div>
-                <div class="col-md-4"><label class="form-label" id="referenceLabel">เลขอ้างอิง</label><input
-                        name="payment_reference_no" class="form-control" placeholder="ถ้ามี"
-                        value="{{ old('payment_reference_no') }}"></div>
-                <div class="col-md-4"><label class="form-label">สลิป/หลักฐาน<span id="proofRequiredMark"
-                            class="text-danger" style="display:none;"> *</span></label><input type="file"
-                        name="payment_proof" id="proofInput" class="form-control" accept=".jpg,.jpeg,.png,.pdf"></div>
+                <div class="col-md-6"><label class="form-label">แนบสลิป/หลักฐานการชำระเงิน<span
+                            id="proofRequiredMark" class="text-danger" style="display:none;"> *</span></label><input
+                        type="file" name="payment_proof" id="proofInput" class="form-control"
+                        accept=".jpg,.jpeg,.png,.pdf"></div>
             </div>
             <div class="form-text mb-2">บังคับแนบหลักฐานสำหรับโอน/PromptPay</div>
             <input name="payment_notes" class="form-control form-control-sm" placeholder="หมายเหตุการชำระเงิน (ถ้ามี)"
@@ -322,13 +393,14 @@
             const trialFeeInput = document.getElementById('trialFeeInput');
             const proofInput = document.getElementById('proofInput');
             const proofRequiredMark = document.getElementById('proofRequiredMark');
-            const referenceLabel = document.getElementById('referenceLabel');
+            const referenceInput = document.getElementById('paymentReferenceInput');
             const promptpayQr = document.getElementById('promptpayQr');
             const promptpayAmountLabel = document.getElementById('promptpayAmountLabel');
             const promptpayId = @json(config('payment.promptpay_id'));
             const boxMap = {
                 promptpay: 'promptpayBox',
-                transfer: 'transferBox'
+                transfer: 'transferBox',
+                credit_card: 'creditCardBox'
             };
 
             function updatePromptpayQr() {
@@ -354,8 +426,6 @@
 
                 const needsProof = ['transfer', 'promptpay'].includes(value);
                 if (proofRequiredMark) proofRequiredMark.style.display = needsProof ? 'inline' : 'none';
-                if (referenceLabel) referenceLabel.textContent = value === 'credit_card' ? 'เลขอ้างอิงการทำรายการบัตร' :
-                    'เลขอ้างอิง';
             }
 
             toggle.addEventListener('change', () => {
@@ -392,6 +462,11 @@
                 if (['transfer', 'promptpay'].includes(methodInput.value) && !proofInput.files.length) {
                     e.preventDefault();
                     alert('กรุณาแนบสลิป/หลักฐานการชำระเงิน');
+                    return;
+                }
+                if (methodInput.value === 'credit_card' && !referenceInput.value.trim()) {
+                    e.preventDefault();
+                    alert('กรุณากรอกเลขอ้างอิงการทำรายการบัตร');
                 }
             });
         })();

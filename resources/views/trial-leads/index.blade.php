@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title','ผู้สนใจและทดลองเรียน')
+@section('title', 'ผู้สนใจและทดลองเรียน')
 
 @section('content')
     <style>
@@ -55,12 +55,35 @@
             flex-shrink: 0;
         }
 
-        .stat-card .icon.new { background: #e7ebf1; color: #1f3350; }
-        .stat-card .icon.contacted { background: #ece9f6; color: #4b3f8a; }
-        .stat-card .icon.scheduled { background: var(--accent-soft, #e7ebf1); color: var(--accent, #1f3350); }
-        .stat-card .icon.completed { background: var(--amber-soft, #f3ece2); color: var(--amber, #8a5a2b); }
-        .stat-card .icon.converted { background: var(--success-soft, #e7f2ec); color: var(--success, #2f6f4e); }
-        .stat-card .icon.followup { background: #fbeae7; color: #b3392c; }
+        .stat-card .icon.new {
+            background: #e7ebf1;
+            color: #1f3350;
+        }
+
+        .stat-card .icon.contacted {
+            background: #ece9f6;
+            color: #4b3f8a;
+        }
+
+        .stat-card .icon.scheduled {
+            background: var(--accent-soft, #e7ebf1);
+            color: var(--accent, #1f3350);
+        }
+
+        .stat-card .icon.completed {
+            background: var(--amber-soft, #f3ece2);
+            color: var(--amber, #8a5a2b);
+        }
+
+        .stat-card .icon.converted {
+            background: var(--success-soft, #e7f2ec);
+            color: var(--success, #2f6f4e);
+        }
+
+        .stat-card .icon.followup {
+            background: #fbeae7;
+            color: #b3392c;
+        }
 
         .stat-card .value {
             font-family: 'Prompt', sans-serif;
@@ -114,12 +137,35 @@
             border-radius: 8px;
         }
 
-        .badge-status.st-new { background: #e7ebf1; color: #1f3350; }
-        .badge-status.st-contacted { background: #ece9f6; color: #4b3f8a; }
-        .badge-status.st-scheduled { background: var(--accent-soft, #e7ebf1); color: var(--accent, #1f3350); }
-        .badge-status.st-completed { background: var(--amber-soft, #f3ece2); color: var(--amber, #8a5a2b); }
-        .badge-status.st-converted { background: var(--success-soft, #e7f2ec); color: var(--success, #2f6f4e); }
-        .badge-status.st-lost { background: #f1efec; color: #6b655e; }
+        .badge-status.st-new {
+            background: #e7ebf1;
+            color: #1f3350;
+        }
+
+        .badge-status.st-contacted {
+            background: #ece9f6;
+            color: #4b3f8a;
+        }
+
+        .badge-status.st-scheduled {
+            background: var(--accent-soft, #e7ebf1);
+            color: var(--accent, #1f3350);
+        }
+
+        .badge-status.st-completed {
+            background: var(--amber-soft, #f3ece2);
+            color: var(--amber, #8a5a2b);
+        }
+
+        .badge-status.st-converted {
+            background: var(--success-soft, #e7f2ec);
+            color: var(--success, #2f6f4e);
+        }
+
+        .badge-status.st-lost {
+            background: #f1efec;
+            color: #6b655e;
+        }
 
         .badge-pay {
             font-weight: 600;
@@ -127,9 +173,20 @@
             border-radius: 8px;
         }
 
-        .badge-pay.paid { background: var(--success-soft, #e7f2ec); color: var(--success, #2f6f4e); }
-        .badge-pay.unpaid { background: var(--amber-soft, #f3ece2); color: var(--amber, #8a5a2b); }
-        .badge-pay.other { background: #f1efec; color: #6b655e; }
+        .badge-pay.paid {
+            background: var(--success-soft, #e7f2ec);
+            color: var(--success, #2f6f4e);
+        }
+
+        .badge-pay.unpaid {
+            background: var(--amber-soft, #f3ece2);
+            color: var(--amber, #8a5a2b);
+        }
+
+        .badge-pay.other {
+            background: #f1efec;
+            color: #6b655e;
+        }
 
         .empty-state {
             padding: 3.5rem 1rem;
@@ -157,12 +214,16 @@
     <div class="stat-row mb-3">
         @php
             $statusIcons = [
-                'new' => 'bi-person-plus', 'contacted' => 'bi-telephone', 'scheduled' => 'bi-calendar-check',
-                'completed' => 'bi-mortarboard', 'converted' => 'bi-check-circle',
+                'new' => 'bi-person-plus',
+                'contacted' => 'bi-telephone',
+                'scheduled' => 'bi-calendar-check',
+                'completed' => 'bi-mortarboard',
+                'converted' => 'bi-check-circle',
             ];
         @endphp
-        @foreach(['new'=>'ใหม่','contacted'=>'ติดต่อแล้ว','scheduled'=>'นัดทดลอง','completed'=>'ทดลองแล้ว','converted'=>'สมัครแล้ว'] as $key=>$label)
-            <a href="{{ route('trial-leads.index',['status'=>$key]) }}" class="stat-card {{ $status === $key ? 'is-active' : '' }}">
+        @foreach (['new' => 'ใหม่', 'contacted' => 'ติดต่อแล้ว', 'scheduled' => 'นัดทดลอง', 'completed' => 'ทดลองแล้ว', 'converted' => 'สมัครแล้ว'] as $key => $label)
+            <a href="{{ route('trial-leads.index', ['status' => $key]) }}"
+                class="stat-card {{ $status === $key ? 'is-active' : '' }}">
                 <div class="icon {{ $key }}"><i class="bi {{ $statusIcons[$key] }}"></i></div>
                 <div>
                     <div class="value">{{ $counts[$key] ?? 0 }}</div>
@@ -184,15 +245,17 @@
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-5">
                     <div class="position-relative">
-                        <i class="bi bi-search position-absolute" style="left:.8rem; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
-                        <input name="q" class="form-control ps-5" value="{{ request('q') }}" placeholder="ค้นหาชื่อ เบอร์โทร หรือเลข Lead">
+                        <i class="bi bi-search position-absolute"
+                            style="left:.8rem; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
+                        <input name="q" class="form-control ps-5" value="{{ request('q') }}"
+                            placeholder="ค้นหาชื่อ เบอร์โทร">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <select name="status" class="form-select">
                         <option value="">ทุกสถานะ</option>
-                        @foreach(['new'=>'ผู้สนใจใหม่','contacted'=>'ติดต่อแล้ว','scheduled'=>'นัดทดลองแล้ว','completed'=>'ทดลองแล้ว','converted'=>'สมัครเรียนแล้ว','lost'=>'ไม่ดำเนินการต่อ'] as $value=>$label)
-                            <option value="{{ $value }}" @selected($status===$value)>{{ $label }}</option>
+                        @foreach (['new' => 'ผู้สนใจใหม่', 'contacted' => 'ติดต่อแล้ว', 'scheduled' => 'นัดทดลองแล้ว', 'completed' => 'ทดลองแล้ว', 'converted' => 'สมัครเรียนแล้ว', 'lost' => 'ไม่ดำเนินการต่อ'] as $value => $label)
+                            <option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -201,7 +264,8 @@
                 </div>
                 @if (request('q') || $status)
                     <div class="col-md-2 d-grid">
-                        <a href="{{ route('trial-leads.index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> ล้างตัวกรอง</a>
+                        <a href="{{ route('trial-leads.index') }}" class="btn btn-outline-secondary"><i
+                                class="bi bi-x-lg"></i> ล้างตัวกรอง</a>
                     </div>
                 @endif
             </form>
@@ -229,26 +293,37 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="lead-avatar">{{ mb_substr($lead->student_name, 0, 1) }}</div>
                                     <div>
-                                        <a class="fw-semibold text-decoration-none text-body" href="{{ route('trial-leads.show',$lead) }}">{{ $lead->student_name }}</a>
+                                        <a class="fw-semibold text-decoration-none text-body"
+                                            href="{{ route('trial-leads.show', $lead) }}">{{ $lead->student_name }}</a>
                                         <div class="small text-muted">{{ $lead->lead_no }} · {{ $lead->phone }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td>{{ $lead->course?->name ?? $lead->interest ?? '-' }}</td>
+                            <td>{{ $lead->course?->name ?? ($lead->interest ?? '-') }}</td>
                             <td>
                                 {{ $lead->trial_date?->format('d/m/Y') ?? '-' }}
-                                @if($lead->trial_start_time)
-                                    <div class="small text-muted">{{ substr($lead->trial_start_time,0,5) }}–{{ substr($lead->trial_end_time,0,5) }}</div>
+                                @if ($lead->trial_start_time)
+                                    <div class="small text-muted">
+                                        {{ substr($lead->trial_start_time, 0, 5) }}–{{ substr($lead->trial_end_time, 0, 5) }}
+                                    </div>
                                 @endif
                             </td>
                             <td>{{ $lead->teacher?->full_name ?? '-' }}</td>
                             <td>
                                 @php $payClass = $lead->payment_status==='paid' ? 'paid' : ($lead->payment_status==='unpaid' ? 'unpaid' : 'other'); @endphp
-                                <span class="badge-pay {{ $payClass }}">{{ ['unpaid'=>'ยังไม่ชำระ','paid'=>'ชำระแล้ว','waived'=>'ยกเว้น','refunded'=>'คืนเงิน'][$lead->payment_status] }}</span>
+                                <span
+                                    class="badge-pay {{ $payClass }}">{{ ['unpaid' => 'ยังไม่ชำระ', 'paid' => 'ชำระแล้ว', 'waived' => 'ยกเว้น', 'refunded' => 'คืนเงิน'][$lead->payment_status] }}</span>
                             </td>
                             <td><span class="badge-status st-{{ $lead->status }}">{{ $lead->statusLabel() }}</span></td>
                             <td class="text-end">
-                                <a href="{{ route('trial-leads.show',$lead) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> ดู</a>
+                                <a href="{{ route('trial-leads.show', $lead) }}"
+                                    class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i> ดู</a>
+                                <form method="POST" action="{{ route('trial-leads.destroy', $lead) }}" class="d-inline"
+                                    onsubmit="return confirm('ยืนยันการลบผู้สนใจและนัดทดลองเรียนรายการนี้? เมื่อลบแล้วจะไม่สามารถกู้คืนได้')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> ลบ</button>
+                                </form>
                             </td>
                         </tr>
                     @empty

@@ -13,6 +13,79 @@ class TrialLeadTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_deletion_preserves_payment_history_and_converted_students(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin', 'email' => 'delete-admin@example.com', 'password' => 'password',
+            'role' => 'admin', 'is_active' => true, 'must_change_password' => false,
+        ]);
+        $this->actingAs($admin);
+        $payload = ['student_name' => 'ผู้สนใจทดสอบ', 'phone' => '0800000000', 'delivery_mode' => 'onsite', 'trial_fee' => 500];
+        $this->post(route('trial-leads.store'), $payload)->assertSessionHasNoErrors();
+        $first = TrialLead::latest('id')->first();
+        $this->post(route('trial-leads.store'), $payload)->assertSessionHasNoErrors();
+        $second = TrialLead::latest('id')->first();
+
+        $this->get(route('trial-leads.index'))->assertOk()->assertSee(route('trial-leads.destroy', $first));
+        $this->get(route('trial-leads.show', $first))->assertOk()->assertSee('DELETE');
+        $this->delete(route('trial-leads.destroy', $first))->assertRedirect(route('trial-leads.index'));
+        $this->assertDatabaseMissing('trial_leads', ['id' => $first->id]);
+        $this->post(route('trial-leads.store'), $payload)->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('trial_leads', 2);
+
+        $this->post(route('trial-payments.store', $second), [
+            'amount' => 500, 'payment_method' => 'cash', 'transaction_at' => now()->format('Y-m-d H:i:s'),
+        ])->assertSessionHasNoErrors();
+        $this->from(route('trial-leads.show', $second))->delete(route('trial-leads.destroy', $second))
+            ->assertRedirect(route('trial-leads.show', $second))->assertSessionHasErrors('delete');
+        $this->assertDatabaseHas('trial_leads', ['id' => $second->id]);
+        $this->assertDatabaseHas('trial_payments', ['trial_lead_id' => $second->id]);
+
+        $third = TrialLead::latest('id')->first();
+        $this->post(route('trial-leads.convert', $third))->assertRedirect();
+        $this->delete(route('trial-leads.destroy', $third))->assertSessionHasErrors('delete');
+        $this->assertDatabaseHas('trial_leads', ['id' => $third->id]);
+        $this->assertDatabaseHas('students', ['id' => $third->fresh()->converted_student_id]);
+    }
+
+    public function test_teacher_cannot_delete_a_trial_lead(): void
+    {
+        $teacher = User::create([
+            'name' => 'Teacher', 'email' => 'delete-teacher@example.com', 'password' => 'password',
+            'role' => 'teacher', 'is_active' => true, 'must_change_password' => false,
+        ]);
+        $lead = TrialLead::create([
+            'lead_no' => 'TL-DELETE-TEST', 'student_name' => 'ผู้สนใจ', 'phone' => '0800000000',
+            'delivery_mode' => 'onsite', 'trial_fee' => 0, 'status' => 'new',
+        ]);
+        $this->actingAs($teacher)->delete(route('trial-leads.destroy', $lead))->assertForbidden();
+        $this->assertDatabaseHas('trial_leads', ['id' => $lead->id]);
+    }
+
+    public function test_unpaid_lead_can_pay_later_from_details_page(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin', 'email' => 'pay-later@example.com', 'password' => 'password',
+            'role' => 'admin', 'is_active' => true, 'must_change_password' => false,
+        ]);
+        $this->actingAs($admin)->post(route('trial-leads.store'), [
+            'student_name' => 'ชำระภายหลัง', 'phone' => '0800000000',
+            'delivery_mode' => 'onsite', 'trial_fee' => 500,
+        ])->assertSessionHasNoErrors();
+        $lead = TrialLead::latest('id')->first();
+        $this->assertSame('unpaid', $lead->payment_status);
+        $this->assertDatabaseCount('trial_payments', 0);
+        $this->get(route('trial-leads.show', $lead))->assertOk()
+            ->assertSee(route('trial-payments.store', $lead))
+            ->assertSee('บันทึกรับชำระค่าทดลอง');
+        $this->from(route('trial-leads.show', $lead))->post(route('trial-payments.store', $lead), [
+            'amount' => 500, 'payment_method' => 'cash', 'transaction_at' => now()->format('Y-m-d H:i:s'),
+        ])->assertRedirect(route('trial-leads.show', $lead))->assertSessionHasNoErrors();
+        $this->assertSame('paid', $lead->fresh()->payment_status);
+        $this->assertSame(500.0, $lead->confirmedPaidAmount());
+        $this->get(route('trial-leads.show', $lead))->assertOk()->assertDontSee('บันทึกรับชำระค่าทดลอง');
+    }
+
     public function test_admin_can_create_a_trial_lead(): void
     {
         $admin = User::create([

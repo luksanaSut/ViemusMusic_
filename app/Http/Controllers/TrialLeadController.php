@@ -94,6 +94,21 @@ class TrialLeadController extends Controller
         return back()->with('success', 'บันทึกข้อมูลผู้สนใจและผลทดลองเรียนแล้ว');
     }
 
+    public function destroy(TrialLead $trialLead)
+    {
+        if ($trialLead->status === 'converted' || $trialLead->converted_student_id) {
+            return back()->withErrors(['delete' => 'ไม่สามารถลบรายการที่แปลงเป็นนักเรียนแล้ว']);
+        }
+
+        if ($trialLead->payments()->exists()) {
+            return back()->withErrors(['delete' => 'ไม่สามารถลบรายการที่มีประวัติชำระเงิน กรุณาเปลี่ยนสถานะเป็นไม่ดำเนินการต่อ']);
+        }
+
+        $trialLead->delete();
+
+        return redirect()->route('trial-leads.index')->with('success', 'ลบข้อมูลผู้สนใจและทดลองเรียนเรียบร้อยแล้ว');
+    }
+
     public function convert(Request $request, TrialLead $trialLead)
     {
         if ($trialLead->converted_student_id) {
@@ -337,7 +352,11 @@ class TrialLeadController extends Controller
 
     private function nextLeadNo(): string
     {
-        return 'TL-' . now()->format('Ymd') . '-' . str_pad(TrialLead::whereDate('created_at', today())->count() + 1, 4, '0', STR_PAD_LEFT);
+        $prefix = 'TL-' . now()->format('Ymd') . '-';
+        $lastNumber = TrialLead::where('lead_no', 'like', $prefix . '%')->pluck('lead_no')
+            ->map(fn ($number) => (int) substr($number, strlen($prefix)))->max() ?? 0;
+
+        return $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
     }
 
     private function ensureTrialSlotIsAvailable(array $data, ?int $excludeLeadId = null): void

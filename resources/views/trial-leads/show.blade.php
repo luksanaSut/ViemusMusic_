@@ -2,6 +2,74 @@
 @section('title',$trialLead->student_name)
 @section('content')
 <style>
+    .channel-card { display:block; position:relative; height:100%; border:1.5px solid var(--border,#e4e1dc); border-radius:12px; padding:1.2rem 1rem; text-align:center; cursor:pointer; transition:.15s; background:var(--surface,#fff); }
+    .channel-card:hover { border-color:#c9c4bb; box-shadow:0 2px 8px rgba(28,26,23,.06); }
+    .channel-card:has(input:checked) { border-color:var(--accent,#1f3350); border-width:2px; background:var(--accent-soft,#e7ebf1); }
+    .channel-card:focus-within { outline:2px solid var(--accent,#1f3350); outline-offset:2px; }
+    .channel-card input { position:absolute; top:12px; right:12px; accent-color:var(--accent,#1f3350); }
+    .channel-card i { font-size:1.8rem; color:var(--accent-dark,#13233a); }
+    .channel-card .name { font-weight:700; margin-top:.5rem; font-family:'Prompt',sans-serif; }
+    .channel-card .desc { font-size:.78rem; color:var(--muted,#6b655e); }
+
+    .payment-detail-box { border:1px solid var(--border,#e4e1dc); border-radius:12px; padding:1.2rem; }
+    .qr-wrap { text-align:center; }
+    .qr-wrap img { max-width:220px; border:1px solid var(--border,#e4e1dc); border-radius:10px; padding:8px; background:#fff; }
+    .bank-info-row { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px dashed var(--border,#e4e1dc); }
+    .bank-info-row .value { font-weight:700; font-family:'Prompt',sans-serif; }
+    .copy-btn { font-size:.75rem; padding:.2rem .6rem; }
+
+    .icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent-soft, #e7ebf1);
+        color: var(--accent-dark, #13233a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
+
+    .form-section-title {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        font-weight: 700;
+        font-size: 1.02rem;
+        margin-bottom: 1.2rem;
+        padding-bottom: .9rem;
+        border-bottom: 1px solid var(--border, #e4e1dc);
+        font-family: 'Prompt', sans-serif;
+        color: var(--ink, #1c1a17);
+    }
+
+    .price-summary {
+        background: var(--accent-soft, #e7ebf1);
+        border-radius: 14px;
+        padding: 1.2rem;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: .88rem;
+        padding: .3rem 0;
+    }
+
+    .price-row.discount {
+        color: #2f6f4e;
+    }
+
+    .price-row.total {
+        font-weight: 700;
+        font-size: 1.25rem;
+        border-top: 1px solid rgba(19, 35, 58, .15);
+        margin-top: .4rem;
+        padding-top: .7rem;
+        color: var(--accent-dark, #13233a);
+    }
+
     .lead-avatar-lg {
         width: 54px;
         height: 54px;
@@ -169,6 +237,12 @@
         <span class="badge {{ $trialLead->statusBadgeClass() }} fs-6">{{ $trialLead->statusLabel() }}</span>
         @if($trialLead->phone)<a href="tel:{{ $trialLead->phone }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-telephone"></i> โทร</a>@endif
         <a href="{{ route('trial-leads.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> กลับ</a>
+        <form method="POST" action="{{ route('trial-leads.destroy', $trialLead) }}"
+            onsubmit="return confirm('ยืนยันการลบผู้สนใจและนัดทดลองเรียนรายการนี้? เมื่อลบแล้วจะไม่สามารถกู้คืนได้')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> ลบ</button>
+        </form>
     </div>
 </div>
 
@@ -276,22 +350,121 @@
     <form id="leadForm" method="POST" action="{{ route('trial-leads.update',$trialLead) }}">@csrf @method('PUT') @include('trial-leads._form')<button class="btn btn-accent mb-3"><i class="bi bi-save"></i> บันทึกการเปลี่ยนแปลง</button></form>
 @endif
 
-{{-- ===== การชำระค่าทดลองเรียน ===== --}}
-<div class="form-section">
-    <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom:1px solid var(--border,#e4e1dc);">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-cash-coin text-muted"></i>
-            <div><strong style="font-family:'Prompt',sans-serif;">การชำระค่าทดลองเรียน</strong><div class="small text-muted">ค่าทดลอง ฿{{ number_format($trialLead->trial_fee,2) }}</div></div>
+{{-- ===== การชำระค่าทดลองเรียน (แบบเดียวกับหน้าขายคอร์ส) ===== --}}
+<div class="row g-3 mb-3">
+    <div class="col-md-7">
+        <div class="form-section h-100 mb-0">
+            <div class="form-section-title">
+                <div class="icon-badge"><i class="bi bi-credit-card"></i></div>
+                {{ $outstanding > 0 ? 'เลือกช่องทางชำระเงิน' : 'ช่องทางที่ชำระ' }}
+            </div>
+
+            @if($outstanding > 0)
+                <form method="POST" action="{{ route('trial-payments.store', $trialLead) }}" enctype="multipart/form-data" id="trialPaymentForm" class="row g-3">
+                    @csrf
+                    <div class="col-12">
+                        <div class="row g-3">
+                            @foreach([
+                                'promptpay' => ['bi-qr-code', 'PromptPay / QR', 'สแกนจ่ายผ่านแอปธนาคาร'],
+                                'transfer' => ['bi-bank', 'โอนเงินผ่านธนาคาร', 'แนบหลักฐานการโอน'],
+                                'credit_card' => ['bi-credit-card-2-front', 'บัตรเครดิต / เดบิต', 'บันทึกรายการจากเครื่องรูดบัตร'],
+                            ] as $value => [$icon, $label, $description])
+                                <div class="col-6 col-lg-4">
+                                    <label class="channel-card">
+                                        <input type="radio" name="payment_method" value="{{ $value }}" required @checked(old('payment_method') === $value)>
+                                        <i class="bi {{ $icon }} d-block"></i>
+                                        <span class="name d-block">{{ $label }}</span>
+                                        <span class="desc">{{ $description }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="col-12" data-trial-detail="promptpay" hidden>
+                        <div class="payment-detail-box">
+                            <div class="qr-wrap">
+                                @if(config('payment.promptpay_id'))
+                                    <img id="trialPaymentQr" alt="QR ชำระเงิน PromptPay" data-promptpay-id="{{ config('payment.promptpay_id') }}">
+                                    <div id="trialPaymentQrAmount" class="fw-bold mt-2"></div>
+                                    <div class="text-muted small">สแกนด้วยแอปธนาคาร จากนั้นแนบสลิปด้านล่าง</div>
+                                @else
+                                    <div class="text-muted">ยังไม่ได้ตั้งค่าเลข PromptPay ของโรงเรียน</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12" data-trial-detail="transfer" hidden>
+                        <div class="payment-detail-box">
+                            <div class="bank-info-row"><span class="text-muted">ธนาคาร</span><span class="value">{{ config('payment.bank_name') ?: '-' }}</span></div>
+                            <div class="bank-info-row"><span class="text-muted">ชื่อบัญชี</span><span class="value">{{ config('payment.bank_account_name') ?: '-' }}</span></div>
+                            <div class="bank-info-row">
+                                <span class="text-muted">เลขบัญชี</span>
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="value">{{ config('payment.bank_account_no') ?: '-' }}</span>
+                                    <button type="button" class="btn btn-outline-secondary copy-btn"
+                                        onclick="navigator.clipboard.writeText('{{ config('payment.bank_account_no') }}'); this.textContent='คัดลอกแล้ว'">คัดลอก</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12" data-trial-detail="credit_card" hidden>
+                        <div class="payment-detail-box">
+                            <label for="trialPaymentReference" class="form-label">เลขอ้างอิงการทำรายการ (Ref. no / Auth code) *</label>
+                            <input id="trialPaymentReference" name="reference_no" class="form-control" maxlength="100"
+                                placeholder="เช่น เลขอ้างอิงจากใบบันทึกรายการบัตร หรือ 4 ตัวท้ายบัตร" value="{{ old('reference_no') }}">
+                            <div class="text-muted small mt-2"><i class="bi bi-info-circle"></i> ใช้เลขอ้างอิง/Auth code
+                                ที่ปรากฏบนใบบันทึกรายการ (Sales Slip) จากเครื่องรูดบัตร
+                                หรือถ่ายภาพหน้าจอแจ้งเตือนการชำระเงินสำเร็จแนบเป็นหลักฐานเพิ่มเติมด้านล่าง</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label for="trialPaymentProof" class="form-label">แนบสลิป/หลักฐานการชำระเงิน<span
+                                id="trialProofRequiredMark" class="text-danger" style="display:none;"> *</span></label>
+                        <input id="trialPaymentProof" name="payment_proof" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                        <div class="form-text">โอนเงินและ PromptPay ต้องแนบหลักฐาน JPG, PNG หรือ PDF ขนาดไม่เกิน 4 MB และรอตรวจสอบการชำระ</div>
+                    </div>
+                    <input id="trialPaymentAmount" name="amount" type="hidden" value="{{ old('amount', $outstanding) }}">
+                    <input id="trialPaymentDate" name="transaction_at" type="hidden" value="{{ old('transaction_at', now()->format('Y-m-d\TH:i')) }}">
+                    <div class="col-12">
+                        <label for="trialPaymentNotes" class="form-label">หมายเหตุการชำระเงิน</label>
+                        <input id="trialPaymentNotes" name="notes" class="form-control" maxlength="1000" value="{{ old('notes') }}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-accent"><i class="bi bi-cash-coin"></i> บันทึกรับชำระค่าทดลอง</button>
+                    </div>
+                </form>
+            @else
+                <div class="alert alert-success py-2 mb-0"><i class="bi bi-check-circle"></i> รับค่าทดลองครบแล้ว</div>
+            @endif
         </div>
-        <div class="text-end"><div class="small text-muted">รับสุทธิแล้ว</div><strong class="text-success fs-5">฿{{ number_format($paidAmount,2) }}</strong></div>
     </div>
 
-    @if($outstanding > 0)
-        <div class="alert alert-warning py-2 mb-3"><i class="bi bi-exclamation-circle"></i> ยังมียอดค้างชำระ ฿{{ number_format($outstanding,2) }} — ระบบรับชำระค่าทดลองเรียนตอนลงทะเบียนผู้สนใจใหม่เท่านั้น</div>
-    @else
-        <div class="alert alert-success py-2 mb-3"><i class="bi bi-check-circle"></i> รับค่าทดลองครบแล้ว</div>
-    @endif
+    <div class="col-md-5">
+        <div class="form-section h-100 mb-0">
+            <div class="form-section-title">
+                <div class="icon-badge"><i class="bi bi-receipt"></i></div> สรุปยอดค่าทดลองเรียน
+            </div>
+            <div class="price-summary">
+                <div class="price-row"><span>ค่าทดลองเรียน</span><span>฿{{ number_format($trialLead->trial_fee,2) }}</span></div>
+                @if($paidAmount > 0)
+                    <div class="price-row discount"><span>รับสุทธิแล้ว</span><span>-฿{{ number_format($paidAmount,2) }}</span></div>
+                @endif
+                <div class="price-row total"><span>คงค้าง</span><span>฿{{ number_format($outstanding,2) }}</span></div>
+            </div>
 
+            @if($outstanding > 0)
+                <div class="alert alert-warning py-2 mt-3 mb-0 small"><i class="bi bi-exclamation-circle"></i> ยังมียอดค้างชำระ ฿{{ number_format($outstanding,2) }}</div>
+            @else
+                <div class="alert alert-success py-2 mt-3 mb-0 small"><i class="bi bi-check-circle"></i> รับค่าทดลองครบแล้ว</div>
+            @endif
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <div class="form-section-title">
+        <div class="icon-badge"><i class="bi bi-clock-history"></i></div> ประวัติการชำระเงิน
+    </div>
     <div class="table-responsive"><table class="table table-sm align-middle mb-0 payments-table"><thead><tr><th>เลขรายการ/วันที่</th><th>ประเภท</th><th>ช่องทาง</th><th>ยอด</th><th>สถานะ</th><th>หลักฐาน</th><th class="text-end">ดำเนินการ</th></tr></thead><tbody>
     @forelse($trialLead->payments->sortByDesc('transaction_at') as $payment)
         <tr>
@@ -318,4 +491,46 @@
     @endforelse
     </tbody></table></div>
 </div>
+<script>
+    (() => {
+        const form = document.getElementById('trialPaymentForm');
+        if (!form) return;
+        const amount = form.querySelector('#trialPaymentAmount');
+        const qr = form.querySelector('#trialPaymentQr');
+        const proofInput = form.querySelector('#trialPaymentProof');
+        const proofRequiredMark = form.querySelector('#trialProofRequiredMark');
+        const referenceInput = form.querySelector('#trialPaymentReference');
+        function updatePaymentDetails() {
+            const method = form.querySelector('input[name="payment_method"]:checked')?.value;
+            form.querySelectorAll('[data-trial-detail]').forEach(box => {
+                box.hidden = box.dataset.trialDetail !== method;
+            });
+            const needsProof = ['transfer', 'promptpay'].includes(method);
+            proofInput.required = needsProof;
+            if (proofRequiredMark) proofRequiredMark.style.display = needsProof ? 'inline' : 'none';
+            if (qr && method === 'promptpay') {
+                const value = Number(amount.value);
+                qr.hidden = !Number.isFinite(value) || value <= 0;
+                if (!qr.hidden) {
+                    qr.src = `https://promptpay.io/${encodeURIComponent(qr.dataset.promptpayId)}/${value.toFixed(2)}.png`;
+                } else {
+                    qr.removeAttribute('src');
+                }
+                form.querySelector('#trialPaymentQrAmount').textContent = qr.hidden ? 'กรุณาระบุยอดชำระ' : `ยอดชำระ ฿${value.toFixed(2)}`;
+            }
+        }
+        form.querySelectorAll('input[name="payment_method"]').forEach(input => input.addEventListener('change', updatePaymentDetails));
+        amount.addEventListener('input', updatePaymentDetails);
+        updatePaymentDetails();
+
+        form.addEventListener('submit', (e) => {
+            const method = form.querySelector('input[name="payment_method"]:checked')?.value;
+            if (method === 'credit_card' && !referenceInput.value.trim()) {
+                e.preventDefault();
+                alert('กรุณากรอกเลขอ้างอิงการทำรายการบัตรก่อนบันทึก');
+                referenceInput.focus();
+            }
+        });
+    })();
+</script>
 @endsection

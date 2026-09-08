@@ -235,7 +235,7 @@ Route::middleware($adminMiddleware)->group(function () {
 
     // ----- ผู้สนใจและทดลองเรียน -----
     Route::middleware('permission:trial_leads.manage')->group(function () {
-        Route::resource('trial-leads', TrialLeadController::class)->except(['edit', 'destroy']);
+        Route::resource('trial-leads', TrialLeadController::class)->except(['edit']);
         Route::post('trial-leads/{trialLead}/convert', [TrialLeadController::class, 'convert'])->name('trial-leads.convert');
         Route::post('trial-leads/{trialLead}/confirmation-status', [TrialLeadController::class, 'updateConfirmationStatus'])->name('trial-leads.confirmation-status');
         Route::post('trial-leads/{trialLead}/payments', [TrialPaymentController::class, 'store'])->name('trial-payments.store');
