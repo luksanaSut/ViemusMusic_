@@ -469,29 +469,6 @@
 
         {{-- คอร์สเรียน --}}
         <div class="tab-pane fade" id="courses">
-            <div class="form-section">
-                <div class="form-section-title">
-                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> ลงทะเบียนคอร์สใหม่
-                </div>
-                <form action="{{ route('students.enrollments.store', $student) }}" method="POST" class="row g-2">
-                    @csrf
-                    <div class="col-md-5">
-                        <select name="course_id" class="form-select form-select-sm" required>
-                            <option value="">เลือกคอร์ส</option>
-                            @foreach ($courses as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->course_code }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3"><input type="date" name="enrolled_date"
-                            class="form-control form-control-sm" required></div>
-                    <div class="col-md-3"><input type="date" name="expected_end_date"
-                            class="form-control form-control-sm" placeholder="วันคาดว่าจบ"></div>
-                    <div class="col-md-1 d-grid"><button class="btn btn-sm btn-accent"><i
-                                class="bi bi-plus-lg"></i></button></div>
-                </form>
-            </div>
-
             @forelse($student->enrollments as $enr)
                 <div class="form-section">
                     <div class="d-flex justify-content-between align-items-start">
@@ -562,32 +539,6 @@
 
         {{-- การชำระเงิน --}}
         <div class="tab-pane fade" id="payments">
-            <div class="form-section">
-                <div class="form-section-title">
-                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> เพิ่มรายการชำระเงิน
-                </div>
-                <form action="{{ route('students.payments.store', $student) }}" method="POST" class="row g-2">
-                    @csrf
-                    <div class="col-md-2"><input type="text" name="invoice_no" class="form-control form-control-sm"
-                            placeholder="เลขที่ใบแจ้งหนี้" required></div>
-                    <div class="col-md-2"><input type="number" step="0.01" name="amount"
-                            class="form-control form-control-sm" placeholder="ยอดรวม" required></div>
-                    <div class="col-md-2"><input type="number" step="0.01" name="paid_amount"
-                            class="form-control form-control-sm" placeholder="ชำระแล้ว"></div>
-                    <div class="col-md-2"><input type="date" name="due_date" class="form-control form-control-sm"
-                            placeholder="ครบกำหนด"></div>
-                    <div class="col-md-2">
-                        <select name="method" class="form-select form-select-sm">
-                            <option value="">วิธีชำระ</option>
-                            <option value="cash">เงินสด</option>
-                            <option value="transfer">โอน</option>
-                            <option value="credit_card">บัตรเครดิต</option>
-                            <option value="other">อื่นๆ</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">บันทึก</button></div>
-                </form>
-            </div>
             <div class="form-section">
                 <div class="form-section-title">
                     <div class="icon-badge"><i class="bi bi-receipt"></i></div> ประวัติการชำระเงิน
@@ -687,25 +638,6 @@
 
         {{-- แต้มสะสม --}}
         <div class="tab-pane fade" id="points">
-            <div class="form-section">
-                <div class="form-section-title">
-                    <div class="icon-badge"><i class="bi bi-plus-circle"></i></div> ปรับยอดแต้ม
-                </div>
-                <form action="{{ route('students.points.store', $student) }}" method="POST" class="row g-2">
-                    @csrf
-                    <div class="col-md-3">
-                        <select name="type" class="form-select form-select-sm" required>
-                            <option value="earn">เพิ่มแต้ม</option>
-                            <option value="use">หักแต้ม</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3"><input type="number" min="1" name="points"
-                            class="form-control form-control-sm" placeholder="จำนวนแต้ม" required></div>
-                    <div class="col-md-4"><input type="text" name="reason" class="form-control form-control-sm"
-                            placeholder="เหตุผล"></div>
-                    <div class="col-md-2 d-grid"><button class="btn btn-sm btn-accent">บันทึก</button></div>
-                </form>
-            </div>
             <div class="form-section">
                 <div class="form-section-title">
                     <div class="icon-badge"><i class="bi bi-clock-history"></i></div> ประวัติแต้มสะสม
