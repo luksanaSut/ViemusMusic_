@@ -122,6 +122,8 @@ class StudentController extends Controller
 
     public function edit(Student $student)
     {
+        $student->load('guardians');
+
         return view('students.edit', compact('student'));
     }
 

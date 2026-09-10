@@ -243,74 +243,92 @@
     </div>
 </div>
 
-{{-- ===== 2. ผู้ปกครอง (เฉพาะตอนเพิ่มนักเรียนใหม่) ===== --}}
-@unless (isset($student))
-    <div class="form-section">
-        <div class="form-section-title">
-            <div class="icon-badge"><i class="bi bi-person-plus"></i></div>
-            เพิ่มผู้ปกครอง
-        </div>
+{{-- ===== 2. ผู้ปกครอง ===== --}}
+<div class="form-section">
+    <div class="form-section-title">
+        <div class="icon-badge"><i class="bi bi-person-plus"></i></div>
+        เพิ่มผู้ปกครอง
+    </div>
 
-        <div id="guardianPicker" class="border rounded p-2 mb-2" style="background:#faf9f7;">
-            <div class="position-relative">
-                <i class="bi bi-search position-absolute"
-                    style="left:.7rem; top:50%; transform:translateY(-50%); color:var(--muted,#6b655e); font-size:.85rem;"></i>
-                <input type="text" id="guardianSearchInput" class="form-control form-control-sm"
-                    style="padding-left:2rem;" placeholder="ค้นหาผู้ปกครองที่มีอยู่แล้ว หรือพิมพ์ชื่อใหม่..."
-                    autocomplete="off">
-                <div id="guardianDropdown" class="list-group position-absolute w-100 shadow-sm d-none"
-                    style="z-index:20; max-height:220px; overflow-y:auto; top:100%;"></div>
+    @if (isset($student))
+        <input type="hidden" id="guardianEditMode" value="{{ $student->id }}">
+        <input type="hidden" id="guardianStoreUrl" value="{{ route('students.guardians.store', $student) }}">
+    @endif
+
+    <div id="guardianPicker" class="border rounded p-2 mb-2" style="background:#faf9f7;">
+        <div class="position-relative">
+            <i class="bi bi-search position-absolute"
+                style="left:.7rem; top:50%; transform:translateY(-50%); color:var(--muted,#6b655e); font-size:.85rem;"></i>
+            <input type="text" id="guardianSearchInput" class="form-control form-control-sm"
+                style="padding-left:2rem;" placeholder="ค้นหาผู้ปกครองที่มีอยู่แล้ว หรือพิมพ์ชื่อใหม่..."
+                autocomplete="off">
+            <div id="guardianDropdown" class="list-group position-absolute w-100 shadow-sm d-none"
+                style="z-index:20; max-height:220px; overflow-y:auto; top:100%;"></div>
+        </div>
+    </div>
+
+    <div class="row g-2">
+        <input type="hidden" id="guardianIdInput">
+        <div class="col-md-4"><input type="text" id="guardianNameInput" class="form-control form-control-sm"
+                placeholder="ชื่อ-นามสกุล"></div>
+        <div class="col-md-3"><input type="tel" id="guardianPhoneInput" class="form-control form-control-sm"
+                placeholder="เบอร์โทร" inputmode="numeric" maxlength="12"></div>
+        <div class="col-md-4"><input type="text" id="guardianRelationInput"
+                class="form-control form-control-sm" placeholder="ความสัมพันธ์ เช่น มารดา"></div>
+        <div class="col-md-1 d-grid"><button type="button" id="guardianAddBtn" class="btn btn-sm btn-accent"><i
+                    class="bi bi-plus-lg"></i></button></div>
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="guardianIsPrimaryCheck">
+                <label class="form-check-label small" for="guardianIsPrimaryCheck">ตั้งเป็นผู้ปกครองหลัก</label>
             </div>
         </div>
+    </div>
 
-        <div class="row g-2">
-            <input type="hidden" id="guardianIdInput">
-            <div class="col-md-4"><input type="text" id="guardianNameInput" class="form-control form-control-sm"
-                    placeholder="ชื่อ-นามสกุล"></div>
-            <div class="col-md-3"><input type="tel" id="guardianPhoneInput" class="form-control form-control-sm"
-                    placeholder="เบอร์โทร" inputmode="numeric" maxlength="12"></div>
-            <div class="col-md-4"><input type="text" id="guardianRelationInput"
-                    class="form-control form-control-sm" placeholder="ความสัมพันธ์ เช่น มารดา"></div>
-            <div class="col-md-1 d-grid"><button type="button" id="guardianAddBtn" class="btn btn-sm btn-accent"><i
-                        class="bi bi-plus-lg"></i></button></div>
-            <div class="col-12">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="guardianIsPrimaryCheck">
-                    <label class="form-check-label small" for="guardianIsPrimaryCheck">ตั้งเป็นผู้ปกครองหลัก</label>
-                </div>
-            </div>
-        </div>
-
+    @unless (isset($student))
         <div id="guardiansHiddenInputs"></div>
+    @endunless
 
-        <hr class="my-3">
+    <hr class="my-3">
 
-        <div class="form-section-title" style="margin-bottom:.8rem; padding-bottom:0; border-bottom:0;">
-            <div class="icon-badge"><i class="bi bi-people-fill"></i></div>
-            รายชื่อผู้ปกครอง
-        </div>
-        <table class="table table-sm table-clean mb-0">
-            <thead>
-                <tr>
-                    <th>ชื่อ</th>
-                    <th>เบอร์โทร</th>
-                    <th>ความสัมพันธ์</th>
-                    <th>สถานะ</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="guardiansListBody">
+    <div class="form-section-title" style="margin-bottom:.8rem; padding-bottom:0; border-bottom:0;">
+        <div class="icon-badge"><i class="bi bi-people-fill"></i></div>
+        รายชื่อผู้ปกครอง
+    </div>
+    <table class="table table-sm table-clean mb-0">
+        <thead>
+            <tr>
+                <th>ชื่อ</th>
+                <th>เบอร์โทร</th>
+                <th>ความสัมพันธ์</th>
+                <th>สถานะ</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="guardiansListBody">
+            @if (isset($student) && $student->guardians->isNotEmpty())
+                @foreach ($student->guardians as $g)
+                    <tr>
+                        <td class="fw-semibold">{{ $g->full_name }}</td>
+                        <td>{{ $g->phone ?: '-' }}</td>
+                        <td>{{ $g->pivot->relation ?: '-' }}</td>
+                        <td>{!! $g->pivot->is_primary ? '<span class="badge text-bg-success">ผู้ปกครองหลัก</span>' : '' !!}</td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger"
+                                data-remove-guardian="{{ $g->id }}"><i class="bi bi-x-lg"></i></button></td>
+                    </tr>
+                @endforeach
+            @else
                 <tr id="guardiansEmptyRow">
                     <td colspan="5">
                         <div class="empty-state"><i class="bi bi-people"></i>ยังไม่มีข้อมูลผู้ปกครอง</div>
                     </td>
                 </tr>
-            </tbody>
-        </table>
-        <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i> ผู้ปกครองที่เพิ่มที่นี่จะแสดงในเมนู
-            "จัดการผู้ปกครอง" ด้วยอัตโนมัติ</small>
-    </div>
-@endunless
+            @endif
+        </tbody>
+    </table>
+    <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i> ผู้ปกครองที่เพิ่มที่นี่จะแสดงในเมนู
+        "จัดการผู้ปกครอง" ด้วยอัตโนมัติ</small>
+</div>
 
 {{-- ===== 3. หมายเหตุ ===== --}}
 <div class="form-section">
@@ -348,23 +366,15 @@
         this.value = this.value.replace(/[^a-zA-Z0-9._\-]/g, '');
     });
 
-    // ===== เพิ่มผู้ปกครองแบบ inline ตอนสร้างนักเรียนใหม่ (เก็บไว้ใน JS แล้วส่งพร้อมฟอร์มนักเรียน) =====
+    // ===== ค้นหาผู้ปกครองที่มีอยู่แล้ว (ใช้ร่วมกันทั้งตอนสร้างและแก้ไข) =====
     (function() {
-        const addBtn = document.getElementById('guardianAddBtn');
-        if (!addBtn) return;
-
         const searchInput = document.getElementById('guardianSearchInput');
+        if (!searchInput) return;
+
         const dropdown = document.getElementById('guardianDropdown');
         const idInput = document.getElementById('guardianIdInput');
         const nameInput = document.getElementById('guardianNameInput');
         const phoneInput = document.getElementById('guardianPhoneInput');
-        const relationInput = document.getElementById('guardianRelationInput');
-        const isPrimaryCheck = document.getElementById('guardianIsPrimaryCheck');
-        const listBody = document.getElementById('guardiansListBody');
-        const emptyRow = document.getElementById('guardiansEmptyRow');
-        const hiddenWrap = document.getElementById('guardiansHiddenInputs');
-
-        let guardians = [];
         let debounceTimer;
 
         searchInput.addEventListener('input', function() {
@@ -414,6 +424,24 @@
             if (!document.getElementById('guardianPicker').contains(e.target)) dropdown.classList.add(
                 'd-none');
         });
+    })();
+
+    // ===== เพิ่มผู้ปกครองแบบ inline ตอนสร้างนักเรียนใหม่ (เก็บไว้ใน JS แล้วส่งพร้อมฟอร์มนักเรียน) =====
+    (function() {
+        const addBtn = document.getElementById('guardianAddBtn');
+        if (!addBtn || document.getElementById('guardianEditMode')) return;
+
+        const idInput = document.getElementById('guardianIdInput');
+        const nameInput = document.getElementById('guardianNameInput');
+        const phoneInput = document.getElementById('guardianPhoneInput');
+        const relationInput = document.getElementById('guardianRelationInput');
+        const isPrimaryCheck = document.getElementById('guardianIsPrimaryCheck');
+        const searchInput = document.getElementById('guardianSearchInput');
+        const listBody = document.getElementById('guardiansListBody');
+        const emptyRow = document.getElementById('guardiansEmptyRow');
+        const hiddenWrap = document.getElementById('guardiansHiddenInputs');
+
+        let guardians = [];
 
         function renderList() {
             listBody.innerHTML = '';
@@ -484,6 +512,77 @@
             relationInput.value = '';
             searchInput.value = '';
             isPrimaryCheck.checked = false;
+        });
+    })();
+
+    // ===== เพิ่ม/ลบผู้ปกครองตอนแก้ไขนักเรียน (บันทึกทันทีผ่าน API ไม่ต้องกดบันทึกฟอร์มหลัก) =====
+    (function() {
+        const editMarker = document.getElementById('guardianEditMode');
+        const addBtn = document.getElementById('guardianAddBtn');
+        if (!editMarker || !addBtn) return;
+
+        const storeUrl = document.getElementById('guardianStoreUrl').value;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const idInput = document.getElementById('guardianIdInput');
+        const nameInput = document.getElementById('guardianNameInput');
+        const phoneInput = document.getElementById('guardianPhoneInput');
+        const relationInput = document.getElementById('guardianRelationInput');
+        const isPrimaryCheck = document.getElementById('guardianIsPrimaryCheck');
+        const searchInput = document.getElementById('guardianSearchInput');
+
+        addBtn.addEventListener('click', async () => {
+            const fullName = nameInput.value.trim();
+            if (!idInput.value && !fullName) {
+                nameInput.focus();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('guardian_id', idInput.value || '');
+            formData.append('full_name', fullName);
+            formData.append('phone', phoneInput.value.trim());
+            formData.append('relation', relationInput.value.trim());
+            if (isPrimaryCheck.checked) formData.append('is_primary', '1');
+
+            addBtn.disabled = true;
+            try {
+                const res = await fetch(storeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+                if (!res.ok) throw new Error('request failed');
+                window.location.reload();
+            } catch (e) {
+                addBtn.disabled = false;
+                alert('เพิ่มผู้ปกครองไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองใหม่');
+            }
+        });
+
+        document.querySelectorAll('[data-remove-guardian]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('นำผู้ปกครองคนนี้ออกจากนักเรียนคนนี้?')) return;
+
+                const guardianId = btn.dataset.removeGuardian;
+                btn.disabled = true;
+                try {
+                    const res = await fetch(`${storeUrl}/${guardianId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                    });
+                    if (!res.ok) throw new Error('request failed');
+                    window.location.reload();
+                } catch (e) {
+                    btn.disabled = false;
+                    alert('นำผู้ปกครองออกไม่สำเร็จ กรุณาลองใหม่');
+                }
+            });
         });
     })();
 </script>
