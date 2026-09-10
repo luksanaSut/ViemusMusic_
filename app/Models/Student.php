@@ -17,6 +17,7 @@ class Student extends Model
         'student_code',
         'full_name',
         'nickname',
+        'school',
         'date_of_birth',
         'gender',
         'phone',
@@ -89,7 +90,8 @@ class Student extends Model
             $q->where('full_name', 'like', "%{$term}%")
                 ->orWhere('nickname', 'like', "%{$term}%")
                 ->orWhere('student_code', 'like', "%{$term}%")
-                ->orWhere('phone', 'like', "%{$term}%");
+                ->orWhere('phone', 'like', "%{$term}%")
+                ->orWhere('school', 'like', "%{$term}%");
         });
     }
 

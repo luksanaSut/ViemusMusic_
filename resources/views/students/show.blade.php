@@ -330,6 +330,10 @@
                                 </td>
                             </tr>
                             <tr>
+                                <th>โรงเรียน</th>
+                                <td>{{ $student->school ?: '-' }}</td>
+                            </tr>
+                            <tr>
                                 <th>เบอร์โทร</th>
                                 <td>{{ $student->phone ?: '-' }}</td>
                             </tr>

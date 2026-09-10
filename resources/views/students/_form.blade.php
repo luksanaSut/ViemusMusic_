@@ -212,6 +212,11 @@
                         maxlength="12" value="{{ old('phone', $student->phone ?? '') }}">
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label">โรงเรียน</label>
+                    <input type="text" name="school" class="form-control" maxlength="150"
+                        value="{{ old('school', $student->school ?? '') }}">
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">สถานะ *</label>
                     <select name="status" class="form-select" required>
                         <option value="active" @selected(old('status', $student->status ?? 'active') == 'active')>กำลังเรียน</option>
@@ -219,12 +224,12 @@
                         <option value="cancelled" @selected(old('status', $student->status ?? '') == 'cancelled')>ยกเลิกเรียน</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">อีเมล</label>
                     <input type="email" name="email" class="form-control" maxlength="150"
                         value="{{ old('email', $student->email ?? '') }}">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Line ID</label>
                     <input type="text" name="line_id" id="studentLineId" class="form-control" maxlength="50"
                         value="{{ old('line_id', $student->line_id ?? '') }}">
