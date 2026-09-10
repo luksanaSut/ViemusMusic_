@@ -128,9 +128,9 @@
 
     /* ===== Photo dropzone ===== */
     .photo-dropzone {
-        width: 96px;
-        height: 96px;
-        border-radius: 18px;
+        width: 100%;
+        aspect-ratio: 1/1;
+        border-radius: 14px;
         background: var(--accent-soft, #e7ebf1);
         overflow: hidden;
         border: 2px dashed #c9c4bb;
@@ -147,11 +147,6 @@
         background: #eef1f5;
     }
 
-    .photo-dropzone.dragover {
-        border-color: var(--accent, #1f3350);
-        background: #dde3ec;
-    }
-
     .photo-dropzone .upload-hint {
         position: absolute;
         inset: 0;
@@ -160,7 +155,7 @@
         justify-content: center;
         background: rgba(28, 26, 23, .55);
         color: #fff;
-        font-size: .7rem;
+        font-size: .75rem;
         opacity: 0;
         transition: .15s;
     }
@@ -195,6 +190,29 @@
     #instrumentDropdown .list-group-item:hover {
         background: var(--accent-soft, #e7ebf1);
     }
+
+    /* ===== เรทค่าจ้างต่อเครื่องดนตรี ===== */
+    .rate-instrument-box {
+        background: #faf9f7;
+        border: 1px solid var(--border, #e4e1dc);
+        border-radius: 12px;
+        padding: .9rem 1rem;
+        margin-bottom: .9rem;
+    }
+
+    .rate-instrument-box:last-child {
+        margin-bottom: 0;
+    }
+
+    .rate-instrument-title {
+        font-weight: 600;
+        font-size: .85rem;
+        margin-bottom: .7rem;
+        color: var(--ink, #1c1a17);
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
 </style>
 
 {{-- ===== 1. รูปโปรไฟล์ + ข้อมูลทั่วไป ===== --}}
@@ -206,8 +224,7 @@
     </div>
     <div class="row g-3">
         <div class="col-md-2 text-center">
-            <div id="photoPreviewWrap" class="photo-dropzone mx-auto mb-2"
-                onclick="document.getElementById('teacherPhotoInput').click()">
+            <div class="photo-dropzone mx-auto mb-2" onclick="document.getElementById('teacherPhotoInput').click()">
                 @if (isset($teacher) && $teacher->photo_path)
                     <img id="photoPreviewImg" src="{{ asset('storage/' . $teacher->photo_path) }}"
                         style="width:100%;height:100%;object-fit:cover;">
@@ -219,16 +236,18 @@
             </div>
             <input type="file" name="photo" id="teacherPhotoInput" class="d-none"
                 accept="image/png,image/jpeg,image/webp" onchange="previewPhoto(this)">
-            <div id="photoError" class="invalid-feedback-static d-none mt-1"></div>
-            <small class="text-muted d-block mt-1" style="font-size:.7rem;">JPG/PNG/WEBP ไม่เกิน 2MB</small>
         </div>
         <div class="col-md-10">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">รหัสอาจารย์ *</label>
                     <input type="text" name="teacher_code" id="teacherCode" class="form-control"
-                        value="{{ old('teacher_code', $teacher->teacher_code ?? '') }}" maxlength="20"
-                        pattern="[A-Za-z0-9\-]+" title="ใช้ได้เฉพาะตัวอักษร A-Z, ตัวเลข, และ - เท่านั้น" required>
+                        value="{{ old('teacher_code', $teacher->teacher_code ?? ($nextTeacherCode ?? '')) }}"
+                        maxlength="20" pattern="[A-Za-z0-9\-]+" title="ใช้ได้เฉพาะตัวอักษร A-Z, ตัวเลข, และ - เท่านั้น"
+                        @unless (isset($teacher)) readonly @endunless required>
+                    @unless (isset($teacher))
+                        <div class="form-text">รหัสถูกสร้างอัตโนมัติ</div>
+                    @endunless
                 </div>
                 <div class="col-md-5">
                     <label class="form-label">ชื่อ-นามสกุล *</label>
@@ -416,47 +435,63 @@
         </div>
     </div>
 
-    {{-- ===== 5. ค่าจ้างและเงื่อนไขพิเศษ (เฉพาะตอนเพิ่มอาจารย์ใหม่) ===== --}}
-    <div class="form-section">
-        <div class="form-section-title">
-            <div class="icon-badge"><i class="bi bi-cash-coin"></i></div>
-            ค่าจ้างและเงื่อนไขพิเศษ
-            {{-- <span class="step-no">ขั้นตอน 5</span> --}}
+@endunless
+
+{{-- ===== 5. ค่าจ้างและเงื่อนไขพิเศษ ===== --}}
+@php
+    $activeRatesInit = isset($teacher)
+        ? $teacher->activeRates
+            ->mapWithKeys(fn($r) => [
+                (string) ($r->instrument_id ?? 'general') => [
+                    'rate_type'   => $r->rate_type,
+                    'rate_amount' => (string) $r->rate_amount,
+                ],
+            ])
+            ->toArray()
+        : [];
+    $ratesInit = old('rates', $activeRatesInit);
+
+    $activeTransportFee = isset($teacher) ? $teacher->activeTransportFee() : null;
+    $activeRateNote = isset($teacher) ? optional($teacher->activeRates->first())->note : null;
+@endphp
+<div class="form-section">
+    <div class="form-section-title">
+        <div class="icon-badge"><i class="bi bi-cash-coin"></i></div>
+        ค่าจ้างและเงื่อนไขพิเศษ
+        {{-- <span class="step-no">ขั้นตอน 5</span> --}}
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label d-block">เรทค่าจ้าง *</label>
+            <small class="text-muted d-block mb-2" style="font-size:.75rem;">กำหนดเรทค่าจ้างแยกตามเครื่องดนตรีที่เลือกไว้ด้านบน
+                — เลือกเครื่องดนตรีเพิ่ม จะมีกล่องเรทค่าจ้างเพิ่มให้อัตโนมัติ</small>
+            <div id="rateBoxes"></div>
+            <div id="rateError" class="invalid-feedback-static d-none mt-1"></div>
         </div>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">รูปแบบเรทค่าจ้าง *</label>
-                <select name="rate_type" class="form-select" required>
-                    <option value="per_hour">ต่อชั่วโมง</option>
-                    <option value="per_session">ต่อคาบ/ครั้ง</option>
-                    <option value="monthly_fixed">เหมาต่อเดือน</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">จำนวนเงิน (บาท) *</label>
-                <input type="number" step="0.01" min="0" max="1000000" name="rate_amount"
-                    class="form-control" required>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">ประเภทค่ารถ</label>
-                <select name="transport_fee_type" class="form-select">
-                    <option value="fixed_per_day">เหมาต่อวัน</option>
-                    <option value="per_km">ต่อกิโลเมตร</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">ค่ารถ (บาท)</label>
-                <input type="number" step="0.01" min="0" max="100000" name="transport_fee_amount"
-                    class="form-control">
-            </div>
-            <div class="col-12">
-                <label class="form-label">เงื่อนไขพิเศษ (ถ้ามี)</label>
-                <textarea name="rate_note" class="form-control" rows="2" maxlength="1000"
-                    placeholder="เช่น เรทพิเศษสำหรับคอร์สกลุ่ม, ปรับเรทหลัง 3 เดือนแรก, มีค่าคอมมิชชันเพิ่มเมื่อรับนักเรียนใหม่ ฯลฯ">{{ old('rate_note') }}</textarea>
-            </div>
+        <div class="col-md-3">
+            <label class="form-label">ประเภทค่ารถ</label>
+            <select name="transport_fee_type" class="form-select">
+                <option value="fixed_per_day" @selected(old('transport_fee_type', $activeTransportFee->fee_type ?? 'fixed_per_day') == 'fixed_per_day')>เหมาต่อวัน</option>
+                <option value="per_km" @selected(old('transport_fee_type', $activeTransportFee->fee_type ?? '') == 'per_km')>ต่อกิโลเมตร</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">ค่ารถ (บาท)</label>
+            <input type="number" step="0.01" min="0" max="100000" name="transport_fee_amount"
+                class="form-control" value="{{ old('transport_fee_amount', $activeTransportFee->fee_amount ?? '') }}">
+        </div>
+        <div class="col-12">
+            <label class="form-label">เงื่อนไขพิเศษ (ถ้ามี)</label>
+            <textarea name="rate_note" class="form-control" rows="2" maxlength="1000"
+                placeholder="เช่น เรทพิเศษสำหรับคอร์สกลุ่ม, ปรับเรทหลัง 3 เดือนแรก, มีค่าคอมมิชชันเพิ่มเมื่อรับนักเรียนใหม่ ฯลฯ">{{ old('rate_note', $activeRateNote ?? '') }}</textarea>
         </div>
     </div>
-@endunless
+</div>
+
+{{-- ข้อมูลตั้งต้นสำหรับ JS: ค่าเรทปัจจุบัน/ที่กรอกไว้แล้ว (กรณี validate ไม่ผ่านแล้วย้อนกลับมา) --}}
+<script id="ratesInit" type="application/json">
+    {!! json_encode($ratesInit) !!}
+</script>
 
 {{-- ===== 6. หมายเหตุเพิ่มเติม ===== --}}
 <div class="form-section">
@@ -480,30 +515,9 @@
 </div>
 
 <script>
-    // ===== พรีวิวรูป + เช็คชนิด/ขนาดไฟล์ + รองรับลาก-วาง =====
+    // ===== พรีวิวรูป =====
     function previewPhoto(input) {
-        const errorBox = document.getElementById('photoError');
-        errorBox.classList.add('d-none');
-
         if (!input.files || !input.files[0]) return;
-        const file = input.files[0];
-
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        const maxSizeBytes = 2 * 1024 * 1024;
-
-        if (!allowedTypes.includes(file.type)) {
-            errorBox.textContent = 'รองรับเฉพาะไฟล์ JPG, PNG, WEBP เท่านั้น';
-            errorBox.classList.remove('d-none');
-            input.value = '';
-            return;
-        }
-        if (file.size > maxSizeBytes) {
-            errorBox.textContent = 'ไฟล์ต้องมีขนาดไม่เกิน 2MB';
-            errorBox.classList.remove('d-none');
-            input.value = '';
-            return;
-        }
-
         const img = document.getElementById('photoPreviewImg');
         const icon = document.getElementById('photoPreviewIcon');
         const reader = new FileReader();
@@ -512,31 +526,8 @@
             img.style.display = 'block';
             if (icon) icon.style.display = 'none';
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(input.files[0]);
     }
-
-    (function() {
-        const dropzone = document.getElementById('photoPreviewWrap');
-        const fileInput = document.getElementById('teacherPhotoInput');
-        ['dragenter', 'dragover'].forEach(evt => {
-            dropzone.addEventListener(evt, e => {
-                e.preventDefault();
-                dropzone.classList.add('dragover');
-            });
-        });
-        ['dragleave', 'drop'].forEach(evt => {
-            dropzone.addEventListener(evt, e => {
-                e.preventDefault();
-                dropzone.classList.remove('dragover');
-            });
-        });
-        dropzone.addEventListener('drop', e => {
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                fileInput.files = e.dataTransfer.files;
-                previewPhoto(fileInput);
-            }
-        });
-    })();
 
     // ===== เบอร์โทร: พิมพ์ได้แต่ตัวเลข ใส่ - ให้อัตโนมัติ =====
     document.getElementById('phoneInput').addEventListener('input', function() {
@@ -604,6 +595,72 @@
         const dropdown = document.getElementById('instrumentDropdown');
         const errorBox = document.getElementById('instrumentError');
 
+        // ===== เรทค่าจ้างต่อเครื่องดนตรี (เฉพาะหน้าเพิ่มอาจารย์ใหม่) =====
+        const rateBoxesContainer = document.getElementById('rateBoxes');
+        const rateTypeOptions = [
+            ['per_hour', 'ต่อชั่วโมง'],
+            ['per_session', 'ต่อคาบ/ครั้ง'],
+            ['monthly_fixed', 'เหมาต่อเดือน'],
+        ];
+        let rateValues = {};
+        if (rateBoxesContainer) {
+            const ratesInitEl = document.getElementById('ratesInit');
+            const ratesInit = ratesInitEl ? JSON.parse(ratesInitEl.textContent || '{}') : {};
+            Object.keys(ratesInit || {}).forEach(key => {
+                rateValues[key] = ratesInit[key];
+            });
+        }
+
+        function renderRateBoxes() {
+            if (!rateBoxesContainer) return;
+
+            // เก็บค่าที่กรอกไว้แล้วก่อน re-render กันข้อมูลหาย
+            rateBoxesContainer.querySelectorAll('.rate-instrument-box').forEach(box => {
+                const key = box.dataset.rateKey;
+                rateValues[key] = {
+                    rate_type: box.querySelector('[data-field="rate_type"]').value,
+                    rate_amount: box.querySelector('[data-field="rate_amount"]').value,
+                };
+            });
+
+            rateBoxesContainer.innerHTML = '';
+
+            const list = selected.length > 0 ? selected : [{
+                id: 'general',
+                name: 'ค่าจ้างทั่วไป (ไม่ระบุเครื่องดนตรี)'
+            }];
+
+            list.forEach(ins => {
+                const key = String(ins.id);
+                const saved = rateValues[key] || {};
+                const box = document.createElement('div');
+                box.className = 'rate-instrument-box';
+                box.dataset.rateKey = key;
+
+                const typeOptionsHtml = rateTypeOptions.map(([val, label]) =>
+                    `<option value="${val}" ${(saved.rate_type || 'per_hour') === val ? 'selected' : ''}>${label}</option>`
+                ).join('');
+
+                box.innerHTML = `
+                    <div class="rate-instrument-title"><i class="bi bi-music-note-beamed"></i> ${ins.name}</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">รูปแบบเรทค่าจ้าง *</label>
+                            <select name="rates[${key}][rate_type]" class="form-select" data-field="rate_type" required>
+                                ${typeOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">จำนวนเงิน (บาท) *</label>
+                            <input type="number" step="0.01" min="0" max="1000000" name="rates[${key}][rate_amount]" data-field="rate_amount" class="form-control" value="${saved.rate_amount ?? ''}" required>
+                        </div>
+                        ${key !== 'general' ? `<input type="hidden" name="rates[${key}][instrument_id]" value="${key}">` : ''}
+                    </div>
+                `;
+                rateBoxesContainer.appendChild(box);
+            });
+        }
+
         function renderChips() {
             chipsBox.innerHTML = '';
             selected.forEach(ins => {
@@ -630,6 +687,7 @@
                 chipsBox.appendChild(chip);
             });
             renderHiddenInputs();
+            renderRateBoxes();
         }
 
         function renderHiddenInputs() {

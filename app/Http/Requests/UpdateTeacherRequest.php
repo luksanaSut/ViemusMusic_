@@ -23,6 +23,7 @@ class UpdateTeacherRequest extends FormRequest
             'address'      => $this->address ? trim(strip_tags($this->address)) : null,
             'bio'          => $this->bio ? trim(strip_tags($this->bio)) : null,
             'notes'        => $this->notes ? trim(strip_tags($this->notes)) : null,
+            'rate_note'    => $this->rate_note ? trim(strip_tags($this->rate_note)) : null,
         ]);
     }
 
@@ -55,6 +56,15 @@ class UpdateTeacherRequest extends FormRequest
 
             'level_ids'   => ['nullable', 'array'],
             'level_ids.*' => ['integer', 'exists:levels,id'],
+
+            'rates'                  => ['required', 'array', 'min:1'],
+            'rates.*.instrument_id'  => ['nullable', 'integer', 'exists:instruments,id'],
+            'rates.*.rate_type'      => ['required', 'in:per_hour,per_session,monthly_fixed'],
+            'rates.*.rate_amount'    => ['required', 'numeric', 'min:0', 'max:1000000'],
+            'rate_note'              => ['nullable', 'string', 'max:1000'],
+
+            'transport_fee_type'   => ['nullable', 'in:fixed_per_day,per_km'],
+            'transport_fee_amount' => ['nullable', 'numeric', 'min:0', 'max:100000'],
         ];
     }
 }

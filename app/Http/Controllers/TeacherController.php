@@ -38,11 +38,25 @@ class TeacherController extends Controller
     // GET /teachers/create
     public function create()
     {
-        $instruments   = Instrument::where('is_active', true)->orderBy('name')->get();
-        $teachingTypes = TeachingType::all();
-        $levels        = Level::orderBy('sort_order')->get();
+        $instruments      = Instrument::where('is_active', true)->orderBy('name')->get();
+        $teachingTypes    = TeachingType::all();
+        $levels           = Level::orderBy('sort_order')->get();
+        $nextTeacherCode  = $this->generateNextTeacherCode();
 
-        return view('teachers.create', compact('instruments', 'teachingTypes', 'levels'));
+        return view('teachers.create', compact('instruments', 'teachingTypes', 'levels', 'nextTeacherCode'));
+    }
+
+    // สร้างรหัสอาจารย์ถัดไปอัตโนมัติ รูปแบบ VMT000
+    private function generateNextTeacherCode(): string
+    {
+        $maxNumber = 0;
+        foreach (Teacher::where('teacher_code', 'like', 'VMT%')->pluck('teacher_code') as $code) {
+            if (preg_match('/^VMT(\d+)$/i', $code, $matches)) {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        return 'VMT' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
     }
 
     // POST /teachers
@@ -66,15 +80,18 @@ class TeacherController extends Controller
         }
         $teacher->instruments()->sync($syncData);
 
-        // เรทค่าจ้างเริ่มต้น + เงื่อนไขพิเศษ
-        TeacherRate::create([
-            'teacher_id'     => $teacher->id,
-            'rate_type'      => $data['rate_type'],
-            'rate_amount'    => $data['rate_amount'],
-            'note'           => $data['rate_note'] ?? null,
-            'effective_from' => now()->toDateString(),
-            'is_active'      => true,
-        ]);
+        // เรทค่าจ้างเริ่มต้น (แยกตามเครื่องดนตรีที่เลือก) + เงื่อนไขพิเศษ
+        foreach ($data['rates'] as $rateRow) {
+            TeacherRate::create([
+                'teacher_id'     => $teacher->id,
+                'instrument_id'  => $rateRow['instrument_id'] ?? null,
+                'rate_type'      => $rateRow['rate_type'],
+                'rate_amount'    => $rateRow['rate_amount'],
+                'note'           => $data['rate_note'] ?? null,
+                'effective_from' => now()->toDateString(),
+                'is_active'      => true,
+            ]);
+        }
 
         // ค่ารถ (ถ้ามีการกรอก)
         if (!empty($data['transport_fee_amount'])) {
@@ -137,7 +154,7 @@ class TeacherController extends Controller
     // GET /teachers/{teacher}/edit
     public function edit(Teacher $teacher)
     {
-        $teacher->load(['instruments', 'teachingTypes', 'levels']);
+        $teacher->load(['instruments', 'teachingTypes', 'levels', 'activeRates']);
         $instruments   = Instrument::where('is_active', true)->orderBy('name')->get();
         $teachingTypes = TeachingType::all();
         $levels        = Level::orderBy('sort_order')->get();
@@ -166,8 +183,88 @@ class TeacherController extends Controller
         }
         $teacher->instruments()->sync($syncData);
 
+        $this->syncRates($teacher, $data);
+        $this->syncTransportFee($teacher, $data);
+
         return redirect()->route('teachers.show', $teacher)
             ->with('success', 'แก้ไขข้อมูลอาจารย์เรียบร้อยแล้ว');
+    }
+
+    // ปรับเรทค่าจ้างให้ตรงกับที่ส่งมาจากฟอร์มแก้ไข โดยเก็บประวัติเรทเดิมไว้ (ปิดใช้งานแทนการลบ)
+    private function syncRates(Teacher $teacher, array $data): void
+    {
+        $submittedRates = $data['rates'] ?? [];
+        $existingActiveRates = $teacher->activeRates()->get()
+            ->keyBy(fn($r) => (string) ($r->instrument_id ?? 'general'));
+
+        $submittedKeys = [];
+        foreach ($submittedRates as $key => $row) {
+            $key = (string) $key;
+            $submittedKeys[] = $key;
+            $instrumentId = $row['instrument_id'] ?? null;
+            $existing = $existingActiveRates->get($key);
+
+            $unchanged = $existing
+                && $existing->rate_type === $row['rate_type']
+                && (float) $existing->rate_amount == (float) $row['rate_amount'];
+
+            if ($unchanged) {
+                continue;
+            }
+
+            if ($existing) {
+                $existing->update(['is_active' => false, 'effective_to' => now()->toDateString()]);
+            }
+
+            TeacherRate::create([
+                'teacher_id'     => $teacher->id,
+                'instrument_id'  => $instrumentId,
+                'rate_type'      => $row['rate_type'],
+                'rate_amount'    => $row['rate_amount'],
+                'note'           => $data['rate_note'] ?? null,
+                'effective_from' => now()->toDateString(),
+                'is_active'      => true,
+            ]);
+        }
+
+        // ปิดเรทของเครื่องดนตรีที่ไม่ได้เลือกแล้ว (ถูกเอาออกจาก "เครื่องดนตรีที่สอนได้")
+        foreach ($existingActiveRates as $key => $rate) {
+            if (!in_array($key, $submittedKeys, true)) {
+                $rate->update(['is_active' => false, 'effective_to' => now()->toDateString()]);
+            }
+        }
+    }
+
+    // ปรับค่ารถให้ตรงกับที่ส่งมาจากฟอร์มแก้ไข โดยเก็บประวัติค่ารถเดิมไว้ (ปิดใช้งานแทนการลบ)
+    private function syncTransportFee(Teacher $teacher, array $data): void
+    {
+        $activeFee = $teacher->activeTransportFee();
+
+        if (empty($data['transport_fee_amount'])) {
+            if ($activeFee) {
+                $teacher->transportFees()->where('is_active', true)->update(['is_active' => false]);
+            }
+            return;
+        }
+
+        $feeType = $data['transport_fee_type'] ?? 'fixed_per_day';
+        $unchanged = $activeFee
+            && $activeFee->fee_type === $feeType
+            && (float) $activeFee->fee_amount == (float) $data['transport_fee_amount'];
+
+        if ($unchanged) {
+            return;
+        }
+
+        $teacher->transportFees()->where('is_active', true)->update(['is_active' => false]);
+
+        TeacherTransportFee::create([
+            'teacher_id'     => $teacher->id,
+            'fee_type'       => $feeType,
+            'fee_amount'     => $data['transport_fee_amount'],
+            'effective_from' => now()->toDateString(),
+            'is_active'      => true,
+        ]);
     }
 
     // DELETE /teachers/{teacher}
