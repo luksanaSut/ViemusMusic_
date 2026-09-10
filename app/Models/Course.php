@@ -58,7 +58,9 @@ class Course extends Model
 
     public function teachers(): BelongsToMany
     {
-        return $this->belongsToMany(Teacher::class, 'course_teacher')->withTimestamps();
+        return $this->belongsToMany(Teacher::class, 'course_teacher')
+            ->withPivot('rate_type', 'rate_amount')
+            ->withTimestamps();
     }
 
     public function promotions(): BelongsToMany

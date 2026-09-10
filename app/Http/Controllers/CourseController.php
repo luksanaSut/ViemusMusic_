@@ -37,7 +37,7 @@ class CourseController extends Controller
     {
         $instruments = Instrument::where('is_active', true)->orderBy('name')->get();
         $levels      = Level::orderBy('sort_order')->get();
-        $teachers    = Teacher::where('is_active', true)->with('instruments')->orderBy('full_name')->get();
+        $teachers    = Teacher::where('is_active', true)->with(['instruments', 'rates'])->orderBy('full_name')->get();
 
         return view('courses.create', compact('instruments', 'levels', 'teachers'));
     }
@@ -53,7 +53,7 @@ class CourseController extends Controller
         }
 
         $course = Course::create($data);
-        $course->teachers()->sync($data['teacher_ids'] ?? []);
+        $course->teachers()->sync($this->buildTeacherSyncData($data));
 
         return redirect()->route('courses.index')
             ->with('success', 'เพิ่มคอร์สเรียนเรียบร้อยแล้ว');
@@ -65,7 +65,7 @@ class CourseController extends Controller
         $course->load('teachers');
         $instruments = Instrument::where('is_active', true)->orderBy('name')->get();
         $levels      = Level::orderBy('sort_order')->get();
-        $teachers    = Teacher::where('is_active', true)->with('instruments')->orderBy('full_name')->get();
+        $teachers    = Teacher::where('is_active', true)->with(['instruments', 'rates'])->orderBy('full_name')->get();
 
         return view('courses.edit', compact('course', 'instruments', 'levels', 'teachers'));
     }
@@ -80,10 +80,25 @@ class CourseController extends Controller
         }
 
         $course->update($data);
-        $course->teachers()->sync($data['teacher_ids'] ?? []);
+        $course->teachers()->sync($this->buildTeacherSyncData($data));
 
         return redirect()->route('courses.index')
             ->with('success', 'แก้ไขคอร์สเรียนเรียบร้อยแล้ว');
+    }
+
+    // รวม teacher_ids กับเรทค่าสอนเฉพาะคอร์ส (teacher_rates) ให้เป็นข้อมูล pivot สำหรับ sync()
+    private function buildTeacherSyncData(array $data): array
+    {
+        $sync = [];
+        foreach ($data['teacher_ids'] ?? [] as $teacherId) {
+            $rate = $data['teacher_rates'][$teacherId] ?? [];
+            $sync[$teacherId] = [
+                'rate_type'   => $rate['rate_type'] ?? null,
+                'rate_amount' => $rate['rate_amount'] ?? null,
+            ];
+        }
+
+        return $sync;
     }
 
     // DELETE /courses/{course}

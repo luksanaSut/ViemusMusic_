@@ -228,8 +228,10 @@ class TeacherController extends Controller
         }
 
         // ปิดเรทของเครื่องดนตรีที่ไม่ได้เลือกแล้ว (ถูกเอาออกจาก "เครื่องดนตรีที่สอนได้")
+        // หมายเหตุ: ต้อง cast $key เป็น string ก่อนเทียบ เพราะ PHP จะแปลง key ที่เป็นเลขล้วน (เช่น "11")
+        // ของ array/Collection กลับเป็น int ให้อัตโนมัติ ทำให้ strict compare กับ $submittedKeys (string ล้วน) พลาดเสมอ
         foreach ($existingActiveRates as $key => $rate) {
-            if (!in_array($key, $submittedKeys, true)) {
+            if (!in_array((string) $key, $submittedKeys, true)) {
                 $rate->update(['is_active' => false, 'effective_to' => now()->toDateString()]);
             }
         }

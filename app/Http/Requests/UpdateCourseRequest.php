@@ -60,6 +60,10 @@ class UpdateCourseRequest extends FormRequest
 
             'teacher_ids'   => ['nullable', 'array'],
             'teacher_ids.*' => ['integer', 'exists:teachers,id'],
+
+            'teacher_rates'               => ['nullable', 'array'],
+            'teacher_rates.*.rate_type'   => ['nullable', 'in:per_hour,per_session,monthly_fixed,percentage'],
+            'teacher_rates.*.rate_amount' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ];
     }
 

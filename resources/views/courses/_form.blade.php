@@ -576,7 +576,50 @@
         อาจารย์ผู้สอนได้
         <span class="step-no">ขั้นตอนสุดท้าย</span>
     </div>
-    @php $selectedTeachers = old('teacher_ids', isset($course) ? $course->teachers->pluck('id')->toArray() : []); @endphp
+    @php
+        $selectedTeachers = old('teacher_ids', isset($course) ? $course->teachers->pluck('id')->toArray() : []);
+
+        // เรทค่าสอนของอาจารย์แต่ละคน แยกตามเครื่องดนตรี (จากตาราง teacher_rates) ใช้เป็นค่าเริ่มต้นแนะนำ
+        // ถ้าเครื่องดนตรีนั้นไม่มีเรทที่ "ใช้งานอยู่" ให้ใช้เรทล่าสุดที่เคยบันทึกไว้แทน (ดีกว่าไม่มีเรทให้ดูเลย)
+        $teacherRateCatalog = $teachers->mapWithKeys(fn($t) => [
+            $t->id => $t->rates
+                ->groupBy(fn($r) => (string) ($r->instrument_id ?? 'general'))
+                ->map(function ($rows) {
+                    $best = $rows->sort(function ($a, $b) {
+                        if ($a->is_active != $b->is_active) {
+                            return $a->is_active ? -1 : 1;
+                        }
+                        return $b->created_at <=> $a->created_at;
+                    })->first();
+
+                    return [
+                        'rate_type'   => $best->rate_type,
+                        'rate_amount' => (string) $best->rate_amount,
+                        'is_active'   => (bool) $best->is_active,
+                    ];
+                })
+                ->toArray(),
+        ]);
+
+        // เรทเฉพาะคอร์สนี้ที่เคยบันทึกไว้ (กรณีแก้ไขคอร์ส)
+        $teacherRatePivotInit = isset($course)
+            ? $course->teachers->mapWithKeys(fn($t) => [
+                $t->id => [
+                    'rate_type'   => $t->pivot->rate_type,
+                    'rate_amount' => $t->pivot->rate_amount !== null ? (string) $t->pivot->rate_amount : null,
+                ],
+            ])
+            : collect();
+
+        $rateTypeLabels = [
+            'per_hour'      => 'ต่อชั่วโมง',
+            'per_session'   => 'ต่อคาบ/ครั้ง',
+            'monthly_fixed' => 'เหมาต่อเดือน',
+            'percentage'    => 'เปอร์เซ็นต์',
+        ];
+    @endphp
+    <small class="text-muted d-block mb-2" style="font-size:.78rem;">เลือกอาจารย์ที่สอนได้ ระบบจะดึงเรทค่าสอนตามเครื่องดนตรีของคอร์สนี้มาแนะนำให้อัตโนมัติ
+        และสามารถแก้ไขเรทเฉพาะคอร์สนี้ได้ตามต้องการ</small>
 
     <div class="row g-2 mb-3">
         <div class="col-md-7">
@@ -597,16 +640,36 @@
         </div>
     </div>
 
-    <div id="teacherListBox" class="row g-2" style="max-height:260px; overflow-y:auto;">
+    <div id="teacherListBox" class="row g-2" style="max-height:360px; overflow-y:auto;">
         @forelse($teachers as $t)
-            <div class="col-md-4 teacher-item" data-name="{{ mb_strtolower($t->full_name . ' ' . $t->nickname) }}"
+            <div class="col-md-6 teacher-item" data-name="{{ mb_strtolower($t->full_name . ' ' . $t->nickname) }}"
                 data-instruments="{{ $t->instruments->pluck('id')->implode(',') }}">
                 <div class="chip-check">
-                    <input class="form-check-input me-1" type="checkbox" name="teacher_ids[]"
-                        value="{{ $t->id }}" id="tch{{ $t->id }}"
-                        {{ in_array($t->id, $selectedTeachers) ? 'checked' : '' }}>
-                    <label class="form-check-label"
-                        for="tch{{ $t->id }}">{{ $t->nickname ?: $t->full_name }}</label>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                        <div class="d-flex align-items-center">
+                            <input class="form-check-input me-1" type="checkbox" name="teacher_ids[]"
+                                value="{{ $t->id }}" id="tch{{ $t->id }}"
+                                {{ in_array($t->id, $selectedTeachers) ? 'checked' : '' }}>
+                            <label class="form-check-label"
+                                for="tch{{ $t->id }}">{{ $t->nickname ?: $t->full_name }}</label>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light border d-none" data-rate-preview="{{ $t->id }}"
+                            style="font-size:.68rem; font-weight:500;"></span>
+                    </div>
+                    <div class="teacher-rate-box mt-2" data-teacher-rate-box="{{ $t->id }}" style="display:none;">
+                        <div class="input-group input-group-sm">
+                            <select class="form-select form-select-sm" name="teacher_rates[{{ $t->id }}][rate_type]"
+                                data-field="rate_type">
+                                @foreach ($rateTypeLabels as $val => $label)
+                                    <option value="{{ $val }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <input type="number" step="0.01" min="0" max="1000000"
+                                class="form-control form-control-sm" name="teacher_rates[{{ $t->id }}][rate_amount]"
+                                data-field="rate_amount" placeholder="เรทค่าสอนคอร์สนี้">
+                        </div>
+                        <div class="field-hint" data-rate-hint style="font-size:.68rem;"></div>
+                    </div>
                 </div>
             </div>
         @empty
@@ -615,6 +678,9 @@
     </div>
     <div id="teacherNoResult" class="text-muted small text-center py-3 d-none">ไม่พบอาจารย์ที่ตรงกับการค้นหา</div>
 </div>
+
+<script id="teacherRateCatalog" type="application/json">{!! $teacherRateCatalog->toJson() !!}</script>
+<script id="teacherRatePivotInit" type="application/json">{!! $teacherRatePivotInit->toJson() !!}</script>
 
 <script>
     (function() {
@@ -747,6 +813,11 @@
         function renderChip() {
             chipBox.innerHTML = '';
             hiddenInp.value = selected ? selected.id : '';
+            document.dispatchEvent(new CustomEvent('course-instrument-changed', {
+                detail: {
+                    id: selected ? String(selected.id) : null
+                }
+            }));
 
             if (!selected) return;
 
@@ -873,5 +944,130 @@
             searchInput.addEventListener('input', applyFilter);
             instrumentFilter.addEventListener('change', applyFilter);
         }
+    })();
+
+    // ===== เรทค่าสอนของอาจารย์ตามเครื่องดนตรีของคอร์ส: แนะนำอัตโนมัติ + แก้ไขได้ =====
+    (function() {
+        const catalog = JSON.parse(document.getElementById('teacherRateCatalog').textContent || '{}');
+        const pivotInit = JSON.parse(document.getElementById('teacherRatePivotInit').textContent || '{}');
+        const instrumentCatalog = JSON.parse(document.getElementById('courseInstrumentsCatalog').textContent || '[]');
+        const instrumentNameById = {};
+        instrumentCatalog.forEach(i => instrumentNameById[i.id] = i.name);
+
+        function getSelectedInstrumentId() {
+            const hidden = document.getElementById('courseInstrumentHidden');
+            return hidden && hidden.value ? String(hidden.value) : null;
+        }
+
+        function suggestedRate(teacherId, instrumentId) {
+            const rates = catalog[teacherId] || {};
+            if (instrumentId && rates[instrumentId]) return rates[instrumentId];
+            if (rates['general']) return rates['general'];
+            return null;
+        }
+
+        function fillBox(box, rate, hintText) {
+            const typeSelect = box.querySelector('[data-field="rate_type"]');
+            const amountInput = box.querySelector('[data-field="rate_amount"]');
+            const hint = box.querySelector('[data-rate-hint]');
+            if (rate) {
+                typeSelect.value = rate.rate_type || 'per_hour';
+                amountInput.value = rate.rate_amount ?? '';
+            }
+            if (hint) hint.textContent = hintText || '';
+        }
+
+        function rateTypeLabel(rateType) {
+            return {
+                per_hour: 'บาท/ชม.',
+                per_session: 'บาท/คาบ',
+                monthly_fixed: 'บาท/เดือน',
+                percentage: '%',
+            } [rateType] || 'บาท';
+        }
+
+        function applySuggestion(box, teacherId) {
+            const instrumentId = getSelectedInstrumentId();
+            const rate = suggestedRate(teacherId, instrumentId);
+            if (rate) {
+                const insName = instrumentId && instrumentNameById[instrumentId] ? instrumentNameById[instrumentId] :
+                    'ทั่วไป';
+                const status = rate.is_active ? '' : ' (เรทล่าสุดที่เคยบันทึกไว้ ปัจจุบันปิดใช้งานอยู่)';
+                fillBox(box, rate, `เรทของอาจารย์ (${insName}): ${rate.rate_amount} บาท${status}`);
+            } else {
+                fillBox(box, null, 'ยังไม่มีเรทตั้งต้นของอาจารย์ท่านนี้ กรุณากรอกเอง');
+            }
+        }
+
+        // แสดงเรทค่าสอนของอาจารย์ตามเครื่องดนตรีที่เลือกไว้บนสุด ให้เห็นทุกคนไม่ว่าจะติ๊กเลือกหรือยัง
+        function updateRatePreview(teacherId) {
+            const badge = document.querySelector(`[data-rate-preview="${teacherId}"]`);
+            if (!badge) return;
+            const instrumentId = getSelectedInstrumentId();
+            const rate = suggestedRate(teacherId, instrumentId);
+            if (rate && rate.rate_amount) {
+                badge.textContent = `เรท ${rate.rate_amount} ${rateTypeLabel(rate.rate_type)}` + (rate.is_active ? '' :
+                    ' (เก่า)');
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+
+        function refreshAllRatePreviews() {
+            document.querySelectorAll('[data-rate-preview]').forEach(badge => {
+                updateRatePreview(badge.dataset.ratePreview);
+            });
+        }
+
+        function initBox(box, teacherId, checkbox) {
+            const typeSelect = box.querySelector('[data-field="rate_type"]');
+            const amountInput = box.querySelector('[data-field="rate_amount"]');
+            [typeSelect, amountInput].forEach(el => {
+                el.addEventListener('input', () => box.dataset.edited = '1');
+                el.addEventListener('change', () => box.dataset.edited = '1');
+            });
+
+            function syncVisibility() {
+                box.style.display = checkbox.checked ? 'block' : 'none';
+            }
+
+            function fillOnFirstCheck() {
+                if (box.dataset.initialized === '1') return;
+                box.dataset.initialized = '1';
+                const pivot = pivotInit[teacherId];
+                if (pivot && pivot.rate_amount) {
+                    fillBox(box, pivot, 'เรทที่บันทึกไว้สำหรับคอร์สนี้');
+                    box.dataset.edited = '1';
+                } else {
+                    applySuggestion(box, teacherId);
+                }
+            }
+
+            checkbox.addEventListener('change', () => {
+                syncVisibility();
+                if (checkbox.checked) fillOnFirstCheck();
+            });
+
+            syncVisibility();
+            if (checkbox.checked) fillOnFirstCheck();
+        }
+
+        document.querySelectorAll('[data-teacher-rate-box]').forEach(box => {
+            const teacherId = box.dataset.teacherRateBox;
+            const checkbox = document.getElementById('tch' + teacherId);
+            if (checkbox) initBox(box, teacherId, checkbox);
+        });
+
+        refreshAllRatePreviews();
+
+        document.addEventListener('course-instrument-changed', () => {
+            refreshAllRatePreviews();
+            document.querySelectorAll('[data-teacher-rate-box]').forEach(box => {
+                if (box.dataset.edited === '1') return;
+                const checkbox = document.getElementById('tch' + box.dataset.teacherRateBox);
+                if (checkbox && checkbox.checked) applySuggestion(box, box.dataset.teacherRateBox);
+            });
+        });
     })();
 </script>
