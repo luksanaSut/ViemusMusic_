@@ -274,7 +274,8 @@
                     <div class="text-muted small">ระดับสมาชิก</div>
                     <div class="fs-5 fw-bold" style="font-family:'Prompt',sans-serif;">
                         @if ($student->membership?->tier)
-                            <span class="badge {{ $student->membership->tier->badgeClass() }}">{{ $student->membership->tier->name }}</span>
+                            <span
+                                class="badge {{ $student->membership->tier->badgeClass() }}">{{ $student->membership->tier->name }}</span>
                         @else
                             <span class="text-muted small">ยังไม่มีระดับ</span>
                         @endif
@@ -360,8 +361,8 @@
                                     <div class="fw-semibold">{{ $primary->full_name }}</div>
                                     <div class="text-muted small">{{ $primary->phone ?: 'ไม่มีเบอร์โทร' }}</div>
                                 </div>
-                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tab"
-                                    data-bs-target="#guardians">ดูทั้งหมด</button>
+                                {{-- <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tab"
+                                    data-bs-target="#guardians">ดูทั้งหมด</button> --}}
                             </div>
                         @else
                             <div class="text-muted small">ยังไม่มีข้อมูลผู้ปกครอง — เพิ่มได้ที่แท็บ
@@ -393,8 +394,7 @@
                         <i class="bi bi-search position-absolute"
                             style="left:.7rem; top:50%; transform:translateY(-50%); color:var(--muted,#6b655e); font-size:.85rem;"></i>
                         <input type="text" id="guardianSearchInput" class="form-control form-control-sm"
-                            style="padding-left:2rem;"
-                            placeholder="ค้นหาผู้ปกครองที่มีอยู่แล้ว (เช่น พี่น้องคนก่อน) หรือพิมพ์ชื่อใหม่..."
+                            style="padding-left:2rem;" placeholder="ค้นหาผู้ปกครองที่มีอยู่แล้ว หรือพิมพ์ชื่อใหม่..."
                             autocomplete="off">
                         <div id="guardianDropdown" class="list-group position-absolute w-100 shadow-sm d-none"
                             style="z-index:20; max-height:220px; overflow-y:auto; top:100%;"></div>
@@ -694,7 +694,8 @@
             <div class="form-section">
                 <div class="form-section-title">
                     <div class="icon-badge"><i class="bi bi-award"></i></div> สถานะสมาชิก
-                    <form action="{{ route('students.membership.recalculate', $student) }}" method="POST" class="ms-auto">
+                    <form action="{{ route('students.membership.recalculate', $student) }}" method="POST"
+                        class="ms-auto">
                         @csrf
                         <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i>
                             คำนวณสถานะสมาชิกใหม่</button>
@@ -705,7 +706,8 @@
                     <div class="col-md-3">
                         <div class="text-muted small">ระดับปัจจุบัน</div>
                         @if ($currentTier)
-                            <span class="badge {{ $currentTier->badgeClass() }} fs-6 mt-1"><i class="bi bi-award me-1"></i>
+                            <span class="badge {{ $currentTier->badgeClass() }} fs-6 mt-1"><i
+                                    class="bi bi-award me-1"></i>
                                 {{ $currentTier->name }}</span>
                         @else
                             <div class="fw-semibold text-muted">ยังไม่มีระดับ</div>
@@ -827,10 +829,9 @@
                     <div class="col-md-2">
                         <select name="result" class="form-select form-select-sm">
                             <option value="">ผลสอบ</option>
-                            <option value="distinction">Distinction</option>
-                            <option value="merit">Merit</option>
-                            <option value="pass">Pass</option>
-                            <option value="fail">Fail</option>
+
+                            <option value="pass">ผ่าน</option>
+                            <option value="fail">ไม่ผ่าน</option>
                         </select>
                     </div>
                     <div class="col-md-2"><input type="text" name="score" class="form-control form-control-sm"

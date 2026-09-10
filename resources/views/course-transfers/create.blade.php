@@ -142,7 +142,8 @@
                         <option value="">เลือกคอร์ส...</option>
                         @foreach ($courses as $c)
                             <option value="{{ $c->id }}" data-price="{{ $c->price }}">{{ $c->name }}
-                                ({{ $c->course_code }}) — ฿{{ number_format($c->price, 0) }}</option>
+                                ({{ $c->course_code }})
+                                — ฿{{ number_format($c->price, 0) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -178,11 +179,11 @@
             <div class="diff-summary" id="diffSummaryBox">
                 <div class="text-muted small">เลือกคอร์สใหม่เพื่อคำนวณส่วนต่าง</div>
             </div>
-            <ul class="text-muted small mt-3 mb-0" style="padding-left:1.2rem;">
+            {{-- <ul class="text-muted small mt-3 mb-0" style="padding-left:1.2rem;">
                 <li>ถ้าคอร์สใหม่ราคาสูงกว่ามูลค่าคงเหลือ ระบบจะให้ชำระส่วนต่างก่อนยืนยันการเปลี่ยนคอร์ส</li>
                 <li>ถ้าคอร์สใหม่ราคาต่ำกว่า ระบบจะเก็บส่วนต่างเป็นเครดิตคงเหลือให้นักเรียนอัตโนมัติ</li>
                 <li>เมื่อยืนยันแล้ว ระบบจะปิดคอร์สเดิมและเปิดคอร์สใหม่ให้ทันที (ถือเป็นการทำรายการใหม่)</li>
-            </ul>
+            </ul> --}}
         </div>
 
         <div class="d-flex gap-2 mb-4">

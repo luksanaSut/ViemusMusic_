@@ -133,7 +133,7 @@
         <a href="{{ route('students.create') }}" class="btn btn-accent"><i class="bi bi-plus-lg"></i> เพิ่มข้อมูลนักเรียน</a>
     </div>
 
-    <div class="stat-row mb-3">
+    {{-- <div class="stat-row mb-3">
         <div class="stat-card">
             <div class="icon total"><i class="bi bi-people"></i></div>
             <div>
@@ -162,14 +162,15 @@
                 <div class="label">ค้างชำระเงิน</div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="card mb-3 filter-card">
         <div class="card-body">
             <form method="GET" class="row g-2 align-items-center">
                 <div class="col-md-5">
                     <div class="position-relative">
-                        <i class="bi bi-search position-absolute" style="left:.8rem; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
+                        <i class="bi bi-search position-absolute"
+                            style="left:.8rem; top:50%; transform:translateY(-50%); color:var(--muted);"></i>
                         <input type="text" name="q" value="{{ request('q') }}" class="form-control ps-5"
                             placeholder="ค้นหาชื่อ / รหัส / เบอร์โทร">
                     </div>
@@ -187,8 +188,8 @@
                 </div>
                 @if (request('q') || request('status'))
                     <div class="col-md-2 d-grid">
-                        <a href="{{ route('students.index') }}" class="btn btn-outline-secondary"><i
-                                class="bi bi-x-lg"></i> ล้างตัวกรอง</a>
+                        <a href="{{ route('students.index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>
+                            ล้างตัวกรอง</a>
                     </div>
                 @endif
             </form>
@@ -231,7 +232,8 @@
                             <td class="text-muted">{{ $student->student_code }}</td>
                             <td>{{ $student->guardian_name ?: '-' }}</td>
                             <td>{{ $student->active_enrollments_count }} คอร์ส</td>
-                            <td><span class="badge {{ $student->statusBadgeClass() }}">{{ $student->statusLabel() }}</span>
+                            <td><span
+                                    class="badge {{ $student->statusBadgeClass() }}">{{ $student->statusLabel() }}</span>
                             </td>
                             <td>
                                 @if ($student->hasOverduePayment())
@@ -244,11 +246,12 @@
                             <td class="text-end">
                                 <div class="d-inline-flex gap-1 row-actions">
                                     <a href="{{ route('students.show', $student) }}"
-                                        class="btn btn-sm btn-outline-secondary" title="ดูข้อมูล"><i class="bi bi-eye"></i></a>
-                                    <a href="{{ route('students.edit', $student) }}"
-                                        class="btn btn-sm btn-outline-primary" title="แก้ไข"><i class="bi bi-pencil"></i></a>
-                                    <form action="{{ route('students.destroy', $student) }}" method="POST" class="d-inline"
-                                        onsubmit="return confirm('ยืนยันการลบข้อมูลนักเรียนนี้?')">
+                                        class="btn btn-sm btn-outline-secondary" title="ดูข้อมูล"><i
+                                            class="bi bi-eye"></i></a>
+                                    <a href="{{ route('students.edit', $student) }}" class="btn btn-sm btn-outline-primary"
+                                        title="แก้ไข"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ route('students.destroy', $student) }}" method="POST"
+                                        class="d-inline" onsubmit="return confirm('ยืนยันการลบข้อมูลนักเรียนนี้?')">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-danger" title="ลบ"><i
                                                 class="bi bi-trash"></i></button>

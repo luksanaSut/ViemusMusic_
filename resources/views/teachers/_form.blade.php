@@ -202,7 +202,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-person-vcard"></i></div>
         ข้อมูลทั่วไป
-        <span class="step-no">ขั้นตอน 1</span>
+        {{-- <span class="step-no">ขั้นตอน 1</span> --}}
     </div>
     <div class="row g-3">
         <div class="col-md-2 text-center">
@@ -271,7 +271,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-briefcase"></i></div>
         ประเภทการทำงาน
-        <span class="step-no">ขั้นตอน 2</span>
+        {{-- <span class="step-no">ขั้นตอน 2</span> --}}
     </div>
     <div class="row g-3">
         <div class="col-md-3">
@@ -307,7 +307,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-stars"></i></div>
         ความเชี่ยวชาญ
-        <span class="step-no">ขั้นตอน 3</span>
+        {{-- <span class="step-no">ขั้นตอน 3</span> --}}
     </div>
     <div class="row g-4">
         <div class="col-md-4">
@@ -380,7 +380,7 @@
         <div class="form-section-title">
             <div class="icon-badge"><i class="bi bi-calendar-week"></i></div>
             Availability / เวลาที่พร้อมสอน
-            <span class="step-no">ขั้นตอน 4</span>
+            {{-- <span class="step-no">ขั้นตอน 4</span> --}}
         </div>
         <div class="form-section-desc">ติ๊กวันที่อาจารย์สะดวกสอน แล้วระบุช่วงเวลา — แก้ไขเพิ่มเติมภายหลังได้ที่แท็บ
             "Availability" ในหน้าโปรไฟล์อาจารย์</div>
@@ -421,7 +421,7 @@
         <div class="form-section-title">
             <div class="icon-badge"><i class="bi bi-cash-coin"></i></div>
             ค่าจ้างและเงื่อนไขพิเศษ
-            <span class="step-no">ขั้นตอน 5</span>
+            {{-- <span class="step-no">ขั้นตอน 5</span> --}}
         </div>
         <div class="row g-3">
             <div class="col-md-3">
@@ -463,7 +463,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-journal-text"></i></div>
         หมายเหตุเพิ่มเติม
-        <span class="step-no">ขั้นตอนสุดท้าย</span>
+        {{-- <span class="step-no">ขั้นตอนสุดท้าย</span> --}}
     </div>
     <div class="row g-3">
         <div class="col-md-6">

@@ -127,7 +127,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-person-vcard"></i></div>
         ข้อมูลทั่วไป
-        <span class="step-no">ขั้นตอน 1</span>
+        {{-- <span class="step-no">ขั้นตอน 1</span> --}}
     </div>
     <div class="row g-3">
         <div class="col-md-2 text-center">
@@ -213,7 +213,7 @@
     <div class="form-section-title">
         <div class="icon-badge"><i class="bi bi-journal-text"></i></div>
         หมายเหตุ
-        <span class="step-no">ขั้นตอนสุดท้าย</span>
+        {{-- <span class="step-no">ขั้นตอนสุดท้าย</span> --}}
     </div>
     <textarea name="notes" class="form-control" rows="3" maxlength="2000"
         placeholder="ข้อมูลเพิ่มเติม เช่น ข้อควรระวังด้านสุขภาพ ความต้องการพิเศษ ฯลฯ">{{ old('notes', $student->notes ?? '') }}</textarea>

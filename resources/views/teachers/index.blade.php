@@ -23,22 +23,14 @@
         <div>
             <h1 class="page-title">จัดการอาจารย์</h1>
             <div class="page-sub">อาจารย์ {{ $teachers->total() }} ท่าน ·
-                {{ number_format($teachers->sum(fn($t) => $t->totalHours(now()->startOfMonth()->toDateString())), 0) }}
-                ชั่วโมงสอนเดือนนี้</div>
+                {{-- {{ number_format($teachers->sum(fn($t) => $t->totalHours(now()->startOfMonth()->toDateString())), 0) }} --}}
+                {{-- ชั่วโมงสอนเดือนนี้ --}}
+            </div>
         </div>
         <a href="{{ route('teachers.create') }}" class="btn btn-accent">
             <i class="bi bi-plus-lg"></i> เพิ่มอาจารย์
         </a>
     </div>
-
-    <ul class="nav tab-pills mb-3">
-        <li class="nav-item"><a class="nav-link active" href="{{ route('teachers.index') }}">รายชื่ออาจารย์ <span
-                    class="text-muted">{{ $teachers->total() }}</span></a></li>
-        <li class="nav-item"><a class="nav-link" href="#" tabindex="-1" title="ยังไม่เปิดใช้งาน">เวลาที่ว่าง
-                (Availability)</a></li>
-        <li class="nav-item"><a class="nav-link" href="#" tabindex="-1"
-                title="ยังไม่เปิดใช้งาน">จับคู่ครู-นักเรียน</a></li>
-    </ul>
 
     <div class="card mb-3">
         <div class="card-body">

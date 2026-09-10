@@ -6,7 +6,7 @@
             class="bi bi-chevron-right small"></i> เพิ่ม</div>
     <h4 class="mb-3"><i class="bi bi-person-plus"></i> เพิ่มข้อมูลอาจารย์</h4>
 
-    <div class="card">
+    <div class="">
         <div class="card-body">
 
 
