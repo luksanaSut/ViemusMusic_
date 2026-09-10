@@ -39,7 +39,7 @@ class UpdateStudentRequest extends FormRequest
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender'        => ['nullable', 'in:male,female,other'],
             'phone'         => ['nullable', 'digits_between:9,10'],
-            'email'         => ['nullable', 'email:rfc,dns', 'max:150'],
+            'email'         => ['nullable', 'email:rfc', 'max:150'],
             'line_id'       => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._\-]+$/'],
             'address'       => ['nullable', 'string', 'max:500'],
             'photo'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

@@ -35,7 +35,7 @@ class UpdateTeacherRequest extends FormRequest
             'teacher_code'    => ['required', 'string', 'max:20', 'regex:/^[A-Z0-9\-]+$/', Rule::unique('teachers', 'teacher_code')->ignore($teacherId)],
             'full_name'       => ['required', 'string', 'max:150'],
             'nickname'        => ['nullable', 'string', 'max:50'],
-            'email'           => ['nullable', 'email:rfc,dns', 'max:150', Rule::unique('teachers', 'email')->ignore($teacherId)],
+            'email'           => ['nullable', 'email:rfc', 'max:150', Rule::unique('teachers', 'email')->ignore($teacherId)],
             'phone'           => ['nullable', 'digits_between:9,10'],
             'line_id'         => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._\-]+$/'],
             'address'         => ['nullable', 'string', 'max:500'],

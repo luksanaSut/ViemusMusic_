@@ -37,7 +37,7 @@ class StoreTeacherRequest extends FormRequest
             'teacher_code'    => ['required', 'string', 'max:20', 'regex:/^[A-Z0-9\-]+$/', 'unique:teachers,teacher_code'],
             'full_name'       => ['required', 'string', 'max:150'],
             'nickname'        => ['nullable', 'string', 'max:50'],
-            'email'           => ['nullable', 'email:rfc,dns', 'max:150', 'unique:teachers,email'],
+            'email'           => ['nullable', 'email:rfc', 'max:150', 'unique:teachers,email'],
             'phone'           => ['nullable', 'digits_between:9,10'],
             'line_id'         => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._\-]+$/'],
             'address'         => ['nullable', 'string', 'max:500'],
