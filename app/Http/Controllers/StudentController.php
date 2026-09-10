@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Models\Course;
+use App\Models\Guardian;
 use App\Models\Student;
 use Illuminate\Http\Request;
 
@@ -37,18 +38,65 @@ class StudentController extends Controller
 
     public function create()
     {
-        return view('students.create');
+        $nextStudentCode = $this->generateNextStudentCode();
+
+        return view('students.create', compact('nextStudentCode'));
+    }
+
+    // สร้างรหัสนักเรียนถัดไปอัตโนมัติ รูปแบบ VM0000
+    private function generateNextStudentCode(): string
+    {
+        $maxNumber = 0;
+        foreach (Student::where('student_code', 'like', 'VM%')->pluck('student_code') as $code) {
+            if (preg_match('/^VM(\d+)$/i', $code, $matches)) {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        return 'VM' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
     }
 
     public function store(StoreStudentRequest $request)
     {
         $data = $request->validated();
+        $guardians = $data['guardians'] ?? [];
+        unset($data['guardians']);
 
         if ($request->hasFile('photo')) {
             $data['photo_path'] = $request->file('photo')->store('students', 'public');
         }
 
         $student = Student::create($data);
+
+        $primaryAssigned = false;
+        foreach ($guardians as $g) {
+            $fullName = trim(strip_tags($g['full_name'] ?? ''));
+            if (empty($g['guardian_id']) && $fullName === '') {
+                continue;
+            }
+
+            if (!empty($g['guardian_id'])) {
+                $guardian = Guardian::find($g['guardian_id']);
+                if (!$guardian) {
+                    continue;
+                }
+            } else {
+                $guardian = Guardian::create([
+                    'full_name' => $fullName,
+                    'phone'     => !empty($g['phone']) ? preg_replace('/\D/', '', $g['phone']) : null,
+                ]);
+            }
+
+            $isPrimary = !empty($g['is_primary']) && !$primaryAssigned;
+            $primaryAssigned = $primaryAssigned || $isPrimary;
+
+            $student->guardians()->syncWithoutDetaching([
+                $guardian->id => [
+                    'relation'   => $g['relation'] ?? null,
+                    'is_primary' => $isPrimary,
+                ],
+            ]);
+        }
 
         return redirect()->route('students.show', $student)->with('success', 'เพิ่มข้อมูลนักเรียนเรียบร้อยแล้ว');
     }

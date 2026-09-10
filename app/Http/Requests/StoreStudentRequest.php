@@ -40,6 +40,13 @@ class StoreStudentRequest extends FormRequest
 
             'status' => ['required', 'in:active,paused,cancelled'],
             'notes'  => ['nullable', 'string', 'max:2000'],
+
+            'guardians'                  => ['nullable', 'array'],
+            'guardians.*.guardian_id'    => ['nullable', 'integer', 'exists:guardians,id'],
+            'guardians.*.full_name'      => ['nullable', 'string', 'max:150'],
+            'guardians.*.phone'          => ['nullable', 'string', 'max:20'],
+            'guardians.*.relation'       => ['nullable', 'string', 'max:50'],
+            'guardians.*.is_primary'     => ['nullable', 'boolean'],
         ];
     }
 
