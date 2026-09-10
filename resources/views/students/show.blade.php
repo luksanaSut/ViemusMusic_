@@ -501,7 +501,7 @@
                                     เปลี่ยนคอร์ส</a>
                                 <a href="{{ route('run-throughs.create', $enr) }}"
                                     class="btn btn-sm btn-outline-primary w-100 mt-1"><i class="bi bi-arrow-repeat"></i>
-                                    สร้าง Run Through</a>
+                                    สร้าง Home Work</a>
                             </div>
                         @endif
                         <div class="col-md-3">
@@ -824,6 +824,7 @@
                         <select name="exam_board" class="form-select form-select-sm" required>
                             <option value="abrsm">ABRSM</option>
                             <option value="trinity">Trinity</option>
+                            <option value="other">อื่นๆ</option>
                         </select>
                     </div>
                     <div class="col-md-2"><input type="text" name="grade" class="form-control form-control-sm"
