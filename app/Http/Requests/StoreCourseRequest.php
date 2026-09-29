@@ -15,7 +15,6 @@ class StoreCourseRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'course_code'    => $this->course_code ? strtoupper(trim($this->course_code)) : null,
             'name'           => $this->name ? trim(strip_tags($this->name)) : null,
             'description'    => $this->description ? trim(strip_tags($this->description)) : null,
             // Private = ไม่จำกัดจำนวนผู้เรียน บังคับเป็น null เสมอไม่ว่าฝั่งหน้าเว็บจะส่งอะไรมา
@@ -28,7 +27,6 @@ class StoreCourseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_code'   => ['required', 'string', 'max:20', 'regex:/^[A-Z0-9\-]+$/', 'unique:courses,course_code'],
             'name'          => ['required', 'string', 'max:150'],
             'description'   => ['nullable', 'string', 'max:2000'],
             'image'         => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

@@ -38,8 +38,22 @@ class CourseController extends Controller
         $instruments = Instrument::where('is_active', true)->orderBy('name')->get();
         $levels      = Level::orderBy('sort_order')->get();
         $teachers    = Teacher::where('is_active', true)->with(['instruments', 'rates'])->orderBy('full_name')->get();
+        $nextCourseCode = $this->generateNextCourseCode();
 
-        return view('courses.create', compact('instruments', 'levels', 'teachers'));
+        return view('courses.create', compact('instruments', 'levels', 'teachers', 'nextCourseCode'));
+    }
+
+    // สร้างรหัสคอร์สถัดไปอัตโนมัติ รูปแบบ VMC0001
+    private function generateNextCourseCode(): string
+    {
+        $maxNumber = 0;
+        foreach (Course::withTrashed()->where('course_code', 'like', 'VMC%')->pluck('course_code') as $code) {
+            if (preg_match('/^VMC(\d+)$/i', $code, $matches)) {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        return 'VMC' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
     }
 
 
@@ -51,6 +65,9 @@ class CourseController extends Controller
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('courses', 'public');
         }
+
+        // รหัสคอร์สสร้างจากระบบเสมอ ตอนบันทึกจริง กันกรณีเปิดฟอร์มพร้อมกันแล้วได้รหัสซ้ำ
+        $data['course_code'] = $this->generateNextCourseCode();
 
         $course = Course::create($data);
         $course->teachers()->sync($this->buildTeacherSyncData($data));

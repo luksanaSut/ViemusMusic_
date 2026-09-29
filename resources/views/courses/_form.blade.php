@@ -257,9 +257,14 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">รหัสคอร์ส *</label>
-                    <input type="text" name="course_code" class="form-control" maxlength="20"
-                        pattern="[A-Za-z0-9\-]+" title="ใช้ได้เฉพาะตัวอักษร A-Z, ตัวเลข, และ -"
-                        value="{{ old('course_code', $course->course_code ?? '') }}" required>
+                    @if (isset($course))
+                        <input type="text" name="course_code" class="form-control" maxlength="20"
+                            pattern="[A-Za-z0-9\-]+" title="ใช้ได้เฉพาะตัวอักษร A-Z, ตัวเลข, และ -"
+                            value="{{ old('course_code', $course->course_code) }}" required>
+                    @else
+                        <input type="text" class="form-control" value="{{ $nextCourseCode ?? '' }}" readonly>
+                        <div class="form-text">รหัสถูกสร้างอัตโนมัติ</div>
+                    @endif
                 </div>
                 <div class="col-md-9">
                     <label class="form-label">ชื่อคอร์ส *</label>
