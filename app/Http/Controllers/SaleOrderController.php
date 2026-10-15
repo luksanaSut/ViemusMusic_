@@ -68,6 +68,7 @@ class SaleOrderController extends Controller
                     'code'       => $s->student_code,
                     'name'       => $s->full_name,
                     'nickname'   => $s->nickname,
+                    'phone'      => $s->phone,
                     'age'        => $s->date_of_birth?->age,
                     'instrument' => optional($s->skillLevels->first()?->instrument)->name,
                 ];
@@ -218,6 +219,7 @@ class SaleOrderController extends Controller
             'code' => $student->student_code,
             'name' => $student->full_name,
             'nickname' => $student->nickname,
+            'phone' => $student->phone,
             'age' => $student->date_of_birth?->age,
             'instrument' => null,
         ], 201);

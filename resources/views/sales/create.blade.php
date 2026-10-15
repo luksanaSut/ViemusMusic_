@@ -184,6 +184,115 @@
             display: block;
         }
 
+        .student-search {
+            position: relative;
+            margin-bottom: .5rem;
+        }
+
+        .student-search .bi-search {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted, #6b655e);
+        }
+
+        .student-search input {
+            padding: .7rem 2.6rem .7rem 2.4rem;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .student-search .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: none;
+            color: var(--muted, #6b655e);
+            font-size: 1.1rem;
+            padding: .2rem .4rem;
+        }
+
+        .student-list {
+            max-height: 380px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: .5rem;
+            align-content: start;
+            padding: 2px;
+        }
+
+        @media (min-width: 768px) {
+            .student-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .student-list .student-card {
+            margin-bottom: 0;
+            padding: .6rem .9rem;
+            min-width: 0;
+        }
+
+        .student-list .student-card .info {
+            min-width: 0;
+        }
+
+        .student-list .student-card .name,
+        .student-list .student-card .meta {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student-list .student-empty {
+            grid-column: 1 / -1;
+        }
+
+        .student-list .student-card:hover,
+        .student-list .student-card.focused {
+            background: #f6f4f1;
+            border-color: #c9c4bb;
+        }
+
+        .student-list .student-card .avatar {
+            width: 36px;
+            height: 36px;
+            font-size: .9rem;
+        }
+
+        .student-card mark {
+            padding: 0;
+            background: #fff1b8;
+        }
+
+        .student-selected {
+            display: flex;
+            align-items: center;
+            gap: .9rem;
+            border: 2px solid var(--accent, #1f3350);
+            background: var(--accent-soft, #e7ebf1);
+            border-radius: 14px;
+            padding: .9rem 1.1rem;
+        }
+
+        .student-selected .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent, #1f3350);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
         /* ===== การ์ดคอร์ส ===== */
         .course-card {
             border: 1.5px solid var(--border, #e4e1dc);
@@ -307,9 +416,21 @@
             </div>
 
             <div id="existingStudentBox">
-                <input type="text" id="studentFilterInput" class="form-control form-control-sm mb-2"
-                    placeholder="ค้นหาชื่อ/รหัสนักเรียน...">
-                <div id="studentCardList" style="max-height:420px; overflow-y:auto;"></div>
+                <div id="studentSelectedBox" class="d-none"></div>
+                <div id="studentSearchBox">
+                    <div class="student-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="studentFilterInput" class="form-control" autocomplete="off"
+                            placeholder="พิมพ์ชื่อ, ชื่อเล่น, รหัส หรือเบอร์โทร...">
+                        <button type="button" id="studentFilterClear" class="clear-btn d-none" title="ล้าง"><i
+                                class="bi bi-x-circle-fill"></i></button>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mb-2">
+                        <span id="studentCountInfo"></span>
+                        <span class="d-none d-md-inline">ใช้ปุ่ม ↑ ↓ แล้วกด Enter เพื่อเลือก</span>
+                    </div>
+                    <div id="studentCardList" class="student-list"></div>
+                </div>
             </div>
 
             <div id="newStudentBox" class="d-none">
@@ -329,7 +450,6 @@
 
             <input type="hidden" name="student_id" id="studentIdInput" value="{{ $preselectedStudent->id ?? '' }}"
                 required>
-            <div id="studentSelectedInfo" class="mt-2 small fw-semibold text-success"></div>
         </div>
 
         {{-- 2. เลือกคอร์ส --}}
@@ -572,49 +692,156 @@
             const studentListBox = document.getElementById('studentCardList');
             const studentFilter = document.getElementById('studentFilterInput');
             const studentIdInput = document.getElementById('studentIdInput');
-            const studentInfo = document.getElementById('studentSelectedInfo');
+            const studentSearchBox = document.getElementById('studentSearchBox');
+            const studentSelectedBox = document.getElementById('studentSelectedBox');
+            const studentFilterClear = document.getElementById('studentFilterClear');
+            const studentCountInfo = document.getElementById('studentCountInfo');
             const preselectedId = "{{ $preselectedStudent->id ?? '' }}";
+            const STUDENT_LIST_LIMIT = 50;
+            let visibleStudents = [];
+            let focusedIndex = -1;
 
-            function renderStudentCards(list) {
+            const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            } [c]));
+
+            // ไฮไลต์คำที่ค้นหา
+            function hl(text, q) {
+                const t = String(text ?? '');
+                if (!q) return esc(t);
+                const i = t.toLowerCase().indexOf(q);
+                if (i < 0) return esc(t);
+                return esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length));
+            }
+
+            function studentMeta(s, q) {
+                return [
+                    hl(s.code, q),
+                    s.nickname ? 'น้อง' + hl(s.nickname, q) : '',
+                    s.age ? 'อายุ ' + s.age + ' ปี' : '',
+                    s.phone ? '<i class="bi bi-telephone"></i> ' + hl(s.phone, q) : '',
+                ].filter(Boolean).join(' · ');
+            }
+
+            function renderStudentCards() {
+                const q = studentFilter.value.trim().toLowerCase();
+                const list = currentFilteredList();
+                visibleStudents = list.slice(0, STUDENT_LIST_LIMIT);
+                focusedIndex = q && visibleStudents.length ? 0 : -1;
+                studentFilterClear.classList.toggle('d-none', !q);
+
+                studentCountInfo.textContent = list.length > STUDENT_LIST_LIMIT ?
+                    `แสดง ${STUDENT_LIST_LIMIT} จาก ${list.length} คน — พิมพ์เพื่อค้นหาให้แคบลง` :
+                    (q ? `พบ ${list.length} คน` : `นักเรียนทั้งหมด ${list.length} คน`);
+
                 studentListBox.innerHTML = '';
                 if (list.length === 0) {
-                    studentListBox.innerHTML =
-                        '<p class="text-muted small text-center py-3">ไม่พบนักเรียนที่ตรงกับการค้นหา</p>';
+                    studentListBox.innerHTML = `
+                <div class="student-empty text-center py-4">
+                    <div class="text-muted small mb-2">ไม่พบนักเรียน "${esc(studentFilter.value.trim())}"</div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="studentAddFromSearch">
+                        <i class="bi bi-plus-lg"></i> เพิ่มเป็นนักเรียนใหม่
+                    </button>
+                </div>`;
+                    document.getElementById('studentAddFromSearch').addEventListener('click', () => {
+                        tabNew.click();
+                        const qsName = document.getElementById('qsName');
+                        if (!/^\d+$/.test(studentFilter.value.trim())) qsName.value = studentFilter.value.trim();
+                        else document.getElementById('qsPhone').value = studentFilter.value.trim();
+                        qsName.focus();
+                    });
                     return;
                 }
-                list.forEach(s => {
+                visibleStudents.forEach((s, i) => {
                     const card = document.createElement('div');
-                    card.className = 'student-card' + (String(s.id) === String(studentIdInput.value) ?
-                        ' active' : '');
+                    card.className = 'student-card' + (i === focusedIndex ? ' focused' : '');
                     card.innerHTML = `
-                <div class="avatar">${(s.nickname || s.name).charAt(0)}</div>
+                <div class="avatar">${esc((s.nickname || s.name).charAt(0))}</div>
                 <div class="info">
-                    <div class="name">${s.name}</div>
-                    <div class="meta">${s.code} ${s.nickname ? '· ' + s.nickname : ''} ${s.age ? '· อายุ ' + s.age + ' ปี' : ''}</div>
+                    <div class="name">${hl(s.name, q)}</div>
+                    <div class="meta">${studentMeta(s, q)}</div>
                 </div>
-                ${s.instrument ? `<span class="badge text-bg-light border">${s.instrument}</span>` : ''}
-                <i class="bi bi-check-circle-fill check"></i>
+                ${s.instrument ? `<span class="badge text-bg-light border">${esc(s.instrument)}</span>` : ''}
+                <i class="bi bi-chevron-right text-muted"></i>
             `;
                     card.addEventListener('click', () => selectStudent(s));
                     studentListBox.appendChild(card);
                 });
             }
 
+            function setFocused(i) {
+                const cards = studentListBox.querySelectorAll('.student-card');
+                if (!cards.length) return;
+                focusedIndex = Math.max(0, Math.min(i, cards.length - 1));
+                cards.forEach((c, idx) => c.classList.toggle('focused', idx === focusedIndex));
+                cards[focusedIndex].scrollIntoView({ block: 'nearest' });
+            }
+
             function selectStudent(s) {
                 studentIdInput.value = s.id;
-                studentInfo.innerHTML = `<i class="bi bi-check-circle"></i> เลือกแล้ว: ${s.name} (${s.code})`;
-                renderStudentCards(currentFilteredList());
+                studentSelectedBox.innerHTML = `
+            <div class="student-selected">
+                <div class="avatar">${esc((s.nickname || s.name).charAt(0))}</div>
+                <div class="flex-grow-1">
+                    <div class="small text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> นักเรียนที่เลือก</div>
+                    <div class="fw-bold" style="font-family:'Prompt',sans-serif; font-size:1.05rem;">${esc(s.name)}</div>
+                    <div class="small text-muted">${studentMeta(s, '')}</div>
+                </div>
+                ${s.instrument ? `<span class="badge text-bg-light border d-none d-sm-inline">${esc(s.instrument)}</span>` : ''}
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="studentChangeBtn">
+                    <i class="bi bi-arrow-repeat"></i> เปลี่ยน
+                </button>
+            </div>`;
+                studentSelectedBox.classList.remove('d-none');
+                studentSearchBox.classList.add('d-none');
+                document.getElementById('studentChangeBtn').addEventListener('click', clearStudent);
+            }
+
+            function clearStudent() {
+                studentIdInput.value = '';
+                studentSelectedBox.classList.add('d-none');
+                studentSearchBox.classList.remove('d-none');
+                studentFilter.value = '';
+                renderStudentCards();
+                studentFilter.focus();
             }
 
             function currentFilteredList() {
                 const q = studentFilter.value.trim().toLowerCase();
                 if (!q) return students;
-                return students.filter(s => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || (s
-                    .nickname || '').toLowerCase().includes(q));
+                const qDigits = q.replace(/\D/g, '');
+                return students.filter(s =>
+                    (s.name || '').toLowerCase().includes(q) ||
+                    (s.code || '').toLowerCase().includes(q) ||
+                    (s.nickname || '').toLowerCase().includes(q) ||
+                    (qDigits.length >= 3 && (s.phone || '').replace(/\D/g, '').includes(qDigits)));
             }
 
-            studentFilter.addEventListener('input', () => renderStudentCards(currentFilteredList()));
-            renderStudentCards(students);
+            studentFilter.addEventListener('input', renderStudentCards);
+            studentFilter.addEventListener('keydown', e => {
+                // จำนวนคอลัมน์ของรายชื่อ (มือถือ 1, จอใหญ่ 2)
+                const cols = getComputedStyle(studentListBox).gridTemplateColumns.split(' ').length;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setFocused(focusedIndex < 0 ? 0 : focusedIndex + cols);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setFocused(focusedIndex - cols);
+
+                } else if (e.key === 'Enter') {
+                    e.preventDefault(); // กันฟอร์มถูกส่ง
+                    if (visibleStudents[focusedIndex]) selectStudent(visibleStudents[focusedIndex]);
+                } else if (e.key === 'Escape') {
+                    studentFilter.value = '';
+                    renderStudentCards();
+                }
+            });
+            studentFilterClear.addEventListener('click', () => {
+                studentFilter.value = '';
+                renderStudentCards();
+                studentFilter.focus();
+            });
+            renderStudentCards();
             if (preselectedId) {
                 const pre = students.find(s => String(s.id) === String(preselectedId));
                 if (pre) selectStudent(pre);
@@ -637,6 +864,14 @@
                 newBox.classList.remove('d-none');
                 existingBox.classList.add('d-none');
             });
+
+            // กด Enter ในช่องเพิ่มนักเรียนใหม่ = กดปุ่มเพิ่ม (ไม่ส่งฟอร์มหลัก)
+            newBox.querySelectorAll('input').forEach(inp => inp.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('qsSubmit').click();
+                }
+            }));
 
             document.getElementById('qsSubmit').addEventListener('click', async function() {
                 const errBox = document.getElementById('qsError');
@@ -676,6 +911,7 @@
                     selectStudent(body);
                     tabExisting.click();
                     studentFilter.value = '';
+                    ['qsName', 'qsNickname', 'qsPhone', 'qsDob'].forEach(id => document.getElementById(id).value = '');
                 } catch (e) {
                     errBox.textContent = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
                     errBox.classList.remove('d-none');

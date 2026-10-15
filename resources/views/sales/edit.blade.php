@@ -101,6 +101,7 @@
             color: #b3392c;
         }
 
+        /* ===== แท็บเลือกนักเรียน ===== */
         .picker-tabs {
             display: flex;
             gap: .6rem;
@@ -183,6 +184,116 @@
             display: block;
         }
 
+        .student-search {
+            position: relative;
+            margin-bottom: .5rem;
+        }
+
+        .student-search .bi-search {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted, #6b655e);
+        }
+
+        .student-search input {
+            padding: .7rem 2.6rem .7rem 2.4rem;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .student-search .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: none;
+            color: var(--muted, #6b655e);
+            font-size: 1.1rem;
+            padding: .2rem .4rem;
+        }
+
+        .student-list {
+            max-height: 380px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: .5rem;
+            align-content: start;
+            padding: 2px;
+        }
+
+        @media (min-width: 768px) {
+            .student-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .student-list .student-card {
+            margin-bottom: 0;
+            padding: .6rem .9rem;
+            min-width: 0;
+        }
+
+        .student-list .student-card .info {
+            min-width: 0;
+        }
+
+        .student-list .student-card .name,
+        .student-list .student-card .meta {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .student-list .student-empty {
+            grid-column: 1 / -1;
+        }
+
+        .student-list .student-card:hover,
+        .student-list .student-card.focused {
+            background: #f6f4f1;
+            border-color: #c9c4bb;
+        }
+
+        .student-list .student-card .avatar {
+            width: 36px;
+            height: 36px;
+            font-size: .9rem;
+        }
+
+        .student-card mark {
+            padding: 0;
+            background: #fff1b8;
+        }
+
+        .student-selected {
+            display: flex;
+            align-items: center;
+            gap: .9rem;
+            border: 2px solid var(--accent, #1f3350);
+            background: var(--accent-soft, #e7ebf1);
+            border-radius: 14px;
+            padding: .9rem 1.1rem;
+        }
+
+        .student-selected .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent, #1f3350);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* ===== การ์ดคอร์ส ===== */
         .course-card {
             border: 1.5px solid var(--border, #e4e1dc);
             border-radius: 14px;
@@ -266,7 +377,28 @@
             color: #b3392c;
             font-weight: 600;
         }
+
+        /* กล่องแจ้งเตือนคอร์สแบบพิเศษ */
+        .special-schedule-box {
+            border-radius: 12px;
+            padding: .9rem 1.1rem;
+            display: flex;
+            gap: .6rem;
+            align-items: flex-start;
+            background: var(--amber-soft, #fdf1e2);
+            color: #8a5a2b;
+            margin-top: .75rem;
+        }
+
+        .special-schedule-box i {
+            font-size: 1rem;
+            margin-top: .1rem;
+        }
     </style>
+
+    @php
+        $invoice = $saleOrder->taxInvoice;
+    @endphp
 
     <div class="breadcrumb-sm">งานขาย <i class="bi bi-chevron-right small"></i> แก้ไขคำสั่งสมัครเรียน</div>
     <h1 class="page-title mb-3"><i class="bi bi-pencil-square"></i> แก้ไขคำสั่งสมัครเรียน: {{ $saleOrder->order_no }}</h1>
@@ -280,15 +412,31 @@
                 <div class="icon-badge"><i class="bi bi-person"></i></div> เลือกนักเรียน <span class="step-no">ขั้นตอน
                     1</span>
             </div>
+            <div class="form-section-desc">เลือกนักเรียนเดิม หรือเพิ่มนักเรียนใหม่</div>
+
             <div class="picker-tabs">
                 <div class="picker-tab active" id="tabExisting">เลือกนักเรียนเดิม</div>
                 <div class="picker-tab" id="tabNew"><i class="bi bi-plus-lg"></i> เพิ่มนักเรียนใหม่</div>
             </div>
+
             <div id="existingStudentBox">
-                <input type="text" id="studentFilterInput" class="form-control form-control-sm mb-2"
-                    placeholder="ค้นหาชื่อ/รหัสนักเรียน...">
-                <div id="studentCardList" style="max-height:420px; overflow-y:auto;"></div>
+                <div id="studentSelectedBox" class="d-none"></div>
+                <div id="studentSearchBox">
+                    <div class="student-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="studentFilterInput" class="form-control" autocomplete="off"
+                            placeholder="พิมพ์ชื่อ, ชื่อเล่น, รหัส หรือเบอร์โทร...">
+                        <button type="button" id="studentFilterClear" class="clear-btn d-none" title="ล้าง"><i
+                                class="bi bi-x-circle-fill"></i></button>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mb-2">
+                        <span id="studentCountInfo"></span>
+                        <span class="d-none d-md-inline">ใช้ปุ่ม ↑ ↓ แล้วกด Enter เพื่อเลือก</span>
+                    </div>
+                    <div id="studentCardList" class="student-list"></div>
+                </div>
             </div>
+
             <div id="newStudentBox" class="d-none">
                 <div class="row g-2">
                     <div class="col-md-4"><input type="text" id="qsName" class="form-control form-control-sm"
@@ -303,8 +451,8 @@
                 </div>
                 <div id="qsError" class="text-danger small mt-2 d-none"></div>
             </div>
+
             <input type="hidden" name="student_id" id="studentIdInput" value="{{ $saleOrder->student_id }}" required>
-            <div id="studentSelectedInfo" class="mt-2 small fw-semibold text-success"></div>
         </div>
 
         {{-- 2. เลือกคอร์ส --}}
@@ -313,12 +461,14 @@
                 <div class="icon-badge"><i class="bi bi-journal-bookmark"></i></div> เลือกคอร์สเรียน (แพ็กเกจ) <span
                     class="step-no">ขั้นตอน 2</span>
             </div>
+
             <div class="position-relative mb-3">
                 <i class="bi bi-search position-absolute"
                     style="left:.9rem; top:50%; transform:translateY(-50%); color:var(--muted,#6b655e);"></i>
                 <input type="text" id="courseFilterInput" class="form-control" style="padding-left:2.3rem;"
                     placeholder="ค้นหาชื่อคอร์ส / รหัสคอร์ส / เครื่องดนตรี...">
             </div>
+
             <input type="hidden" name="course_id" id="courseIdInput" value="{{ $saleOrder->course_id }}" required>
             <div class="row g-3" id="courseCardGrid">
                 @php
@@ -337,7 +487,9 @@
                             <div class="course-cover" style="background:{{ $covers[$i % count($covers)] }};">
                                 @if ($card['discount_label'])
                                     <span class="badge badge-discount"><i class="bi bi-tag"></i> ลด
-                                    {{ $card['discount_label'] }}</span>@else<span></span>
+                                        {{ $card['discount_label'] }}</span>
+                                @else
+                                    <span></span>
                                 @endif
                                 @if ($card['instrument'])
                                     <span class="badge badge-instrument">{{ $card['instrument'] }}</span>
@@ -352,7 +504,8 @@
                                         <span class="remaining ok">ไม่จำกัด</span>
                                     @elseif($card['remaining'] === 0)
                                         <span class="remaining full">เต็มแล้ว</span>
-                                    @else<span class="remaining ok">เหลือ {{ $card['remaining'] }} ที่</span>
+                                    @else
+                                        <span class="remaining ok">เหลือ {{ $card['remaining'] }} ที่</span>
                                     @endif
                                 </div>
                             </div>
@@ -365,7 +518,7 @@
             <div id="capacityHintBox" class="capacity-hint d-none"></div>
         </div>
 
-        {{-- 3. รายละเอียดการเรียน --}}
+        {{-- 3. อาจารย์ / สาขา / รูปแบบเรียน / วันเวลา --}}
         <div class="form-section">
             <div class="form-section-title">
                 <div class="icon-badge"><i class="bi bi-sliders"></i></div> รายละเอียดการเรียน <span
@@ -377,12 +530,13 @@
                     <select name="teacher_id" id="teacherSelect" class="form-select">
                         <option value="">ให้ทางโรงเรียนจัดให้</option>
                     </select>
-                    <small class="text-muted" id="teacherHint"></small>
+                    <small class="text-muted" id="teacherHint">เลือกคอร์สก่อน
+                        ระบบจะแสดงอาจารย์ที่สอนคอร์สนี้ได้ให้อัตโนมัติ</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เลือกสาขาเรียน</label>
                     <input type="text" name="branch" class="form-control" list="branchList"
-                        value="{{ $saleOrder->branch }}">
+                        placeholder="เช่น Cloud 11" value="{{ $saleOrder->branch }}">
                     <datalist id="branchList">
                         @foreach (\App\Models\Teacher::whereNotNull('branch')->distinct()->pluck('branch') as $b)
                             <option value="{{ $b }}">
@@ -397,59 +551,82 @@
                         <option value="hybrid" @selected($saleOrder->delivery_mode == 'hybrid')>ไฮบริด</option>
                     </select>
                 </div>
+            </div>
+
+            {{-- คอร์สแบบปกติ: เลือกวันที่สะดวกเรียนได้อิสระตามวันในสัปดาห์ --}}
+            <div class="row g-3 mt-1" id="regularScheduleBox">
                 <div class="col-md-4">
                     <label class="form-label">วันที่สะดวกเรียน</label>
-                    <select name="preferred_day_of_week" id="preferredDaySelect" class="form-select"></select>
-                    <small class="text-muted" id="dayHint"></small>
+                    <select name="preferred_day_of_week" id="preferredDaySelect" class="form-select">
+                        <option value="">ไม่ระบุ</option>
+                        @foreach (\App\Models\TeacherAvailability::dayLabels() as $dow => $label)
+                            <option value="{{ $dow }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted" id="dayHint">เลือกอาจารย์ก่อน
+                        ระบบจะกรองเฉพาะวันที่อาจารย์ว่างจริงให้อัตโนมัติ</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เวลาเริ่ม</label>
                     <input type="time" name="preferred_start_time" id="preferredStartTime" class="form-control"
-                        value="{{ $saleOrder->preferred_start_time }}">
+                        value="{{ $saleOrder->preferred_start_time ? substr($saleOrder->preferred_start_time, 0, 5) : '' }}">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">เวลาสิ้นสุด</label>
                     <input type="time" name="preferred_end_time" id="preferredEndTime" class="form-control"
-                        value="{{ $saleOrder->preferred_end_time }}">
+                        value="{{ $saleOrder->preferred_end_time ? substr($saleOrder->preferred_end_time, 0, 5) : '' }}">
+                </div>
+            </div>
+
+            {{-- คอร์สแบบพิเศษ: วันเวลากำหนดตายตัวจากตัวคอร์สอยู่แล้ว แสดงเป็นข้อมูลอย่างเดียว ไม่ต้องเลือกซ้ำ --}}
+            <div class="special-schedule-box d-none" id="specialScheduleBox">
+                <i class="bi bi-calendar-range"></i>
+                <div>
+                    คอร์สนี้เป็น<strong>แบบพิเศษ</strong> กำหนดวันเรียนไว้ตายตัวแล้ว: <strong
+                        id="specialDateRangeText">-</strong>
+                    <div class="small mt-1">รวม <strong id="specialDaysCountText">-</strong> วัน วันละ <strong
+                            id="specialHoursText">-</strong> ชั่วโมง — ไม่ต้องเลือกวันที่สะดวกเรียนซ้ำ
+                        ระบบจะให้จัดตารางเรียนแต่ละวันในเมนู "จัดตารางเรียน" ภายหลัง</div>
                 </div>
             </div>
         </div>
 
-        {{-- 4. ราคา --}}
+        {{-- 4. สรุปราคา --}}
         <div class="form-section">
             <div class="form-section-title">
-                <div class="icon-badge"><i class="bi bi-calculator"></i></div> ค่าเรียน <span class="step-no">ขั้นตอน
-                    4</span>
+                <div class="icon-badge"><i class="bi bi-calculator"></i></div> คำนวณค่าเรียน <span
+                    class="step-no">ขั้นตอน 4</span>
             </div>
             <div class="price-box">
                 <div class="price-row"><span>ราคาคอร์ส (ก่อน VAT)</span><span
-                        id="priceSubtotal">{{ number_format($saleOrder->base_price, 2) }}</span></div>
+                        id="priceSubtotal">{{ number_format($saleOrder->base_price, 2, '.', '') }}</span></div>
                 <div class="price-row"><span>VAT 7%</span><span
-                        id="priceVat">{{ number_format($saleOrder->vat_amount, 2) }}</span></div>
+                        id="priceVat">{{ number_format($saleOrder->vat_amount, 2, '.', '') }}</span></div>
                 <div class="price-row total"><span>ยอดชำระทั้งหมด</span><span
-                        id="priceTotal">{{ number_format($saleOrder->total_amount, 2) }}</span></div>
+                        id="priceTotal">{{ number_format($saleOrder->total_amount, 2, '.', '') }}</span></div>
             </div>
             <small class="text-muted d-block mt-2"><i class="bi bi-info-circle"></i> ถ้าเปลี่ยนคอร์ส
                 ราคาจะคำนวณใหม่ทั้งหมด และส่วนลด/คูปอง/แต้มที่เคยใช้ไว้จะถูกล้างค่า ต้องกดใช้ใหม่ในหน้าสรุป</small>
         </div>
 
-        {{-- 5. ใบเสร็จ --}}
+        {{-- 5. ใบเสร็จ/ใบกำกับภาษี (เลือกได้ว่าต้องการหรือไม่) --}}
         <div class="form-section">
             <div class="form-section-title">
-                <div class="icon-badge"><i class="bi bi-receipt"></i></div> ใบเสร็จ / ใบกำกับภาษี <span
-                    class="step-no">ขั้นตอน 5</span>
+                <div class="icon-badge"><i class="bi bi-receipt"></i></div> ใบเสร็จ / ใบกำกับภาษี
+                <span class="step-no">ขั้นตอน 5</span>
             </div>
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" role="switch" id="wantsInvoiceCheck"
-                    {{ $saleOrder->taxInvoice ? 'checked' : '' }}>
+                    @checked($invoice)>
                 <label class="form-check-label fw-semibold">ต้องการใบเสร็จ/ใบกำกับภาษี</label>
             </div>
+
             <div id="invoiceFieldsBox" class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">ประเภทเอกสาร *</label>
                     <select name="invoice_type" id="invoiceType" class="form-select">
-                        <option value="receipt" @selected(optional($saleOrder->taxInvoice)->invoice_type == 'receipt')>ใบเสร็จรับเงิน</option>
-                        <option value="tax_invoice" @selected(optional($saleOrder->taxInvoice)->invoice_type == 'tax_invoice')>ใบกำกับภาษีเต็มรูป</option>
+                        <option value="receipt" @selected(optional($invoice)->invoice_type == 'receipt')>ใบเสร็จรับเงิน</option>
+                        <option value="tax_invoice" @selected(optional($invoice)->invoice_type == 'tax_invoice')>ใบกำกับภาษีเต็มรูป</option>
                         <option value="none" hidden>ไม่ต้องการเอกสาร</option>
                     </select>
                 </div>
@@ -457,29 +634,28 @@
                     <div class="form-check form-switch">
                         <input type="hidden" name="is_company" value="0">
                         <input class="form-check-input" type="checkbox" role="switch" name="is_company"
-                            id="isCompanyCheck" value="1"
-                            {{ optional($saleOrder->taxInvoice)->is_company ? 'checked' : '' }}>
+                            id="isCompanyCheck" value="1" @checked(optional($invoice)->is_company)>
                         <label class="form-check-label">ออกในนามนิติบุคคล</label>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">ชื่อผู้ซื้อ/บริษัท *</label>
                     <input type="text" name="buyer_name" id="buyerNameInput" class="form-control" maxlength="150"
-                        value="{{ optional($saleOrder->taxInvoice)->buyer_name }}">
+                        value="{{ optional($invoice)->buyer_name }}">
                 </div>
-                <div class="col-md-6 {{ optional($saleOrder->taxInvoice)->is_company ? '' : 'd-none' }}" id="taxIdBox">
+                <div class="col-md-6 {{ optional($invoice)->is_company ? '' : 'd-none' }}" id="taxIdBox">
                     <label class="form-label">เลขผู้เสียภาษี (13 หลัก) *</label>
                     <input type="text" name="buyer_tax_id" id="buyerTaxId" class="form-control" maxlength="13"
-                        inputmode="numeric" value="{{ optional($saleOrder->taxInvoice)->buyer_tax_id }}">
+                        inputmode="numeric" value="{{ optional($invoice)->buyer_tax_id }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">เบอร์โทร</label>
                     <input type="text" name="buyer_phone" class="form-control" maxlength="20"
-                        value="{{ optional($saleOrder->taxInvoice)->buyer_phone }}">
+                        value="{{ optional($invoice)->buyer_phone }}">
                 </div>
                 <div class="col-12">
                     <label class="form-label">ที่อยู่สำหรับออกเอกสาร</label>
-                    <textarea name="buyer_address" class="form-control" rows="2" maxlength="500">{{ optional($saleOrder->taxInvoice)->buyer_address }}</textarea>
+                    <textarea name="buyer_address" class="form-control" rows="2" maxlength="500">{{ optional($invoice)->buyer_address }}</textarea>
                 </div>
             </div>
             <p class="text-muted small mb-0 d-none" id="noInvoiceNote"><i class="bi bi-info-circle"></i>
@@ -492,11 +668,12 @@
                 <div class="icon-badge"><i class="bi bi-journal-text"></i></div> หมายเหตุ <span
                     class="step-no">ขั้นตอนสุดท้าย</span>
             </div>
-            <textarea name="notes" class="form-control" rows="2" maxlength="1000">{{ $saleOrder->notes }}</textarea>
+            <textarea name="notes" class="form-control" rows="2" maxlength="1000"
+                placeholder="ข้อมูลเพิ่มเติม (ถ้ามี)">{{ $saleOrder->notes }}</textarea>
         </div>
 
         <div class="d-flex gap-2 mb-4">
-            <button class="btn btn-accent"><i class="bi bi-save"></i> บันทึกการแก้ไข</button>
+            <button type="submit" class="btn btn-accent"><i class="bi bi-save"></i> บันทึกการแก้ไข</button>
             <a href="{{ route('sales.show', $saleOrder) }}" class="btn btn-outline-secondary">ยกเลิก</a>
         </div>
     </form>
@@ -504,61 +681,191 @@
     <script id="studentsCatalog" type="application/json">{!! json_encode($students) !!}</script>
     <script id="teachersAvailabilityData" type="application/json">{!! json_encode($teachersAvailability) !!}</script>
     <script id="dayLabelsData" type="application/json">{!! json_encode(\App\Models\TeacherAvailability::dayLabels()) !!}</script>
-    <script id="courseCardsData" type="application/json">{!! json_encode($courseCards->keyBy('id')) !!}</script>
+    <script id="courseCardsData" type="application/json">
+{!! json_encode(
+    $courseCards->map(function ($c) use ($courses) {
+        $course = $courses->firstWhere('id', $c['id']);
+        return array_merge($c, [
+            'structure_type' => $course->structure_type ?? 'regular',
+            'course_start'   => optional($course->course_start_date)->format('d/m/Y'),
+            'course_end'     => optional($course->course_end_date)->format('d/m/Y'),
+            'days_count'     => $course->days_count,
+            'hours_per_day'  => $course->hours_per_day,
+        ]);
+    })->keyBy('id')
+) !!}
+</script>
 
     <script>
         (function() {
-            const preselectedStudentId = "{{ $saleOrder->student_id }}";
-            const preselectedCourseId = "{{ $saleOrder->course_id }}";
-            const preselectedTeacherId = "{{ $saleOrder->teacher_id }}";
-            const preselectedDay = "{{ $saleOrder->preferred_day_of_week }}";
-
-            // ===== นักเรียน =====
+            // ============ 1. เลือกนักเรียน ============
             let students = JSON.parse(document.getElementById('studentsCatalog').textContent);
             const studentListBox = document.getElementById('studentCardList');
             const studentFilter = document.getElementById('studentFilterInput');
             const studentIdInput = document.getElementById('studentIdInput');
-            const studentInfo = document.getElementById('studentSelectedInfo');
+            const studentSearchBox = document.getElementById('studentSearchBox');
+            const studentSelectedBox = document.getElementById('studentSelectedBox');
+            const studentFilterClear = document.getElementById('studentFilterClear');
+            const studentCountInfo = document.getElementById('studentCountInfo');
+            const preselectedId = "{{ $saleOrder->student_id }}";
+            const preselectedTeacherId = "{{ $saleOrder->teacher_id }}";
+            const preselectedDay = "{{ $saleOrder->preferred_day_of_week }}";
+            let isInitialLoad = true;
+            const STUDENT_LIST_LIMIT = 50;
+            let visibleStudents = [];
+            let focusedIndex = -1;
 
-            function renderStudentCards(list) {
+            const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            } [c]));
+
+            // ไฮไลต์คำที่ค้นหา
+            function hl(text, q) {
+                const t = String(text ?? '');
+                if (!q) return esc(t);
+                const i = t.toLowerCase().indexOf(q);
+                if (i < 0) return esc(t);
+                return esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length));
+            }
+
+            function studentMeta(s, q) {
+                return [
+                    hl(s.code, q),
+                    s.nickname ? 'น้อง' + hl(s.nickname, q) : '',
+                    s.age ? 'อายุ ' + s.age + ' ปี' : '',
+                    s.phone ? '<i class="bi bi-telephone"></i> ' + hl(s.phone, q) : '',
+                ].filter(Boolean).join(' · ');
+            }
+
+            function renderStudentCards() {
+                const q = studentFilter.value.trim().toLowerCase();
+                const list = currentFilteredList();
+                visibleStudents = list.slice(0, STUDENT_LIST_LIMIT);
+                focusedIndex = q && visibleStudents.length ? 0 : -1;
+                studentFilterClear.classList.toggle('d-none', !q);
+
+                studentCountInfo.textContent = list.length > STUDENT_LIST_LIMIT ?
+                    `แสดง ${STUDENT_LIST_LIMIT} จาก ${list.length} คน — พิมพ์เพื่อค้นหาให้แคบลง` :
+                    (q ? `พบ ${list.length} คน` : `นักเรียนทั้งหมด ${list.length} คน`);
+
                 studentListBox.innerHTML = '';
                 if (list.length === 0) {
-                    studentListBox.innerHTML =
-                        '<p class="text-muted small text-center py-3">ไม่พบนักเรียนที่ตรงกับการค้นหา</p>';
+                    studentListBox.innerHTML = `
+                <div class="student-empty text-center py-4">
+                    <div class="text-muted small mb-2">ไม่พบนักเรียน "${esc(studentFilter.value.trim())}"</div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="studentAddFromSearch">
+                        <i class="bi bi-plus-lg"></i> เพิ่มเป็นนักเรียนใหม่
+                    </button>
+                </div>`;
+                    document.getElementById('studentAddFromSearch').addEventListener('click', () => {
+                        tabNew.click();
+                        const qsName = document.getElementById('qsName');
+                        if (!/^\d+$/.test(studentFilter.value.trim())) qsName.value = studentFilter.value.trim();
+                        else document.getElementById('qsPhone').value = studentFilter.value.trim();
+                        qsName.focus();
+                    });
                     return;
                 }
-                list.forEach(s => {
+                visibleStudents.forEach((s, i) => {
                     const card = document.createElement('div');
-                    card.className = 'student-card' + (String(s.id) === String(studentIdInput.value) ?
-                        ' active' : '');
-                    card.innerHTML =
-                        `<div class="avatar">${(s.nickname||s.name).charAt(0)}</div><div class="info"><div class="name">${s.name}</div><div class="meta">${s.code} ${s.nickname?'· '+s.nickname:''} ${s.age?'· อายุ '+s.age+' ปี':''}</div></div>${s.instrument?`<span class="badge text-bg-light border">${s.instrument}</span>`:''}<i class="bi bi-check-circle-fill check"></i>`;
+                    card.className = 'student-card' + (i === focusedIndex ? ' focused' : '');
+                    card.innerHTML = `
+                <div class="avatar">${esc((s.nickname || s.name).charAt(0))}</div>
+                <div class="info">
+                    <div class="name">${hl(s.name, q)}</div>
+                    <div class="meta">${studentMeta(s, q)}</div>
+                </div>
+                ${s.instrument ? `<span class="badge text-bg-light border">${esc(s.instrument)}</span>` : ''}
+                <i class="bi bi-chevron-right text-muted"></i>
+            `;
                     card.addEventListener('click', () => selectStudent(s));
                     studentListBox.appendChild(card);
                 });
             }
 
+            function setFocused(i) {
+                const cards = studentListBox.querySelectorAll('.student-card');
+                if (!cards.length) return;
+                focusedIndex = Math.max(0, Math.min(i, cards.length - 1));
+                cards.forEach((c, idx) => c.classList.toggle('focused', idx === focusedIndex));
+                cards[focusedIndex].scrollIntoView({ block: 'nearest' });
+            }
+
             function selectStudent(s) {
                 studentIdInput.value = s.id;
-                studentInfo.innerHTML = `<i class="bi bi-check-circle"></i> เลือกแล้ว: ${s.name} (${s.code})`;
-                renderStudentCards(currentFilteredList());
+                studentSelectedBox.innerHTML = `
+            <div class="student-selected">
+                <div class="avatar">${esc((s.nickname || s.name).charAt(0))}</div>
+                <div class="flex-grow-1">
+                    <div class="small text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> นักเรียนที่เลือก</div>
+                    <div class="fw-bold" style="font-family:'Prompt',sans-serif; font-size:1.05rem;">${esc(s.name)}</div>
+                    <div class="small text-muted">${studentMeta(s, '')}</div>
+                </div>
+                ${s.instrument ? `<span class="badge text-bg-light border d-none d-sm-inline">${esc(s.instrument)}</span>` : ''}
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="studentChangeBtn">
+                    <i class="bi bi-arrow-repeat"></i> เปลี่ยน
+                </button>
+            </div>`;
+                studentSelectedBox.classList.remove('d-none');
+                studentSearchBox.classList.add('d-none');
+                document.getElementById('studentChangeBtn').addEventListener('click', clearStudent);
+            }
+
+            function clearStudent() {
+                studentIdInput.value = '';
+                studentSelectedBox.classList.add('d-none');
+                studentSearchBox.classList.remove('d-none');
+                studentFilter.value = '';
+                renderStudentCards();
+                studentFilter.focus();
             }
 
             function currentFilteredList() {
                 const q = studentFilter.value.trim().toLowerCase();
                 if (!q) return students;
-                return students.filter(s => s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || (s
-                    .nickname || '').toLowerCase().includes(q));
+                const qDigits = q.replace(/\D/g, '');
+                return students.filter(s =>
+                    (s.name || '').toLowerCase().includes(q) ||
+                    (s.code || '').toLowerCase().includes(q) ||
+                    (s.nickname || '').toLowerCase().includes(q) ||
+                    (qDigits.length >= 3 && (s.phone || '').replace(/\D/g, '').includes(qDigits)));
             }
-            studentFilter.addEventListener('input', () => renderStudentCards(currentFilteredList()));
-            renderStudentCards(students);
-            const pre = students.find(s => String(s.id) === preselectedStudentId);
-            if (pre) selectStudent(pre);
+
+            studentFilter.addEventListener('input', renderStudentCards);
+            studentFilter.addEventListener('keydown', e => {
+                // จำนวนคอลัมน์ของรายชื่อ (มือถือ 1, จอใหญ่ 2)
+                const cols = getComputedStyle(studentListBox).gridTemplateColumns.split(' ').length;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setFocused(focusedIndex < 0 ? 0 : focusedIndex + cols);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setFocused(focusedIndex - cols);
+
+                } else if (e.key === 'Enter') {
+                    e.preventDefault(); // กันฟอร์มถูกส่ง
+                    if (visibleStudents[focusedIndex]) selectStudent(visibleStudents[focusedIndex]);
+                } else if (e.key === 'Escape') {
+                    studentFilter.value = '';
+                    renderStudentCards();
+                }
+            });
+            studentFilterClear.addEventListener('click', () => {
+                studentFilter.value = '';
+                renderStudentCards();
+                studentFilter.focus();
+            });
+            renderStudentCards();
+            if (preselectedId) {
+                const pre = students.find(s => String(s.id) === String(preselectedId));
+                if (pre) selectStudent(pre);
+            }
 
             const tabExisting = document.getElementById('tabExisting');
             const tabNew = document.getElementById('tabNew');
             const existingBox = document.getElementById('existingStudentBox');
             const newBox = document.getElementById('newStudentBox');
+
             tabExisting.addEventListener('click', () => {
                 tabExisting.classList.add('active');
                 tabNew.classList.remove('active');
@@ -572,6 +879,14 @@
                 existingBox.classList.add('d-none');
             });
 
+            // กด Enter ในช่องเพิ่มนักเรียนใหม่ = กดปุ่มเพิ่ม (ไม่ส่งฟอร์มหลัก)
+            newBox.querySelectorAll('input').forEach(inp => inp.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('qsSubmit').click();
+                }
+            }));
+
             document.getElementById('qsSubmit').addEventListener('click', async function() {
                 const errBox = document.getElementById('qsError');
                 errBox.classList.add('d-none');
@@ -581,6 +896,7 @@
                     errBox.classList.remove('d-none');
                     return;
                 }
+
                 try {
                     const res = await fetch('{{ route('sales.quick-student') }}', {
                         method: 'POST',
@@ -588,14 +904,14 @@
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content
+                                .content,
                         },
                         body: JSON.stringify({
                             full_name: name,
                             nickname: document.getElementById('qsNickname').value.trim() ||
                                 null,
                             phone: document.getElementById('qsPhone').value.trim() || null,
-                            date_of_birth: document.getElementById('qsDob').value || null
+                            date_of_birth: document.getElementById('qsDob').value || null,
                         }),
                     });
                     const body = await res.json();
@@ -604,17 +920,19 @@
                         errBox.classList.remove('d-none');
                         return;
                     }
+
                     students.unshift(body);
                     selectStudent(body);
                     tabExisting.click();
                     studentFilter.value = '';
+                    ['qsName', 'qsNickname', 'qsPhone', 'qsDob'].forEach(id => document.getElementById(id).value = '');
                 } catch (e) {
                     errBox.textContent = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
                     errBox.classList.remove('d-none');
                 }
             });
 
-            // ===== คอร์ส =====
+            // ============ 2. เลือกคอร์ส (การ์ด + ค้นหา) ============
             const courseIdInput = document.getElementById('courseIdInput');
             const capacityBox = document.getElementById('capacityHintBox');
             const courseCardsData = JSON.parse(document.getElementById('courseCardsData').textContent);
@@ -635,31 +953,38 @@
                     updatePrice();
                     updateTeachers();
                     checkCapacity();
+                    toggleScheduleBoxByStructureType();
                 });
             });
 
             const courseFilterInput = document.getElementById('courseFilterInput');
             const courseNoResult = document.getElementById('courseNoResult');
             const courseCols = document.querySelectorAll('#courseCardGrid > .col-md-4');
+
             courseFilterInput.addEventListener('input', function() {
                 const q = this.value.trim().toLowerCase();
                 let visibleCount = 0;
+
                 courseCols.forEach(col => {
                     const card = col.querySelector('.course-card');
                     const matches = q === '' || card.dataset.search.includes(q);
                     col.style.display = matches ? '' : 'none';
                     if (matches) visibleCount++;
                 });
+
                 courseNoResult.classList.toggle('d-none', visibleCount > 0);
             });
 
-            // ===== อาจารย์ + วันว่าง =====
+            // ============ 3. อาจารย์ (ตามคอร์ส) + วันว่างจริง + toggle ตามประเภทคอร์ส ============
             const teacherSelect = document.getElementById('teacherSelect');
             const teacherHint = document.getElementById('teacherHint');
+            const deliverySelect = document.getElementById('deliveryModeSelect');
             const preferredDaySelect = document.getElementById('preferredDaySelect');
             const dayHint = document.getElementById('dayHint');
             const startTimeInput = document.getElementById('preferredStartTime');
             const endTimeInput = document.getElementById('preferredEndTime');
+            const regularScheduleBox = document.getElementById('regularScheduleBox');
+            const specialScheduleBox = document.getElementById('specialScheduleBox');
 
             const teachersByCourse = {!! json_encode(
                 $courses->mapWithKeys(function ($c) {
@@ -670,6 +995,7 @@
                     ];
                 }),
             ) !!};
+
             const teachersAvailability = JSON.parse(document.getElementById('teachersAvailabilityData').textContent);
             const dayLabels = JSON.parse(document.getElementById('dayLabelsData').textContent);
 
@@ -677,20 +1003,26 @@
                 const price = parseFloat(courseCardsData[courseIdInput.value]?.price || 0);
                 const subtotal = price / 1.07;
                 const vat = price - subtotal;
+
                 document.getElementById('priceSubtotal').textContent = subtotal.toFixed(2);
                 document.getElementById('priceVat').textContent = vat.toFixed(2);
                 document.getElementById('priceTotal').textContent = price.toFixed(2);
             }
 
+            // preselect = ค่าเดิมของคำสั่ง ใช้ตอนเปิดหน้าครั้งแรกเท่านั้น
             function updateTeachers(preselect) {
                 const courseId = courseIdInput.value;
                 const list = teachersByCourse[courseId] || [];
+
                 teacherSelect.innerHTML = '<option value="">ให้ทางโรงเรียนจัดให้</option>';
                 list.forEach(t => teacherSelect.insertAdjacentHTML('beforeend',
                     `<option value="${t.id}">${t.name}</option>`));
-                teacherHint.textContent = list.length ? `มีอาจารย์ที่สอนคอร์สนี้ได้ ${list.length} ท่าน` :
-                    'คอร์สนี้ยังไม่ได้กำหนดอาจารย์ผู้สอนไว้';
-                if (preselect && list.some(t => String(t.id) === preselect)) {
+
+                teacherHint.textContent = list.length ?
+                    `มีอาจารย์ที่สอนคอร์สนี้ได้ ${list.length} ท่าน` :
+                    'คอร์สนี้ยังไม่ได้กำหนดอาจารย์ผู้สอนไว้ — เลือก "ให้ทางโรงเรียนจัดให้" ได้';
+
+                if (preselect && list.some(t => String(t.id) === String(preselect))) {
                     teacherSelect.value = preselect;
                     teacherSelect.dispatchEvent(new Event('change'));
                 } else {
@@ -698,34 +1030,68 @@
                 }
             }
 
-            function resetDaySelect(preselect) {
+            function resetDaySelect() {
                 preferredDaySelect.innerHTML = '<option value="">ไม่ระบุ</option>';
-                Object.keys(dayLabels).forEach(dow => preferredDaySelect.insertAdjacentHTML('beforeend',
-                    `<option value="${dow}">${dayLabels[dow]}</option>`));
+                Object.keys(dayLabels).forEach(dow => {
+                    preferredDaySelect.insertAdjacentHTML('beforeend',
+                        `<option value="${dow}">${dayLabels[dow]}</option>`);
+                });
+                if (isInitialLoad && preselectedDay !== '') preferredDaySelect.value = preselectedDay;
                 dayHint.textContent = 'เลือกอาจารย์ก่อน ระบบจะกรองเฉพาะวันที่อาจารย์ว่างจริงให้อัตโนมัติ';
-                if (preselect) preferredDaySelect.value = preselect;
+                startTimeInput.removeAttribute('min');
+                startTimeInput.removeAttribute('max');
+                endTimeInput.removeAttribute('min');
+                endTimeInput.removeAttribute('max');
+            }
+
+            // Business rule: คอร์สแบบพิเศษมีวันเวลาตายตัวอยู่แล้วตั้งแต่ตอนสร้างคอร์ส ไม่ต้องให้เลือกวันสะดวกเรียนซ้ำ
+            // คอร์สแบบปกติ (นับจำนวนครั้ง) ยังเลือกวันที่สะดวกเรียนได้อิสระเหมือนเดิม
+            function toggleScheduleBoxByStructureType() {
+                const data = courseCardsData[courseIdInput.value];
+                const structureType = data?.structure_type;
+
+                if (structureType === 'special') {
+                    regularScheduleBox.classList.add('d-none');
+                    specialScheduleBox.classList.remove('d-none');
+
+                    document.getElementById('specialDateRangeText').textContent =
+                        `${data.course_start || '-'} ถึง ${data.course_end || '-'}`;
+                    document.getElementById('specialDaysCountText').textContent = data.days_count || '-';
+                    document.getElementById('specialHoursText').textContent = data.hours_per_day || '-';
+
+                    // ล้างค่าช่องวันสะดวกเรียนของคอร์สปกติ ไม่ให้ส่งค่าเก่าติดไปโดยไม่ตั้งใจ
+                    preferredDaySelect.value = '';
+                    startTimeInput.value = '';
+                    endTimeInput.value = '';
+                } else {
+                    regularScheduleBox.classList.remove('d-none');
+                    specialScheduleBox.classList.add('d-none');
+                }
             }
 
             teacherSelect.addEventListener('change', function() {
                 const teacherId = this.value;
                 const avail = teachersAvailability[teacherId];
+
                 if (!teacherId || !avail || avail.length === 0) {
-                    resetDaySelect(preferredDay === preselectedDay ? preselectedDay : null);
+                    resetDaySelect();
                     if (teacherId) dayHint.textContent =
                         'อาจารย์ท่านนี้ยังไม่ได้ตั้งตาราง Availability ไว้ — เลือกวันได้อิสระ';
                     return;
                 }
+
                 const availableDays = [...new Set(avail.map(a => a.day))];
                 preferredDaySelect.innerHTML = '<option value="">ไม่ระบุ</option>';
-                availableDays.forEach(dow => preferredDaySelect.insertAdjacentHTML('beforeend',
-                    `<option value="${dow}">${dayLabels[dow]}</option>`));
+                availableDays.forEach(dow => {
+                    preferredDaySelect.insertAdjacentHTML('beforeend',
+                        `<option value="${dow}">${dayLabels[dow]}</option>`);
+                });
                 dayHint.innerHTML =
                     `<i class="bi bi-check-circle text-success"></i> แสดงเฉพาะวันที่อาจารย์ว่างจริง (${availableDays.length} วัน)`;
-                if (preselectedDay !== '' && availableDays.includes(parseInt(preselectedDay)))
-                    preferredDaySelect.value = preselectedDay;
 
                 preferredDaySelect.onchange = function() {
-                    const win = avail.find(a => a.day == this.value);
+                    const dow = this.value;
+                    const win = avail.find(a => a.day == dow);
                     if (win) {
                         startTimeInput.min = win.start;
                         startTimeInput.max = win.end;
@@ -735,6 +1101,12 @@
                             `<i class="bi bi-clock text-success"></i> อาจารย์ว่างวันนี้ช่วง ${win.start} - ${win.end}`;
                     }
                 };
+
+                // เปิดหน้าครั้งแรก: เลือกวันเดิมไว้ให้ ถ้าอาจารย์ยังว่างวันนั้นอยู่
+                if (isInitialLoad && preselectedDay !== '' && availableDays.includes(parseInt(preselectedDay))) {
+                    preferredDaySelect.value = preselectedDay;
+                    preferredDaySelect.onchange();
+                }
             });
 
             async function checkCapacity() {
@@ -765,11 +1137,14 @@
                 }
             }
 
-            // โหลดค่าเดิมตอนเปิดหน้า
+            // ============ โหลดค่าเดิมของคำสั่งตอนเปิดหน้า ============
             updateTeachers(preselectedTeacherId);
+            toggleScheduleBoxByStructureType();
             checkCapacity();
+            isInitialLoad = false;
 
-            // ===== ใบเสร็จ =====
+            // ============ 5. Toggle ใบเสร็จ/ใบกำกับภาษี ============
+            // สำคัญ: ห้าม disable ช่อง select เด็ดขาด เพราะ input ที่ disabled จะไม่ถูกส่งไปกับฟอร์มเลย
             const wantsInvoiceCheck = document.getElementById('wantsInvoiceCheck');
             const invoiceFieldsBox = document.getElementById('invoiceFieldsBox');
             const noInvoiceNote = document.getElementById('noInvoiceNote');
@@ -783,8 +1158,12 @@
                 invoiceFieldsBox.classList.toggle('d-none', !wants);
                 noInvoiceNote.classList.toggle('d-none', wants);
                 buyerNameInput.required = wants;
-                if (!wants) invoiceTypeSelect.value = 'none';
-                else if (invoiceTypeSelect.value === 'none') invoiceTypeSelect.value = 'receipt';
+
+                if (!wants) {
+                    invoiceTypeSelect.value = 'none';
+                } else if (invoiceTypeSelect.value === 'none') {
+                    invoiceTypeSelect.value = 'receipt';
+                }
             }
             wantsInvoiceCheck.addEventListener('change', toggleInvoiceFields);
             toggleInvoiceFields();
@@ -800,6 +1179,7 @@
                 this.value = this.value.replace(/\D/g, '').slice(0, 13);
             });
 
+            // ============ Submit guard ============
             document.getElementById('saleForm').addEventListener('submit', function(e) {
                 if (!studentIdInput.value) {
                     e.preventDefault();
@@ -811,6 +1191,7 @@
                     alert('กรุณาเลือกคอร์สก่อน');
                     return;
                 }
+
                 const btn = this.querySelector('button[type=submit]');
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...';
