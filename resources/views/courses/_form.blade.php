@@ -459,7 +459,7 @@
                     <input type="radio" name="activity_type" value="master_class" class="d-none"
                         {{ $activityType == 'master_class' ? 'checked' : '' }}>
                     <i class="bi bi-check-circle-fill check-mark"></i>
-                    <div class="title text-center">Master Class</div>
+                    <div class="title text-center">Masterclass</div>
                 </label>
             </div>
         </div>
@@ -586,44 +586,51 @@
 
         // เรทค่าสอนของอาจารย์แต่ละคน แยกตามเครื่องดนตรี (จากตาราง teacher_rates) ใช้เป็นค่าเริ่มต้นแนะนำ
         // ถ้าเครื่องดนตรีนั้นไม่มีเรทที่ "ใช้งานอยู่" ให้ใช้เรทล่าสุดที่เคยบันทึกไว้แทน (ดีกว่าไม่มีเรทให้ดูเลย)
-        $teacherRateCatalog = $teachers->mapWithKeys(fn($t) => [
-            $t->id => $t->rates
-                ->groupBy(fn($r) => (string) ($r->instrument_id ?? 'general'))
-                ->map(function ($rows) {
-                    $best = $rows->sort(function ($a, $b) {
-                        if ($a->is_active != $b->is_active) {
-                            return $a->is_active ? -1 : 1;
-                        }
-                        return $b->created_at <=> $a->created_at;
-                    })->first();
+        $teacherRateCatalog = $teachers->mapWithKeys(
+            fn($t) => [
+                $t->id => $t->rates
+                    ->groupBy(fn($r) => (string) ($r->instrument_id ?? 'general'))
+                    ->map(function ($rows) {
+                        $best = $rows
+                            ->sort(function ($a, $b) {
+                                if ($a->is_active != $b->is_active) {
+                                    return $a->is_active ? -1 : 1;
+                                }
+                                return $b->created_at <=> $a->created_at;
+                            })
+                            ->first();
 
-                    return [
-                        'rate_type'   => $best->rate_type,
-                        'rate_amount' => (string) $best->rate_amount,
-                        'is_active'   => (bool) $best->is_active,
-                    ];
-                })
-                ->toArray(),
-        ]);
+                        return [
+                            'rate_type' => $best->rate_type,
+                            'rate_amount' => (string) $best->rate_amount,
+                            'is_active' => (bool) $best->is_active,
+                        ];
+                    })
+                    ->toArray(),
+            ],
+        );
 
         // เรทเฉพาะคอร์สนี้ที่เคยบันทึกไว้ (กรณีแก้ไขคอร์ส)
         $teacherRatePivotInit = isset($course)
-            ? $course->teachers->mapWithKeys(fn($t) => [
-                $t->id => [
-                    'rate_type'   => $t->pivot->rate_type,
-                    'rate_amount' => $t->pivot->rate_amount !== null ? (string) $t->pivot->rate_amount : null,
+            ? $course->teachers->mapWithKeys(
+                fn($t) => [
+                    $t->id => [
+                        'rate_type' => $t->pivot->rate_type,
+                        'rate_amount' => $t->pivot->rate_amount !== null ? (string) $t->pivot->rate_amount : null,
+                    ],
                 ],
-            ])
+            )
             : collect();
 
         $rateTypeLabels = [
-            'per_hour'      => 'ต่อชั่วโมง',
-            'per_session'   => 'ต่อคาบ/ครั้ง',
+            'per_hour' => 'ต่อชั่วโมง',
+            'per_session' => 'ต่อคาบ/ครั้ง',
             'monthly_fixed' => 'เหมาต่อเดือน',
-            'percentage'    => 'เปอร์เซ็นต์',
+            'percentage' => 'เปอร์เซ็นต์',
         ];
     @endphp
-    <small class="text-muted d-block mb-2" style="font-size:.78rem;">เลือกอาจารย์ที่สอนได้ ระบบจะดึงเรทค่าสอนตามเครื่องดนตรีของคอร์สนี้มาแนะนำให้อัตโนมัติ
+    <small class="text-muted d-block mb-2" style="font-size:.78rem;">เลือกอาจารย์ที่สอนได้
+        ระบบจะดึงเรทค่าสอนตามเครื่องดนตรีของคอร์สนี้มาแนะนำให้อัตโนมัติ
         และสามารถแก้ไขเรทเฉพาะคอร์สนี้ได้ตามต้องการ</small>
 
     <div class="row g-2 mb-3">
@@ -658,20 +665,23 @@
                             <label class="form-check-label"
                                 for="tch{{ $t->id }}">{{ $t->nickname ?: $t->full_name }}</label>
                         </div>
-                        <span class="badge rounded-pill text-bg-light border d-none" data-rate-preview="{{ $t->id }}"
+                        <span class="badge rounded-pill text-bg-light border d-none"
+                            data-rate-preview="{{ $t->id }}"
                             style="font-size:.68rem; font-weight:500;"></span>
                     </div>
-                    <div class="teacher-rate-box mt-2" data-teacher-rate-box="{{ $t->id }}" style="display:none;">
+                    <div class="teacher-rate-box mt-2" data-teacher-rate-box="{{ $t->id }}"
+                        style="display:none;">
                         <div class="input-group input-group-sm">
-                            <select class="form-select form-select-sm" name="teacher_rates[{{ $t->id }}][rate_type]"
-                                data-field="rate_type">
+                            <select class="form-select form-select-sm"
+                                name="teacher_rates[{{ $t->id }}][rate_type]" data-field="rate_type">
                                 @foreach ($rateTypeLabels as $val => $label)
                                     <option value="{{ $val }}">{{ $label }}</option>
                                 @endforeach
                             </select>
                             <input type="number" step="0.01" min="0" max="1000000"
-                                class="form-control form-control-sm" name="teacher_rates[{{ $t->id }}][rate_amount]"
-                                data-field="rate_amount" placeholder="เรทค่าสอนคอร์สนี้">
+                                class="form-control form-control-sm"
+                                name="teacher_rates[{{ $t->id }}][rate_amount]" data-field="rate_amount"
+                                placeholder="เรทค่าสอนคอร์สนี้">
                         </div>
                         <div class="field-hint" data-rate-hint style="font-size:.68rem;"></div>
                     </div>
@@ -807,7 +817,7 @@
     (function() {
         let catalog = JSON.parse(document.getElementById('courseInstrumentsCatalog').textContent);
         let selected = JSON.parse(document.getElementById('courseInstrumentSelectedInit')
-        .textContent); // {id, name} หรือ null
+            .textContent); // {id, name} หรือ null
 
         const chipBox = document.getElementById('courseInstrumentChip');
         const hiddenInp = document.getElementById('courseInstrumentHidden');
@@ -955,7 +965,8 @@
     (function() {
         const catalog = JSON.parse(document.getElementById('teacherRateCatalog').textContent || '{}');
         const pivotInit = JSON.parse(document.getElementById('teacherRatePivotInit').textContent || '{}');
-        const instrumentCatalog = JSON.parse(document.getElementById('courseInstrumentsCatalog').textContent || '[]');
+        const instrumentCatalog = JSON.parse(document.getElementById('courseInstrumentsCatalog').textContent ||
+            '[]');
         const instrumentNameById = {};
         instrumentCatalog.forEach(i => instrumentNameById[i.id] = i.name);
 
@@ -995,7 +1006,8 @@
             const instrumentId = getSelectedInstrumentId();
             const rate = suggestedRate(teacherId, instrumentId);
             if (rate) {
-                const insName = instrumentId && instrumentNameById[instrumentId] ? instrumentNameById[instrumentId] :
+                const insName = instrumentId && instrumentNameById[instrumentId] ? instrumentNameById[
+                    instrumentId] :
                     'ทั่วไป';
                 const status = rate.is_active ? '' : ' (เรทล่าสุดที่เคยบันทึกไว้ ปัจจุบันปิดใช้งานอยู่)';
                 fillBox(box, rate, `เรทของอาจารย์ (${insName}): ${rate.rate_amount} บาท${status}`);
@@ -1011,7 +1023,8 @@
             const instrumentId = getSelectedInstrumentId();
             const rate = suggestedRate(teacherId, instrumentId);
             if (rate && rate.rate_amount) {
-                badge.textContent = `เรท ${rate.rate_amount} ${rateTypeLabel(rate.rate_type)}` + (rate.is_active ? '' :
+                badge.textContent = `เรท ${rate.rate_amount} ${rateTypeLabel(rate.rate_type)}` + (rate.is_active ?
+                    '' :
                     ' (เก่า)');
                 badge.classList.remove('d-none');
             } else {

@@ -157,9 +157,14 @@
                 <div class="fw-semibold">เลือกคอร์ส</div>
                 <div class="text-muted small">เลือกคอร์สที่สามารถใช้โปรโมชัน/คูปองนี้ได้</div>
             </div>
-            <div class="row g-2">
+            <div class="input-group mb-3">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control scope-search" data-target="#courseList"
+                    placeholder="ค้นหาคอร์ส...">
+            </div>
+            <div class="row g-2" id="courseList">
                 @foreach ($courses as $c)
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-4 col-md-6 scope-item">
                         <div class="border rounded-3 bg-white p-2 h-100">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="course_ids[]"
@@ -170,6 +175,7 @@
                         </div>
                     </div>
                 @endforeach
+                <div class="col-12 text-muted small scope-empty" style="display:none;">ไม่พบรายการที่ค้นหา</div>
             </div>
         </div>
 
@@ -179,9 +185,14 @@
                 <div class="fw-semibold">เลือกสินค้า</div>
                 <div class="text-muted small">เลือกสินค้าที่สามารถใช้โปรโมชัน/คูปองนี้ได้</div>
             </div>
-            <div class="row g-2">
+            <div class="input-group mb-3">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control scope-search" data-target="#productList"
+                    placeholder="ค้นหาสินค้า...">
+            </div>
+            <div class="row g-2" id="productList">
                 @foreach ($products as $p)
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-4 col-md-6 scope-item">
                         <div class="border rounded-3 bg-white p-2 h-100">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="product_ids[]"
@@ -192,6 +203,7 @@
                         </div>
                     </div>
                 @endforeach
+                <div class="col-12 text-muted small scope-empty" style="display:none;">ไม่พบรายการที่ค้นหา</div>
             </div>
         </div>
 
@@ -216,6 +228,28 @@
         appliesAll.addEventListener('change', updateScopeBoxes);
         scopeSelect.addEventListener('change', updateScopeBoxes);
         updateScopeBoxes();
+
+        // ค้นหาคอร์ส/สินค้า
+        document.querySelectorAll('.scope-search').forEach(function(input) {
+            const list = document.querySelector(input.dataset.target);
+            const empty = list.querySelector('.scope-empty');
+
+            input.addEventListener('input', function() {
+                const keyword = this.value.trim().toLowerCase();
+                let visible = 0;
+                list.querySelectorAll('.scope-item').forEach(function(item) {
+                    const match = item.textContent.toLowerCase().includes(keyword);
+                    item.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                empty.style.display = visible ? 'none' : '';
+            });
+
+            // กัน Enter ส่งฟอร์ม
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+        });
 
         // ประเภทส่วนลด: หน่วย + ช่องยอดขั้นต่ำ
         const discountType = document.getElementById('discountType');

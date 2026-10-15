@@ -457,13 +457,19 @@
 
         /* ===== Responsive shell ===== */
         .mobile-menu-btn,
-        .sidebar-backdrop { display: none; }
+        .sidebar-backdrop {
+            display: none;
+        }
 
         .content img,
         .content video,
-        .content iframe { max-width: 100%; }
+        .content iframe {
+            max-width: 100%;
+        }
 
-        .content .table-responsive { -webkit-overflow-scrolling: touch; }
+        .content .table-responsive {
+            -webkit-overflow-scrolling: touch;
+        }
 
         @media (max-width: 991.98px) {
             .sidebar {
@@ -473,8 +479,15 @@
                 z-index: 1045;
                 box-shadow: 12px 0 30px rgba(0, 0, 0, .2);
             }
-            body.sidebar-open { overflow: hidden; }
-            body.sidebar-open .sidebar { transform: translateX(0); }
+
+            body.sidebar-open {
+                overflow: hidden;
+            }
+
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
             .sidebar-backdrop {
                 position: fixed;
                 inset: 0;
@@ -482,8 +495,17 @@
                 border: 0;
                 background: rgba(16, 18, 22, .48);
             }
-            body.sidebar-open .sidebar-backdrop { display: block; }
-            .main-wrap { margin-left: 0; width: 100%; min-width: 0; }
+
+            body.sidebar-open .sidebar-backdrop {
+                display: block;
+            }
+
+            .main-wrap {
+                margin-left: 0;
+                width: 100%;
+                min-width: 0;
+            }
+
             .mobile-menu-btn {
                 display: inline-flex;
                 align-items: center;
@@ -497,34 +519,85 @@
                 background: var(--card);
                 color: var(--ink);
             }
-            .topbar { padding: .6rem 1rem; }
-            .topbar .search-box { max-width: none; min-width: 0; }
-            .topbar .kbd { display: none; }
-            .content { min-width: 0; padding: 1rem; }
-            .page-title { font-size: 1.25rem; }
+
+            .topbar {
+                padding: .6rem 1rem;
+            }
+
+            .topbar .search-box {
+                max-width: none;
+                min-width: 0;
+            }
+
+            .topbar .kbd {
+                display: none;
+            }
+
+            .content {
+                min-width: 0;
+                padding: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.25rem;
+            }
         }
 
         @media (max-width: 575.98px) {
-            .topbar { gap: .55rem; padding: .55rem .75rem; }
-            .topbar .search-box input { padding-right: .65rem; font-size: .8rem; }
-            .topbar .ms-auto { gap: .65rem !important; }
-            .content { padding: .85rem .75rem 1.25rem; }
-            .content > .d-flex.justify-content-between,
-            .content > form > .d-flex.justify-content-between,
+            .topbar {
+                gap: .55rem;
+                padding: .55rem .75rem;
+            }
+
+            .topbar .search-box input {
+                padding-right: .65rem;
+                font-size: .8rem;
+            }
+
+            .topbar .ms-auto {
+                gap: .65rem !important;
+            }
+
+            .content {
+                padding: .85rem .75rem 1.25rem;
+            }
+
+            .content>.d-flex.justify-content-between,
+            .content>form>.d-flex.justify-content-between,
             .card-header.d-flex.justify-content-between {
                 align-items: stretch !important;
                 flex-direction: column;
                 gap: .75rem;
             }
-            .content > .d-flex.justify-content-between .btn,
-            .content > form > .d-flex.justify-content-between .btn { width: 100%; }
+
+            .content>.d-flex.justify-content-between .btn,
+            .content>form>.d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+
             .card-body,
             .card-header,
-            .card-footer { padding-left: .9rem; padding-right: .9rem; }
-            .mobile-stack { width: 100%; flex-direction: column; }
-            .modal-dialog { margin: .6rem; }
-            .alert { overflow-wrap: anywhere; }
-            .user-dropdown-menu { max-width: calc(100vw - 1.5rem); }
+            .card-footer {
+                padding-left: .9rem;
+                padding-right: .9rem;
+            }
+
+            .mobile-stack {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .modal-dialog {
+                margin: .6rem;
+            }
+
+            .alert {
+                overflow-wrap: anywhere;
+            }
+
+            .user-dropdown-menu {
+                max-width: calc(100vw - 1.5rem);
+            }
         }
     </style>
 </head>
@@ -553,7 +626,7 @@
             {{-- ==================== บุคคล ==================== --}}
             @if (
                 $u->hasModulePermission('trial_leads.manage') ||
-                $u->hasModulePermission('students.manage') ||
+                    $u->hasModulePermission('students.manage') ||
                     $u->hasModulePermission('guardians.manage') ||
                     $u->hasModulePermission('teachers.manage'))
                 <div class="nav-section-label">บุคคล</div>
@@ -640,7 +713,7 @@
 
                     <a href="{{ route('run-throughs.index') }}"
                         class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
-                        <i class="bi bi-arrow-repeat"></i> Run Through
+                        <i class="bi bi-arrow-repeat"></i> Homework
                     </a>
                 @endif
             @endif
@@ -840,7 +913,8 @@
                     class="nav-link {{ request()->routeIs('teacher.tasks') ? 'active' : '' }}">
                     <i class="bi bi-list-check"></i> งานที่ต้องทำ
                     @if (($teacherPendingTaskCount ?? 0) > 0)
-                        <span class="badge rounded-pill text-bg-danger ms-auto">{{ $teacherPendingTaskCount > 99 ? '99+' : $teacherPendingTaskCount }}</span>
+                        <span
+                            class="badge rounded-pill text-bg-danger ms-auto">{{ $teacherPendingTaskCount > 99 ? '99+' : $teacherPendingTaskCount }}</span>
                     @endif
                 </a>
 

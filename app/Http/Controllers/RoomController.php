@@ -29,12 +29,30 @@ class RoomController extends Controller
     public function create()
     {
         $equipmentTypes = EquipmentType::orderBy('name')->get();
-        return view('rooms.create', compact('equipmentTypes'));
+        $nextRoomCode = $this->generateNextRoomCode();
+        return view('rooms.create', compact('equipmentTypes', 'nextRoomCode'));
+    }
+
+    // สร้างรหัสห้องถัดไปอัตโนมัติ รูปแบบ R0001
+    private function generateNextRoomCode(): string
+    {
+        $maxNumber = 0;
+        foreach (Room::withTrashed()->where('room_code', 'like', 'R%')->pluck('room_code') as $code) {
+            if (preg_match('/^R(\d+)$/i', $code, $matches)) {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        return 'R' . str_pad((string) ($maxNumber + 1), 4, '0', STR_PAD_LEFT);
     }
 
     public function store(StoreRoomRequest $request)
     {
         $data = $request->validated();
+
+        // รหัสห้องสร้างจากระบบเสมอ ตอนบันทึกจริง กันกรณีเปิดฟอร์มพร้อมกันแล้วได้รหัสซ้ำ
+        $data['room_code'] = $this->generateNextRoomCode();
+
         $room = Room::create($data);
 
         foreach ($data['equipment'] ?? [] as $eq) {

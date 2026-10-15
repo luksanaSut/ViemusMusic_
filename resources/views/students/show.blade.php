@@ -501,7 +501,7 @@
                                     เปลี่ยนคอร์ส</a>
                                 <a href="{{ route('run-throughs.create', $enr) }}"
                                     class="btn btn-sm btn-outline-primary w-100 mt-1"><i class="bi bi-arrow-repeat"></i>
-                                    สร้าง Home Work</a>
+                                    สร้าง Homework</a>
                             </div>
                         @endif
                         <div class="col-md-3">

@@ -147,8 +147,13 @@
     <div class="row g-3">
         <div class="col-md-3">
             <label class="form-label">รหัสห้อง *</label>
-            <input type="text" name="room_code" id="roomCode" class="form-control" maxlength="20"
-                pattern="[A-Za-z0-9\-]+" value="{{ old('room_code', $room->room_code ?? '') }}" required>
+            @if (isset($room))
+                <input type="text" name="room_code" id="roomCode" class="form-control" maxlength="20"
+                    pattern="[A-Za-z0-9\-]+" value="{{ old('room_code', $room->room_code) }}" required>
+            @else
+                <input type="text" class="form-control" value="{{ $nextRoomCode ?? '' }}" readonly>
+                <div class="form-text">รหัสถูกสร้างอัตโนมัติ</div>
+            @endif
         </div>
         <div class="col-md-6">
             <label class="form-label">ชื่อห้อง *</label>
@@ -340,7 +345,7 @@
 @endunless
 
 <script>
-    document.getElementById('roomCode').addEventListener('input', function() {
+    document.getElementById('roomCode')?.addEventListener('input', function() {
         this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
     });
 </script>
