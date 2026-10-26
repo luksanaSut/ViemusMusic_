@@ -598,10 +598,8 @@
                     class="step-no">ขั้นตอน 4</span>
             </div>
             <div class="price-box">
-                <div class="price-row"><span>ราคาคอร์ส (ก่อน VAT)</span><span
-                        id="priceSubtotal">{{ number_format($saleOrder->base_price, 2, '.', '') }}</span></div>
-                <div class="price-row"><span>VAT 7%</span><span
-                        id="priceVat">{{ number_format($saleOrder->vat_amount, 2, '.', '') }}</span></div>
+                <div class="price-row"><span>ราคาคอร์ส</span><span
+                        id="priceSubtotal">{{ number_format($saleOrder->base_price + $saleOrder->vat_amount, 2, '.', '') }}</span></div>
                 <div class="price-row total"><span>ยอดชำระทั้งหมด</span><span
                         id="priceTotal">{{ number_format($saleOrder->total_amount, 2, '.', '') }}</span></div>
             </div>
@@ -1001,11 +999,8 @@
 
             function updatePrice() {
                 const price = parseFloat(courseCardsData[courseIdInput.value]?.price || 0);
-                const subtotal = price / 1.07;
-                const vat = price - subtotal;
 
-                document.getElementById('priceSubtotal').textContent = subtotal.toFixed(2);
-                document.getElementById('priceVat').textContent = vat.toFixed(2);
+                document.getElementById('priceSubtotal').textContent = price.toFixed(2);
                 document.getElementById('priceTotal').textContent = price.toFixed(2);
             }
 
