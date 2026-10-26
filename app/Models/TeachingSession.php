@@ -30,13 +30,13 @@ class TeachingSession extends Model
             if ($session->start_time && $session->end_time) {
                 $start = Carbon::parse($session->start_time);
                 $end   = Carbon::parse($session->end_time);
-                $session->hours = round($end->diffInMinutes($start) / 60, 2);
+                $session->hours = round($start->diffInMinutes($end) / 60, 2);
             }
 
-            // คำนวณรายได้ = ชั่วโมง * เรท (หรือ fixed ต่อคาบ) + ค่ารถ
+            // คำนวณรายได้ = ชั่วโมง * เรท (หรือ fixed ต่อคาบ)
+            // ไม่รวมค่ารถ เพราะค่ารถแยกเก็บใน transport_fee_applied และระบบเงินเดือนบวกแยกให้อยู่แล้ว
             if ($session->rate_applied !== null) {
-                $income = $session->hours * $session->rate_applied;
-                $session->income_amount = round($income + ($session->transport_fee_applied ?? 0), 2);
+                $session->income_amount = round($session->hours * $session->rate_applied, 2);
             }
         });
     }

@@ -239,11 +239,7 @@ class TeachingLogController extends Controller
 
             // ===== Business rule: เชื่อมโยงกับระบบเงินเดือน (สร้างรายการ teaching_sessions ให้อาจารย์) =====
             $hours = round($data['duration_minutes'] / 60, 2);
-            $rate = $teacher->rates()
-                ->where('is_active', true)
-                ->where(fn($q) => $q->whereNull('instrument_id')->orWhere('instrument_id', $enrollment->course->instrument_id))
-                ->orderByRaw('instrument_id IS NULL') // เรทเฉพาะเครื่องดนตรีมาก่อนเรทกลาง
-                ->first();
+            $rate = $this->resolveRate($teacher, $enrollment->course);
 
             $rateApplied = $rate?->rate_amount ?? 0;
 
@@ -311,6 +307,21 @@ class TeachingLogController extends Controller
 
     // คำนวณค่ารถตามเงื่อนไขที่ตั้งไว้ให้อาจารย์แต่ละคน
     // Business rule: คำนวณเฉพาะคลาสที่สอนจริงเท่านั้น (เมธอดนี้ถูกเรียกจากจุดเดียวคือตอนยืนยันเวลาสอนจริงสำเร็จ)
+    // เลือกเรทค่าสอน: เรทเฉพาะคอร์ส (course_teacher) > เรทของเครื่องดนตรีนั้น > เรทกลางของอาจารย์
+    private function resolveRate($teacher, $course): ?object
+    {
+        $courseRate = $course?->teachers()->where('teachers.id', $teacher->id)->first()?->pivot;
+        if ($courseRate && $courseRate->rate_type && $courseRate->rate_amount !== null) {
+            return (object) ['rate_type' => $courseRate->rate_type, 'rate_amount' => (float) $courseRate->rate_amount];
+        }
+
+        return $teacher->rates()
+            ->where('is_active', true)
+            ->where(fn($q) => $q->whereNull('instrument_id')->orWhere('instrument_id', $course?->instrument_id))
+            ->orderByRaw('instrument_id IS NULL') // เรทเฉพาะเครื่องดนตรีมาก่อนเรทกลาง
+            ->first();
+    }
+
     private function calculateTransportFee($teacher, string $sessionDate, ?float $kmTraveled): float
     {
         $fee = $teacher->activeTransportFee();
