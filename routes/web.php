@@ -26,6 +26,7 @@ use App\Http\Controllers\RoomEquipmentController;
 use App\Http\Controllers\EquipmentTypeController;
 use App\Http\Controllers\RoomBookingController;
 use App\Http\Controllers\RoomScheduleController;
+use App\Http\Controllers\RoomAvailabilityController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\StudentSearchController;
 use App\Http\Controllers\CourseTransferController;
@@ -380,6 +381,7 @@ Route::middleware($adminMiddleware)->group(function () {
         Route::patch('schedules/{classSchedule}/cancel', [ClassScheduleController::class, 'cancel'])->name('schedules.cancel');
         Route::delete('schedules/{classSchedule}', [ClassScheduleController::class, 'destroy'])->name('schedules.destroy');
         Route::get('schedule', [ScheduleController::class, 'index'])->name('schedule.index');
+        Route::get('room-availability', [RoomAvailabilityController::class, 'index'])->name('room-availability.index');
         Route::get('schedules/bulk-create', [ClassScheduleController::class, 'bulkCreate'])->name('schedules.bulk-create');
         Route::post('schedules/bulk-preview', [ClassScheduleController::class, 'bulkPreview'])->name('schedules.bulk-preview');
         Route::get('schedules/bulk-row-check-conflict', [ClassScheduleController::class, 'bulkRowCheckConflict'])->name('schedules.bulk-row-check-conflict');

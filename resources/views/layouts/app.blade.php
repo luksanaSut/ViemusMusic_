@@ -688,6 +688,11 @@
                         <i class="bi bi-calendar3"></i> จัดตารางเรียน
                     </a>
 
+                    <a href="{{ route('room-availability.index') }}"
+                        class="nav-link {{ request()->routeIs('room-availability.*') ? 'active' : '' }}">
+                        <i class="bi bi-grid-3x3"></i> ตารางห้องว่าง (รายวัน)
+                    </a>
+
                     {{-- <a href="{{ route('schedule.index') }}"
                         class="nav-link {{ request()->routeIs('schedule.*') ? 'active' : '' }}">
                         <i class="bi bi-calendar-week"></i> ตารางเรียน

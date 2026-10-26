@@ -245,7 +245,7 @@
                 <option value="">ไม่ระบุห้อง (เรียนออนไลน์)</option>
                 @foreach ($rooms as $r)
                     <option value="{{ $r->id }}"
-                        {{ old('room_id', $classSchedule->room_id ?? '') == $r->id ? 'selected' : '' }}>
+                        {{ old('room_id', $classSchedule->room_id ?? request('room_id', '')) == $r->id ? 'selected' : '' }}>
                         {{ $r->name }} (ความจุ {{ $r->capacity }} คน)</option>
                 @endforeach
             </select>
@@ -263,19 +263,19 @@
         <div class="col-md-4">
             <label class="form-label">วันที่ *</label>
             <input type="date" name="schedule_date" id="scheduleDate" class="form-control"
-                value="{{ old('schedule_date', isset($classSchedule) ? $classSchedule->schedule_date->format('Y-m-d') : now()->toDateString()) }}"
+                value="{{ old('schedule_date', isset($classSchedule) ? $classSchedule->schedule_date->format('Y-m-d') : request('schedule_date', now()->toDateString())) }}"
                 required>
             <div class="info-hint" id="dateRangeHint"></div>
         </div>
         <div class="col-md-4">
             <label class="form-label">เวลาเริ่ม *</label>
             <input type="time" name="start_time" id="startTime" class="form-control"
-                value="{{ old('start_time', $classSchedule->start_time ?? '') }}" required>
+                value="{{ old('start_time', $classSchedule->start_time ?? request('start_time', '')) }}" required>
         </div>
         <div class="col-md-4">
             <label class="form-label">เวลาสิ้นสุด *</label>
             <input type="time" name="end_time" id="endTime" class="form-control"
-                value="{{ old('end_time', $classSchedule->end_time ?? '') }}" required>
+                value="{{ old('end_time', $classSchedule->end_time ?? request('end_time', '')) }}" required>
         </div>
     </div>
 
