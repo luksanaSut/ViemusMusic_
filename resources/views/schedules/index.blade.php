@@ -254,7 +254,7 @@
             <a href="{{ route('schedules.create') }}" class="btn btn-outline-secondary"><i class="bi bi-calendar-plus"></i>
                 เพิ่มทีละคาบ</a>
             <a href="{{ route('schedules.bulk-create') }}" class="btn btn-accent"><i class="bi bi-calendar2-range"></i>
-                จัดตารางแบบชุด</a>
+                จัดตารางเรียนแบบคอร์ส</a>
 
         </div>
     </div>
@@ -381,7 +381,9 @@
                         @foreach ($dayTrials as $tr)
                             <a href="{{ route('trial-leads.show', $tr) }}" class="calendar-chip trial-chip"
                                 title="ทดลองเรียน: {{ $tr->student_name }}">
-                                <i class="bi bi-person-check"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) : '' }} {{ $tr->student_name }}
+                                <i class="bi bi-person-check"></i>
+                                {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) : '' }}
+                                {{ $tr->student_name }}
                             </a>
                         @endforeach
                     </div>
@@ -420,9 +422,12 @@
                         @endforelse
                         @foreach ($dayTrials as $tr)
                             <a href="{{ route('trial-leads.show', $tr) }}" class="week-event trial-chip">
-                                <div class="t"><i class="bi bi-person-check"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . '-' . substr($tr->trial_end_time, 0, 5) : 'ทดลองเรียน' }}</div>
+                                <div class="t"><i class="bi bi-person-check"></i>
+                                    {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . '-' . substr($tr->trial_end_time, 0, 5) : 'ทดลองเรียน' }}
+                                </div>
                                 <div>{{ $tr->student_name }}</div>
-                                <div class="text-muted">{{ $tr->teacher->nickname ?? ($tr->teacher->full_name ?? 'ยังไม่เลือกอาจารย์') }}</div>
+                                <div class="text-muted">
+                                    {{ $tr->teacher->nickname ?? ($tr->teacher->full_name ?? 'ยังไม่เลือกอาจารย์') }}</div>
                             </a>
                         @endforeach
                     </div>
@@ -441,9 +446,12 @@
                 </div>
                 @foreach ($dayTrialLeads as $tr)
                     <div class="schedule-row">
-                        <div class="schedule-time"><i class="bi bi-clock"></i> {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . ' - ' . substr($tr->trial_end_time, 0, 5) : 'ไม่ระบุเวลา' }}</div>
+                        <div class="schedule-time"><i class="bi bi-clock"></i>
+                            {{ $tr->trial_start_time ? substr($tr->trial_start_time, 0, 5) . ' - ' . substr($tr->trial_end_time, 0, 5) : 'ไม่ระบุเวลา' }}
+                        </div>
                         <div class="schedule-info">
-                            <div class="main">{{ $tr->student_name }} — {{ $tr->course->name ?? $tr->interest ?? '-' }}</div>
+                            <div class="main">{{ $tr->student_name }} — {{ $tr->course->name ?? ($tr->interest ?? '-') }}
+                            </div>
                             <div class="meta">
                                 <i class="bi bi-person-badge"></i> {{ $tr->teacher->full_name ?? 'ไม่ระบุอาจารย์' }}
                                 @if ($tr->room)
@@ -451,8 +459,10 @@
                                 @endif
                             </div>
                         </div>
-                        <span class="badge {{ $tr->confirmationStatusBadgeClass() }}">{{ $tr->confirmationStatusLabel() }}</span>
-                        <a href="{{ route('trial-leads.show', $tr) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <span
+                            class="badge {{ $tr->confirmationStatusBadgeClass() }}">{{ $tr->confirmationStatusLabel() }}</span>
+                        <a href="{{ route('trial-leads.show', $tr) }}" class="btn btn-sm btn-outline-primary"><i
+                                class="bi bi-eye"></i></a>
                     </div>
                 @endforeach
             </div>
@@ -468,7 +478,8 @@
                         <a href="{{ route('reschedule-requests.create', ['class_schedule_id' => $s->id]) }}"
                             class="btn btn-sm btn-outline-secondary" title="ขอเปลี่ยนแปลง/แลกคาบ"><i
                                 class="bi bi-arrow-left-right"></i></a>
-                        <div class="schedule-time"><i class="bi bi-clock"></i> {{ $s->start_time }} - {{ $s->end_time }}
+                        <div class="schedule-time"><i class="bi bi-clock"></i> {{ $s->start_time }} -
+                            {{ $s->end_time }}
                         </div>
                         <div class="schedule-info">
                             <div class="main">
