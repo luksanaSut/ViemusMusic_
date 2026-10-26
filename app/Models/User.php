@@ -71,11 +71,19 @@ class User extends Authenticatable
     }
 
     // admin มีสิทธิ์ทุกโมดูลเสมอ; staff ต้องได้รับสิทธิ์ผ่านตาราง role_permissions ก่อน
+    // hasModulePermission = ดูได้ (เห็นเมนู/เปิดหน้าได้), canEditModule = แก้ไขได้ (เพิ่ม/แก้/ลบ/บันทึก)
     public function hasModulePermission(string $key): bool
     {
         if ($this->isAdmin()) return true;
 
         return RolePermission::isGranted($this->role, $key);
+    }
+
+    public function canEditModule(string $key): bool
+    {
+        if ($this->isAdmin()) return true;
+
+        return RolePermission::isGranted($this->role, $key, true);
     }
 
     public function roleLabel(): string

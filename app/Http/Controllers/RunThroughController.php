@@ -111,7 +111,7 @@ class RunThroughController extends Controller
 
         AppNotification::notifyStudentAndGuardians(
             $enrollment->student,
-            'มีแบบฝึกหัดทบทวนใหม่ (Run Through)',
+            'มีแบบฝึกหัดทบทวนใหม่ (Homework)',
             "{$runThrough->title} — {$enrollment->course->name}",
             route('run-throughs.my-index')
         );
@@ -142,7 +142,7 @@ class RunThroughController extends Controller
 
         AppNotification::notifyStudentAndGuardians(
             $runThrough->enrollment->student,
-            'บันทึกผลการฝึกซ้อม Run Through แล้ว',
+            'บันทึกผลการฝึกซ้อม Homework แล้ว',
             "{$runThrough->title} — ผล: {$runThrough->practiceResultLabel()}",
             route('run-throughs.my-index')
         );

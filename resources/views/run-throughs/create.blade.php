@@ -2,10 +2,10 @@
 @section('title', 'สร้างแบบฝึกหัดทบทวน')
 
 @section('content')
-    <h1 class="page-title mb-1"><i class="bi bi-arrow-repeat"></i> สร้างแบบฝึกหัดทบทวน (Run Through)</h1>
+    <h1 class="page-title mb-1"><i class="bi bi-arrow-repeat"></i> สร้างแบบฝึกหัดทบทวน (Homework)</h1>
     <div class="page-sub mb-1">{{ $enrollment->student->full_name }} — {{ $enrollment->course->name }}</div>
     <p class="text-muted small mb-3"><i class="bi bi-1-circle"></i> ขั้นตอนที่ 1 จาก 2 — สร้างหัวข้อให้นักเรียนไปฝึกซ้อม
-        หลังจากนักเรียนฝึกซ้อมแล้ว ให้กลับมาที่หน้า <a href="{{ route('run-throughs.index') }}">รายการ Run Through</a> เพื่อบันทึกผล (ขั้นตอนที่ 2)</p>
+        หลังจากนักเรียนฝึกซ้อมแล้ว ให้กลับมาที่หน้า <a href="{{ route('run-throughs.index') }}">รายการ Homework</a> เพื่อบันทึกผล (ขั้นตอนที่ 2)</p>
 
     <form action="{{ route('run-throughs.store', $enrollment) }}" method="POST" enctype="multipart/form-data">
         @csrf

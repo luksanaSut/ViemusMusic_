@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Run Through ของฉัน')
+@section('title', 'Homework ของฉัน')
 
 @section('content')
-    <h1 class="page-title mb-3"><i class="bi bi-arrow-repeat"></i> ประวัติ Run Through</h1>
+    <h1 class="page-title mb-3"><i class="bi bi-arrow-repeat"></i> ประวัติ Homework</h1>
 
     @forelse($runThroughs as $rt)
         <div class="card mb-3" style="border-radius:16px;">
@@ -33,6 +33,6 @@
             </div>
         </div>
     @empty
-        <p class="text-muted">ยังไม่มี Run Through</p>
+        <p class="text-muted">ยังไม่มี Homework</p>
     @endforelse
 @endsection

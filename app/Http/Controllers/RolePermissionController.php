@@ -11,9 +11,11 @@ class RolePermissionController extends Controller
     // GET /role-permissions
     public function index()
     {
-        $grantedKeys = RolePermission::where('role', 'staff')
+        // key => can_edit ของ staff (มี key = ดูได้)
+        $granted = RolePermission::where('role', 'staff')
             ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
-            ->pluck('permissions.key')
+            ->pluck('role_permissions.can_edit', 'permissions.key')
+            ->map(fn ($canEdit) => (bool) $canEdit)
             ->all();
 
         $permissions = Permission::where('is_locked', false)
@@ -22,34 +24,39 @@ class RolePermissionController extends Controller
             ->get()
             ->groupBy('module');
 
-        return view('role-permissions.index', compact('permissions', 'grantedKeys'));
+        return view('role-permissions.index', compact('permissions', 'granted'));
     }
 
     // POST /role-permissions
     public function update(Request $request)
     {
         $data = $request->validate([
-            'permissions'   => ['nullable', 'array'],
-            'permissions.*' => ['string'],
+            'view'   => ['nullable', 'array'],
+            'view.*' => ['string'],
+            'edit'   => ['nullable', 'array'],
+            'edit.*' => ['string'],
         ]);
+
+        // แก้ไขได้ = ดูได้ด้วยเสมอ
+        $editKeys = $data['edit'] ?? [];
+        $viewKeys = array_unique([...($data['view'] ?? []), ...$editKeys]);
 
         // เฉพาะโมดูลที่ไม่ล็อกเท่านั้นที่แก้ได้ (กันแก้ผ่าน request ปลอมด้วย)
-        $grantableIds = Permission::where('is_locked', false)
-            ->whereIn('key', $data['permissions'] ?? [])
-            ->pluck('id');
+        $grantable = Permission::where('is_locked', false)
+            ->whereIn('key', $viewKeys)
+            ->pluck('id', 'key');
 
-        $rows = $grantableIds->map(fn ($id) => [
+        $rows = $grantable->map(fn ($id, $key) => [
             'role'          => 'staff',
             'permission_id' => $id,
-        ]);
+            'can_edit'      => in_array($key, $editKeys, true),
+            'created_at'    => now(),
+            'updated_at'    => now(),
+        ])->values();
 
         RolePermission::where('role', 'staff')->delete();
         if ($rows->isNotEmpty()) {
-            RolePermission::insert($rows->map(fn ($r) => [
-                ...$r,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->all());
+            RolePermission::insert($rows->all());
         }
 
         return back()->with('success', 'บันทึกสิทธิ์เรียบร้อยแล้ว');

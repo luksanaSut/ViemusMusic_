@@ -67,7 +67,7 @@ class RoomScheduleController extends Controller
                 'url'   => route('trial-leads.show', $t),
             ]);
 
-        $canEditSchedule = (bool) $request->user()?->hasModulePermission('schedules.manage');
+        $canEditSchedule = (bool) $request->user()?->canEditModule('schedules.manage');
 
         // คาบเรียนจากตารางเรียน (class_schedules) ที่ระบุห้อง
         $classSchedules = ClassSchedule::with([

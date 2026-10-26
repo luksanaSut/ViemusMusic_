@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Run Through')
+@section('title', 'Homework')
 
 @section('content')
     <style>
@@ -76,8 +76,8 @@
 
     <div class="rt-intro">
         <div>
-            <div class="breadcrumb-sm">การเรียนการสอน <i class="bi bi-chevron-right small"></i> Run Through</div>
-            <h1 class="page-title mb-1"><i class="bi bi-arrow-repeat"></i> ระบบ Run Through</h1>
+            <div class="breadcrumb-sm">การเรียนการสอน <i class="bi bi-chevron-right small"></i> Homework</div>
+            <h1 class="page-title mb-1"><i class="bi bi-arrow-repeat"></i> ระบบ Homework</h1>
             <p class="lead-text">สร้างหัวข้อให้นักเรียนไปฝึกซ้อม แล้วกลับมาบันทึกผลเมื่อฝึกเสร็จแล้ว</p>
         </div>
         @if ($pendingCount > 0)
@@ -106,12 +106,12 @@
                 <div class="icon-circle"><i class="bi bi-plus-lg"></i></div>
                 @if ($pickerEnrollments->isEmpty())
                     <div>
-                        <div class="heading">สร้าง Run Through ใหม่</div>
+                        <div class="heading">สร้าง Homework ใหม่</div>
                         <div class="sub">ยังไม่มีนักเรียนที่กำลังเรียนอยู่ในความดูแลของคุณ จึงยังสร้างไม่ได้</div>
                     </div>
                 @else
                     <div>
-                        <div class="heading">สร้าง Run Through ใหม่</div>
+                        <div class="heading">สร้าง Homework ใหม่</div>
                         <div class="sub">ขั้นตอนที่ 1 — เลือกนักเรียนและคอร์สที่ต้องการมอบหมาย</div>
                     </div>
                     <form method="GET" action="{{ route('run-throughs.new') }}" class="d-flex gap-2 flex-wrap flex-md-nowrap">
@@ -121,7 +121,7 @@
                                 <option value="{{ $enr->id }}">{{ $enr->student->full_name ?? '-' }} — {{ $enr->course->name ?? '-' }}</option>
                             @endforeach
                         </select>
-                        <button class="btn btn-sm btn-accent text-nowrap"><i class="bi bi-arrow-right-circle"></i> ไปสร้าง Run Through</button>
+                        <button class="btn btn-sm btn-accent text-nowrap"><i class="bi bi-arrow-right-circle"></i> ไปสร้าง Homework</button>
                     </form>
                 @endif
             </div>
@@ -206,7 +206,7 @@
         </div>
     @empty
         <div class="rt-card rt-empty">
-            <i class="bi bi-inboxes fs-3 d-block mb-2"></i> ยังไม่มี Run Through ในระบบ
+            <i class="bi bi-inboxes fs-3 d-block mb-2"></i> ยังไม่มี Homework ในระบบ
         </div>
     @endforelse
 

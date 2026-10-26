@@ -27,6 +27,26 @@ class EnsurePermission
             abort(403, 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
         }
 
+        // สิทธิ์ "ดูได้" อย่างเดียว: เปิดได้เฉพาะหน้าดูข้อมูล — กันทุกคำขอที่เปลี่ยนข้อมูล และหน้าฟอร์มสร้าง/แก้ไข
+        if ($this->isEditRequest($request) && !$user->canEditModule($key)) {
+            abort(403, 'คุณมีสิทธิ์ดูข้อมูลอย่างเดียว ไม่สามารถเพิ่มหรือแก้ไขได้');
+        }
+
+        // ให้ layout รู้ว่าหน้านี้เป็นโหมดดูอย่างเดียว เพื่อแสดงแถบแจ้งและปิดปุ่มบันทึก
+        if (!$user->canEditModule($key)) {
+            $request->attributes->set('readOnlyModule', true);
+        }
+
         return $next($request);
+    }
+
+    private function isEditRequest(Request $request): bool
+    {
+        if (!$request->isMethodSafe()) {
+            return true;
+        }
+
+        // หน้าฟอร์ม เช่น schedules.create, schedules.bulk-create, sales.edit
+        return (bool) preg_match('/[.\-](create|edit)$/', (string) $request->route()?->getName());
     }
 }

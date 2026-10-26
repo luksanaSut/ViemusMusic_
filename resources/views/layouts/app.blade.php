@@ -935,7 +935,7 @@
 
                 <a href="{{ route('run-throughs.index') }}"
                     class="nav-link {{ request()->routeIs('run-throughs.*') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-repeat"></i> Run Through
+                    <i class="bi bi-arrow-repeat"></i> Homework
                 </a>
 
 
@@ -996,7 +996,7 @@
 
                 <a href="{{ route('run-throughs.my-index') }}"
                     class="nav-link {{ request()->routeIs('run-throughs.my-index') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-repeat"></i> Run Through
+                    <i class="bi bi-arrow-repeat"></i> Homework
                 </a>
 
                 <div class="nav-section-label">การลา</div>
@@ -1110,6 +1110,11 @@
         </div>
 
         <div class="content">
+            @if (request()->attributes->get('readOnlyModule'))
+                <div class="alert alert-light border small" id="readOnlyNotice">
+                    <i class="bi bi-eye"></i> คุณมีสิทธิ์ <strong>ดูได้อย่างเดียว</strong> ในหน้านี้ — ไม่สามารถเพิ่ม แก้ไข หรือลบข้อมูลได้
+                </div>
+            @endif
             @if (session('success'))
                 @if (session('generated_password'))
                     <div class="alert alert-success">
@@ -1182,6 +1187,25 @@
                 }
             });
         })();
+
+        @if (request()->attributes->get('readOnlyModule'))
+            // โหมดดูอย่างเดียว: ปิดปุ่มบันทึก/ลบ และซ่อนลิงก์ไปหน้าสร้าง/แก้ไข (ฝั่งเซิร์ฟเวอร์กันซ้ำไว้แล้วใน EnsurePermission)
+            (function() {
+                const content = document.querySelector('.content');
+                content.querySelectorAll('form').forEach(form => {
+                    if ((form.getAttribute('method') || 'get').toLowerCase() === 'get') return;
+                    form.querySelectorAll('button, input[type="submit"]').forEach(btn => {
+                        btn.disabled = true;
+                        btn.title = 'สิทธิ์ดูได้อย่างเดียว';
+                    });
+                    form.addEventListener('submit', e => e.preventDefault());
+                });
+                content.querySelectorAll('a[href]').forEach(link => {
+                    const path = new URL(link.href, location.href).pathname;
+                    if (/\/(create|edit|bulk-create)$/.test(path)) link.classList.add('d-none');
+                });
+            })();
+        @endif
     </script>
     @yield('scripts')
 </body>
