@@ -198,20 +198,14 @@
         }
 
         .brand-mark {
-            width: 66px;
-            height: 66px;
-            margin: 0 auto 1.1rem;
-            border-radius: 16px;
-            background: linear-gradient(145deg, var(--navy-soft), var(--navy-deep));
-            border: 2px solid rgba(255, 255, 255, .18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Prompt', sans-serif;
-            font-weight: 700;
-            font-size: 1.6rem;
-            color: #fff;
-            box-shadow: 0 0 0 4px rgba(111, 198, 198, .12);
+            width: 190px;
+            margin: 0 auto 1.3rem;
+        }
+
+        .brand-mark img {
+            display: block;
+            width: 100%;
+            height: auto;
         }
 
         h1.brand-title {
@@ -325,7 +319,8 @@
             color: #a9e8c4;
         }
 
-        @media (max-width: 575.98px), (max-height: 680px) {
+        @media (max-width: 575.98px),
+        (max-height: 680px) {
             body {
                 align-items: flex-start;
                 overflow-y: auto;
@@ -339,16 +334,25 @@
             }
 
             .brand-mark {
-                width: 54px;
-                height: 54px;
-                margin-bottom: .8rem;
-                font-size: 1.35rem;
+                width: 150px;
+                margin-bottom: 1rem;
             }
 
-            h1.brand-title { font-size: 1.3rem; }
-            .brand-sub { letter-spacing: 1.8px; }
-            .tagline { margin-bottom: 1.25rem; }
-            .deco { opacity: .2; }
+            h1.brand-title {
+                font-size: 1.3rem;
+            }
+
+            .brand-sub {
+                letter-spacing: 1.8px;
+            }
+
+            .tagline {
+                margin-bottom: 1.25rem;
+            }
+
+            .deco {
+                opacity: .2;
+            }
         }
     </style>
 </head>
@@ -362,10 +366,11 @@
     <div class="deco deco-piano"><span></span><span></span><span></span><span></span><span></span><span></span></div>
 
     <div class="login-card">
-        <div class="brand-mark">V</div>
-        <h1 class="brand-title">โรงเรียนดนตรีวีมุส</h1>
+        <div class="brand-mark"><img src="{{ asset('images/viemus-logo.png') }}"
+                alt="VIEMUS International School of Music"></div>
+        {{-- <h1 class="brand-title">โรงเรียนดนตรีวีมุส</h1>
         <div class="brand-sub">VIEMUS MUSIC SCHOOL</div>
-        <div class="tagline">Creative Music Learning Management</div>
+        <div class="tagline">Creative Music Learning Management</div> --}}
 
         @if (session('error'))
             <div class="alert alert-danger">{{ session('error') }}</div>
@@ -391,8 +396,8 @@
                 <label class="form-label">รหัสผ่าน</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                    <input type="password" name="password" id="password" class="form-control"
-                        placeholder="••••••••••" required>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="••••••••••"
+                        required>
                     <span class="input-group-text" id="togglePassword"><i class="bi bi-eye" id="toggleIcon"></i></span>
                 </div>
             </div>
@@ -405,7 +410,7 @@
     </div>
 
     <script>
-        document.getElementById('togglePassword').addEventListener('click', function () {
+        document.getElementById('togglePassword').addEventListener('click', function() {
             const input = document.getElementById('password');
             const icon = document.getElementById('toggleIcon');
             const show = input.type === 'password';
